@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 const https = require('https');
 
-const BLOB_URL = 'https://jsonblob.com/api/jsonBlob/019f74dc-884d-7ca6-84fd-14f453452511';
+const BLOB_URL = 'https://jsonblob.com/api/jsonBlob/019f7ac0-fcfd-7d7a-a5bd-b3a8753923a8';
 
 const defaultUsers = [
     { id: "ZC000", name: "Amr Nasr", role: "Admin" },
