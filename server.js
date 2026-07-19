@@ -86,13 +86,17 @@ async function readDb() {
     try {
         const raw = await fs.readFile(dbPath, 'utf8');
         const clean = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
-        return JSON.parse(clean.trim());
+        const db = JSON.parse(clean.trim());
+        db.aiScenarios = db.aiScenarios || [];
+        return db;
     } catch (e) {
         const initial = {
             users: defaultUsers,
             assignments: [],
+            aiAssignments: [],
             results: [],
             scenarios: null,
+            aiScenarios: [],
             aiResults: []
         };
         await fs.writeFile(dbPath, JSON.stringify(initial, null, 4), 'utf8');
@@ -158,6 +162,18 @@ app.get('/api/scenarios', async (req, res) => {
 app.post('/api/scenarios', async (req, res) => {
     const db = await readDb();
     db.scenarios = req.body;
+    await writeDb(db);
+    res.json({ success: true });
+});
+
+app.get('/api/ai-scenarios', async (req, res) => {
+    const db = await readDb();
+    res.json(db.aiScenarios || []);
+});
+
+app.post('/api/ai-scenarios', async (req, res) => {
+    const db = await readDb();
+    db.aiScenarios = req.body;
     await writeDb(db);
     res.json({ success: true });
 });
@@ -233,7 +249,7 @@ app.post('/api/ai-results', async (req, res) => {
 });
 
 app.post('/api/send-invite', async (req, res) => {
-    const { userId, email } = req.body;
+    const { userId, email, testType } = req.body;
     const db = await readDb();
     
     const user = db.users.find(u => u.id === userId);
@@ -249,6 +265,9 @@ app.post('/api/send-invite', async (req, res) => {
     let sent = false;
     let simulated = false;
     let errorMsg = "";
+    
+    const activeTestName = testType === 'ai-agent' ? "Zain Cash AI Agent Coach Test" : "Zain Cash Customer Care Chat Simulator Test";
+    const activeTestDesc = testType === 'ai-agent' ? "Zain Cash AI Agent Coach" : "Zain Cash Customer Care Chat Simulator";
     
     if (db.smtp && db.smtp.server && db.smtp.username) {
         try {
@@ -268,7 +287,7 @@ app.post('/api/send-invite', async (req, res) => {
             const mailOptions = {
                 from: `"Zain Cash Academy" <${db.smtp.username}>`,
                 to: email,
-                subject: "Invitation to Zain Cash Customer Care Test",
+                subject: `Invitation to ${activeTestName}`,
                 html: `
 <!DOCTYPE html>
 <html>
@@ -291,7 +310,7 @@ app.post('/api/send-invite', async (req, res) => {
         </div>
         <div class="body">
             <h3 style="margin-top: 0; color: #0f172a;">Hello ${employeeName},</h3>
-            <p>You have been invited to perform a practice evaluation on the **Zain Cash Customer Care Chat Simulator**.</p>
+            <p>You have been invited to perform a practice evaluation on the **${activeTestDesc}**.</p>
             <p>Please click the button below to start your training and testing session directly. Your performance and results will be automatically saved and reported to the management.</p>
             <div class="btn-container">
                 <a href="${loginLink}" class="btn">Start Test Now</a>

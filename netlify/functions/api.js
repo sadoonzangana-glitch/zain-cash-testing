@@ -99,7 +99,9 @@ async function getDb() {
     try {
         const res = await httpReq(BLOB_URL, 'GET');
         if (res.statusCode === 200) {
-            return JSON.parse(res.body);
+            const db = JSON.parse(res.body);
+            db.aiScenarios = db.aiScenarios || [];
+            return db;
         }
     } catch (e) {
         console.error("JSONBlob Fetch error:", e);
@@ -110,6 +112,7 @@ async function getDb() {
         aiAssignments: [],
         results: [],
         scenarios: null,
+        aiScenarios: [],
         aiResults: []
     };
 }
@@ -196,6 +199,17 @@ exports.handler = async (event, context) => {
         }
     }
 
+    if (cleanPath === '/ai-scenarios') {
+        if (event.httpMethod === 'GET') {
+            return { statusCode: 200, headers, body: JSON.stringify(db.aiScenarios || []) };
+        }
+        if (event.httpMethod === 'POST') {
+            db.aiScenarios = bodyData;
+            await saveDb(db);
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
+    }
+
     if (cleanPath === '/slides') {
         if (event.httpMethod === 'GET') {
             return { statusCode: 200, headers, body: JSON.stringify(db.slides) };
@@ -262,7 +276,7 @@ exports.handler = async (event, context) => {
     }
 
     if (cleanPath === '/send-invite' && event.httpMethod === 'POST') {
-        const { userId, email } = bodyData;
+        const { userId, email, testType } = bodyData;
         const user = db.users.find(u => u.id === userId);
         const employeeName = user ? user.name : "Employee";
         if (user) {
@@ -276,6 +290,9 @@ exports.handler = async (event, context) => {
         let sent = false;
         let simulated = false;
         let errorMsg = "";
+
+        const activeTestName = testType === 'ai-agent' ? "Zain Cash AI Agent Coach Test" : "Zain Cash Customer Care Chat Simulator Test";
+        const activeTestDesc = testType === 'ai-agent' ? "Zain Cash AI Agent Coach" : "Zain Cash Customer Care Chat Simulator";
 
         if (db.smtp && db.smtp.server && db.smtp.username) {
             try {
@@ -295,7 +312,7 @@ exports.handler = async (event, context) => {
                 const mailOptions = {
                     from: `"Zain Cash Academy" <${db.smtp.username}>`,
                     to: email,
-                    subject: "Invitation to Zain Cash Customer Care Test",
+                    subject: `Invitation to ${activeTestName}`,
                     html: `
 <!DOCTYPE html>
 <html>
@@ -318,7 +335,7 @@ exports.handler = async (event, context) => {
         </div>
         <div class="body">
             <h3 style="margin-top: 0; color: #0f172a;">Hello ${employeeName},</h3>
-            <p>You have been invited to perform a practice evaluation on the **Zain Cash Customer Care Chat Simulator**.</p>
+            <p>You have been invited to perform a practice evaluation on the **${activeTestDesc}**.</p>
             <p>Please click the button below to start your training and testing session directly. Your performance and results will be automatically saved and reported to the management.</p>
             <div class="btn-container">
                 <a href="${loginLink}" class="btn">Start Test Now</a>

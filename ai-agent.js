@@ -198,17 +198,20 @@ class GeminiTrainerAgent {
         let scList = scenarios;
         if (!scList || scList.length === 0) {
             scList = [
-                { id: 1, customerName: "محمد", turns: [{ customerText: "تم تجميد بطاقة الماستر تبعتي" }] },
-                { id: 2, customerName: "حسن", turns: [{ customerText: "أريد أحول 50 ألف دينار لأخوي بس رصيدي بس 30 ألف" }] },
-                { id: 3, customerName: "فاطمة", turns: [{ customerText: "أرسلت كاش من 3 أيام لرقم معين وما وصله لحد الآن" }] },
-                { id: 4, customerName: "كريم", turns: [{ customerText: "ما أعرف كيف أشحن المحفظة، وضحلي" }] }
+                { id: 1, customerName: "محمد", customerTone: "Simple & Worried (بسيط وقلق)", initialMessage: "تم تجميد بطاقة الماستر تبعتي", correctDisp: "MC/Visa Issue", correctSubDisp: "Activation Issue" },
+                { id: 2, customerName: "حسن", customerTone: "Angry & Demanding (غاضب ومستعجل)", initialMessage: "أريد أحول 50 ألف دينار لأخوي بس رصيدي بس 30 ألف", correctDisp: "Wallet/App Issue", correctSubDisp: "Trx Issue" },
+                { id: 3, customerName: "فاطمة", customerTone: "Polite & Inquiring (مهذب ومستفسر)", initialMessage: "أرسلت كاش من 3 أيام لرقم معين وما وصله لحد الآن", correctDisp: "WU Issue", correctSubDisp: "Hold Transaction Issue" },
+                { id: 4, customerName: "كريم", customerTone: "Simple & Worried (بسيط وقلق)", initialMessage: "ما أعرف كيف أشحن المحفظة، وضحلي", correctDisp: "Wallet/Registration Inquiry", correctSubDisp: "Wallet/Registration Inquiry" }
             ];
         }
 
         let scenarioInstructions = '';
         scList.forEach((sc, idx) => {
-            const firstText = sc.turns?.[0]?.customerText || "مرحبا";
-            scenarioInstructions += `Scenario ${idx + 1}: Customer ${sc.customerName} says: "${firstText}"\n`;
+            const customerMsg = sc.initialMessage || (sc.turns?.[0]?.customerText) || "مرحبا";
+            const tone = sc.customerTone || "Simple & Worried (بسيط وقلق)";
+            const correctDisp = sc.correctDisp || "";
+            const correctSubDisp = sc.correctSubDisp || "";
+            scenarioInstructions += `Scenario ${idx + 1}: Customer ${sc.customerName} (Tone: ${tone}) says: "${customerMsg}". Correct classification expected: Main="${correctDisp}", Sub="${correctSubDisp}".\n`;
         });
 
         const totalScenarios = scList.length;
@@ -658,17 +661,17 @@ ${transcript3}`;
             return;
         }
 
-        // Fetch custom scenarios from server!
-        let scenarios = null;
+        // Fetch custom AI scenarios from server!
+        let aiSc = null;
         if (window.apiCall) {
             try {
-                scenarios = await window.apiCall('/api/scenarios', 'GET');
+                aiSc = await window.apiCall('/api/ai-scenarios', 'GET');
             } catch (e) {
-                console.error("Failed to load scenarios for AI Trainer", e);
+                console.error("Failed to load AI scenarios for AI Trainer", e);
             }
         }
 
-        agent.setupDynamicPrompt(scenarios);
+        agent.setupDynamicPrompt(aiSc);
 
         // Reset selects
         const dispSelect = document.getElementById('ai-disp-select');

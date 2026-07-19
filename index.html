@@ -283,6 +283,9 @@
                         <button class="admin-tab-btn active" data-tab="tab-scenarios">
                             <i class="fa-solid fa-file-signature"></i> Manage Scenarios
                         </button>
+                        <button class="admin-tab-btn" data-tab="tab-ai-scenarios">
+                            <i class="fa-solid fa-brain"></i> Manage AI Scenarios
+                        </button>
                         <button class="admin-tab-btn" data-tab="tab-assignments">
                             <i class="fa-solid fa-clipboard-list"></i> Assign Tests
                         </button>
@@ -340,6 +343,29 @@
                                     <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
                                         <label for="edit-customer-query">Customer message in this turn:</label>
                                         <input type="text" id="edit-customer-query" required placeholder="e.g. My Master card has been frozen">
+                                    </div>
+                                    
+                                    <div class="form-row-double" style="margin-top: 15px; margin-bottom: 15px; display: flex; gap: 15px;">
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-scenario-channel">Platform Channel:</label>
+                                            <select id="edit-scenario-channel" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
+                                                <option value="WhatsApp Chat">WhatsApp Chat</option>
+                                                <option value="Instagram DM">Instagram DM</option>
+                                                <option value="Instagram Post">Instagram Post</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-scenario-correct-disp">Correct Main Disposition:</label>
+                                            <select id="edit-scenario-correct-disp" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
+                                                <option value="">Select Disposition</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-scenario-correct-sub">Correct Sub Disposition:</label>
+                                            <select id="edit-scenario-correct-sub" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
+                                                <option value="">Select Sub Disposition</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     
                                     <div class="options-edit-section">
@@ -429,6 +455,80 @@
                                 </button>
                             </div>
                         </footer>
+                    </div>
+
+                    <!-- TAB 1.5: AI Scenarios Manager -->
+                    <div class="admin-tab-content" id="tab-ai-scenarios">
+                        <div class="admin-modal-body">
+                            <!-- Sidebar: AI Scenarios List -->
+                            <aside class="admin-sidebar">
+                                <div class="sidebar-header">
+                                    <h3>Current AI Scenarios</h3>
+                                    <button class="btn-add-scenario" id="add-new-ai-scenario-btn" type="button">
+                                        <i class="fa-solid fa-plus"></i> Add New
+                                    </button>
+                                </div>
+                                <ul class="admin-scenarios-list" id="admin-ai-scenarios-list-ul">
+                                    <!-- Loaded dynamically -->
+                                </ul>
+                            </aside>
+                            
+                            <!-- Main Area: Edit Form -->
+                            <main class="admin-form-area">
+                                <div id="no-ai-scenario-selected" class="no-selection-message">
+                                    <i class="fa-solid fa-brain"></i>
+                                    <p>Select an AI scenario from the sidebar to edit it, or click "Add New".</p>
+                                </div>
+                                
+                                <form id="ai-scenario-edit-form" class="hidden">
+                                    <input type="hidden" id="edit-ai-scenario-id">
+                                    
+                                    <div class="form-row-double" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-ai-customer-name">Customer Name:</label>
+                                            <input type="text" id="edit-ai-customer-name" required placeholder="e.g. Mohammad">
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-ai-customer-tone">Customer Tone / Personality:</label>
+                                            <select id="edit-ai-customer-tone" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
+                                                <option value="Simple & Worried (بسيط وقلق)">Simple & Worried (بسيط وقلق)</option>
+                                                <option value="Angry & Demanding (غاضب ومستعجل)">Angry & Demanding (غاضب ومستعجل)</option>
+                                                <option value="Polite & Inquiring (مهذب ومستفسر)">Polite & Inquiring (مهذب ومستفسر)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label for="edit-ai-initial-message">Customer Message / Problem Description:</label>
+                                        <textarea id="edit-ai-initial-message" required placeholder="e.g. My wallet transfer has failed..." style="width:100%; min-height:80px; border: 1px solid var(--border-color); border-radius:8px; padding:10px; font-family:inherit; outline:none; resize:vertical;"></textarea>
+                                    </div>
+
+                                    <div class="form-row-double" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-ai-correct-disp">Correct Main Disposition:</label>
+                                            <select id="edit-ai-correct-disp" required style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
+                                                <option value="">Select Disposition</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-ai-correct-sub">Correct Sub Disposition:</label>
+                                            <select id="edit-ai-correct-sub" required style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
+                                                <option value="">Select Sub Disposition</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                                        <button type="button" class="btn btn-secondary" id="delete-ai-scenario-btn" style="background: #ef4444; color: white;">
+                                            <i class="fa-solid fa-trash-can"></i> Delete Scenario
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa-solid fa-circle-check"></i> Save Scenario
+                                        </button>
+                                    </div>
+                                </form>
+                            </main>
+                        </div>
                     </div>
 
                     <!-- TAB 2: Assignments Manager -->

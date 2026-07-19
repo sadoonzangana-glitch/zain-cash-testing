@@ -1208,9 +1208,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedTurnIndex = 0;
 
     function openAdminPanel() {
+        populateDispositionDropdowns('edit-scenario-correct-disp', 'edit-scenario-correct-sub');
+        populateDispositionDropdowns('edit-ai-correct-disp', 'edit-ai-correct-sub');
+
         loadScenariosFromStorage();
         renderAdminScenariosList();
         selectScenario(null);
+
+        loadAiScenariosFromStorage().then(() => {
+            renderAdminAiScenariosList();
+            selectAiScenario(null);
+        });
+
         renderAdminSlidesList();
         selectSlide(null);
     }
@@ -1260,6 +1269,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editScenarioId) editScenarioId.value = idx;
         if (editCustomerName) editCustomerName.value = sc.customerName || '';
         if (editTurnSelect) editTurnSelect.value = "0";
+
+        // Populate new configuration settings fields
+        const chSelect = document.getElementById('edit-scenario-channel');
+        if (chSelect) chSelect.value = sc.channel || 'WhatsApp Chat';
+
+        const dispSelect = document.getElementById('edit-scenario-correct-disp');
+        const subSelect = document.getElementById('edit-scenario-correct-sub');
+        if (dispSelect && subSelect) {
+            dispSelect.value = sc.correctDisp || '';
+            populateAdminSubDispositions(sc.correctDisp || '', subSelect);
+            subSelect.value = sc.correctSubDisp || '';
+        }
 
         loadScenarioTurn(idx, 0);
     }
@@ -1338,25 +1359,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (editTurnSelect) {
         editTurnSelect.addEventListener('change', function() {
-            if (selectedScenarioIndex !== null) {
-                saveTurnToMemory(selectedScenarioIndex, selectedTurnIndex);
-                selectedTurnIndex = parseInt(this.value);
-                loadScenarioTurn(selectedScenarioIndex, selectedTurnIndex);
-            }
+            if (selectedScenarioIndex === null) return;
+            // Save current turn state first
+            saveTurnToMemory(selectedScenarioIndex, selectedTurnIndex);
+            // Switch to the new turn index
+            selectedTurnIndex = parseInt(editTurnSelect.value);
+            loadScenarioTurn(selectedScenarioIndex, selectedTurnIndex);
         });
     }
 
-    function updateOptionCardHighlight(oIdx, isCorrect) {
-        const card = document.querySelector(`.option-edit-card[data-option-index="${oIdx}"]`);
+    function updateOptionCardHighlight(optIdx, isCorrect) {
+        const card = document.querySelector(`.option-edit-card[data-option-index="${optIdx}"]`);
         if (card) {
             if (isCorrect) {
-                card.classList.add('has-correct-selected');
+                card.classList.add('correct');
             } else {
-                card.classList.remove('has-correct-selected');
+                card.classList.remove('correct');
             }
         }
     }
 
+    // Toggle radio correct actions
     for (let i = 0; i < 3; i++) {
         const radio = document.getElementById(`correct-opt-${i}`);
         if (radio) {
@@ -1368,42 +1391,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Add Scenario
+    // Add New Scenario
     if (addNewScenarioBtn) {
         addNewScenarioBtn.addEventListener('click', () => {
             const newSc = {
-                id: scenarios.length > 0 ? Math.max(...scenarios.map(s => s.id)) + 1 : 1,
-                customerName: "زبون جديد",
-                customerPhone: "07701234567",
-                turns: [
-                    {
-                        step: 1,
-                        customerText: "رسالة الجولة الأولى للزبون الجديد؟",
-                        options: [
-                            { text: "الرد الأول (غير صحيح)", isCorrect: false, feedback: "تعليق..." },
-                            { text: "الرد الثاني (صحيح)", isCorrect: true, feedback: "ممتاز!" },
-                            { text: "الرد الثالث (غير صحيح)", isCorrect: false, feedback: "تعليق..." }
-                        ]
-                    },
-                    {
-                        step: 2,
-                        customerText: "رسالة الجولة الثانية للزبون الجديد؟",
-                        options: [
-                            { text: "الرد الأول (غير صحيح)", isCorrect: false, feedback: "تعليق..." },
-                            { text: "الرد الثاني (صحيح)", isCorrect: true, feedback: "أحسنت!" },
-                            { text: "الرد الثالث (غير صحيح)", isCorrect: false, feedback: "تعليق..." }
-                        ]
-                    },
-                    {
-                        step: 3,
-                        customerText: "رسالة الجولة الثالثة للزبون الجديد؟",
-                        options: [
-                            { text: "الرد الأول (غير صحيح)", isCorrect: false, feedback: "تعليق..." },
-                            { text: "الرد الثاني (صحيح)", isCorrect: true, feedback: "رائع!" },
-                            { text: "الرد الثالث (غير صحيح)", isCorrect: false, feedback: "تعليق..." }
-                        ]
-                    }
-                ]
+                id: scenarios.length + 1,
+                customerName: "New Customer",
+                channel: "WhatsApp Chat",
+                correctDisp: "",
+                correctSubDisp: "",
+                turns: []
             };
             scenarios.push(newSc);
             saveScenariosToStorage();
@@ -1437,6 +1434,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const sc = scenarios[selectedScenarioIndex];
             if (editCustomerName) sc.customerName = editCustomerName.value;
 
+            // Save new platform channel and correct dispositions
+            const chSelect = document.getElementById('edit-scenario-channel');
+            const dispSelect = document.getElementById('edit-scenario-correct-disp');
+            const subSelect = document.getElementById('edit-scenario-correct-sub');
+
+            if (chSelect) sc.channel = chSelect.value;
+            if (dispSelect) sc.correctDisp = dispSelect.value;
+            if (subSelect) sc.correctSubDisp = subSelect.value;
+
             saveTurnToMemory(selectedScenarioIndex, selectedTurnIndex);
 
             try {
@@ -1450,7 +1456,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAdminScenariosList();
             selectScenario(selectedScenarioIndex);
 
-            const submitBtn = scenarioEditForm.querySelector('.btn-save-scenario');
+            const submitBtn = scenarioEditForm.querySelector('button[type="submit"]');
             if (submitBtn) {
                 const originalHtml = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> تم الحفظ!';
@@ -1903,6 +1909,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (targetTab === 'tab-scenarios') {
                 renderAdminScenariosList();
                 selectScenario(null);
+            } else if (targetTab === 'tab-ai-scenarios') {
+                loadAiScenariosFromStorage().then(() => {
+                    renderAdminAiScenariosList();
+                    selectAiScenario(null);
+                });
             } else if (targetTab === 'tab-edit-slides') {
                 renderAdminSlidesList();
                 selectSlide(null);
@@ -1934,6 +1945,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const activeType = currentTestType;
             const assignAll = activeType === 'simulator' ? simulatorAssignAll : aiAssignAll;
+            
+            if (typeSimulatorRadio) typeSimulatorRadio.checked = (activeType === 'simulator');
+            if (typeAiRadio) typeAiRadio.checked = (activeType === 'ai-agent');
             
             const radioAll = document.getElementById('assign-all-radio');
             const radioSpecific = document.getElementById('assign-specific-radio');
@@ -1991,8 +2005,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const hue = Math.abs(hash) % 360;
             const avatarBg = `hsl(${hue}, 65%, 40%)`;
             
-            const isSimAssigned = currentAssignments.includes(user.id);
-            const isAiAssigned = currentAiAssignments.includes(user.id);
+            const isSimAssigned = currentAssignments.includes(user.id) || simulatorAssignAll;
+            const isAiAssigned = currentAiAssignments.includes(user.id) || aiAssignAll;
             
             const card = document.createElement('div');
             card.className = `user-checkbox-card ${isChecked ? 'selected' : ''}`;
@@ -2060,8 +2074,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const badgeContainer = card.querySelector('.user-assignment-badges');
                     if (badgeContainer) {
-                        const isSimAssignedNow = currentAssignments.includes(user.id);
-                        const isAiAssignedNow = currentAiAssignments.includes(user.id);
+                        const isSimAssignedNow = currentAssignments.includes(user.id) || simulatorAssignAll;
+                        const isAiAssignedNow = currentAiAssignments.includes(user.id) || aiAssignAll;
                         badgeContainer.innerHTML = `
                             ${isSimAssignedNow ? '<span class="status-badge badge-simulator"><i class="fa-solid fa-comments"></i> Chat Simulator Active</span>' : ''}
                             ${isAiAssignedNow ? '<span class="status-badge badge-ai"><i class="fa-solid fa-robot"></i> AI Agent Active</span>' : ''}
@@ -2195,7 +2209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const usr = allUsers.find(u => u.id === uId);
                     if (usr && usr.email) {
                         try {
-                            await apiCall('/api/send-invite', 'POST', { userId: usr.id, email: usr.email });
+                            await apiCall('/api/send-invite', 'POST', { userId: usr.id, email: usr.email, testType: activeTest });
                         } catch (err) {
                             console.error(`Bulk invite failed for user ${usr.id}:`, err);
                         }
@@ -2336,7 +2350,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 inviteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
                 
                 try {
-                    const res = await apiCall('/api/send-invite', 'POST', { userId: user.id, email: emailVal });
+                    const res = await apiCall('/api/send-invite', 'POST', { userId: user.id, email: emailVal, testType: currentTestType });
                     if (res.success) {
                         if (res.sent) {
                             showToast(`Invitation sent successfully to ${emailVal}!`, "success");
