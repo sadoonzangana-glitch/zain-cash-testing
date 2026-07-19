@@ -29,19 +29,21 @@
 
             <!-- Amyo Header Tabs -->
             <div class="amy-nav-tabs">
-                <button class="amy-nav-btn active" data-amy-tab="tab-slides">
-                    <i class="fa-solid fa-graduation-cap"></i> Home (Training)
+                <button class="amy-nav-btn active" data-amy-tab="tab-kb">
+                    <i class="fa-solid fa-book"></i> المكتبة المعرفية (Knowledge Base)
                 </button>
-                <button class="amy-nav-btn" data-amy-tab="tab-simulator" id="nav-btn-simulator">
-                    <i class="fa-solid fa-comments"></i> Chat Simulator
-                </button>
-                <button class="amy-nav-btn" data-amy-tab="tab-ai-agent" id="nav-btn-ai-agent">
-                    <i class="fa-solid fa-robot"></i> AI Agent Trainer
+                <button class="amy-nav-btn" data-amy-tab="tab-training-center" id="nav-btn-training-center">
+                    <i class="fa-solid fa-laptop-code"></i> مركز التدريب والتقييم
                 </button>
                 
                 <button class="amy-nav-btn hidden" id="open-admin-btn" data-amy-tab="tab-admin">
-                    <i class="fa-solid fa-gears"></i> Admin Panel
+                    <i class="fa-solid fa-gears"></i> لوحة التحكم (Admin)
                 </button>
+                
+                <!-- Hidden/Flat tabs referenced by JS switcher -->
+                <button class="amy-nav-btn hidden" data-amy-tab="tab-slides" id="nav-btn-slides-hidden"></button>
+                <button class="amy-nav-btn hidden" data-amy-tab="tab-simulator" id="nav-btn-simulator-hidden"></button>
+                <button class="amy-nav-btn hidden" data-amy-tab="tab-ai-agent" id="nav-btn-ai-agent-hidden"></button>
             </div>
             
             <div class="header-right-controls">
@@ -65,8 +67,149 @@
         <!-- Main Dashboard Content Area -->
         <div class="amyo-main-wrapper">
             
+            <!-- TAB 0: Knowledge Base -->
+            <div class="amy-tab-pane active" id="tab-kb">
+                <div class="kb-container" style="display: flex; gap: 20px; height: calc(100vh - 160px); min-height: 520px; font-family: var(--font-ar); direction: rtl; text-align: right;">
+                    <!-- Sidebar: Search and categories list -->
+                    <aside class="kb-sidebar" style="width: 280px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0;">
+                        <div class="kb-search-box" style="position: relative; display: flex; align-items: center;">
+                            <i class="fa-solid fa-magnifying-glass search-icon" style="position: absolute; right: 10px; color: #94a3b8;"></i>
+                            <input type="text" id="kb-search-input" placeholder="ابحث في المعرفة..." style="width: 100%; padding: 8px 32px 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc;">
+                        </div>
+                        
+                        <div class="kb-categories-list" style="flex: 1; overflow-y: auto;">
+                            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; border-bottom: 2px solid var(--primary); padding-bottom: 6px;">أقسام المعرفة</h3>
+                            <ul id="kb-categories-ul" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+                                <!-- Loaded dynamically -->
+                            </ul>
+                        </div>
+                    </aside>
+                    
+                    <!-- Main Area: Article reader or search results -->
+                    <main class="kb-content-area" style="flex: 1; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; position: relative;">
+                        <div id="kb-no-article-selected" class="kb-welcome-screen" style="display: flex; align-items: center; justify-content: center; height: 100%; text-align: center; width: 100%;">
+                            <div class="kb-welcome-card" style="max-width: 500px; padding: 20px;">
+                                <i class="fa-solid fa-book-open welcome-icon" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 20px; display: inline-block;"></i>
+                                <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">مكتبة المعرفة الذكية لزين كاش</h2>
+                                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 25px; line-height: 1.6;">ابحث عن إجراءات العمل، والتعليمات الرسمية، وتصنيف التذاكر الصحيح لمساعدتك في إجابة الزبائن بسرعة ودقة.</p>
+                                
+                                <div class="kb-welcome-search-large" style="display: flex; gap: 8px; margin-bottom: 25px;">
+                                    <input type="text" id="kb-welcome-search-input" placeholder="اكتب سؤالك أو الكلمة المفتاحية هنا..." style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; background: #f8fafc; font-family: inherit;">
+                                    <button class="btn btn-primary" id="kb-welcome-search-btn" style="padding: 10px 20px; font-weight: bold; flex-shrink: 0;">بحث ذكي</button>
+                                </div>
+                                
+                                <div class="kb-popular-topics" style="text-align: right;">
+                                    <h4 style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 12px;">المواضيع الأكثر قراءة:</h4>
+                                    <div class="kb-popular-grid" id="kb-popular-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <!-- Loaded dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <article id="kb-article-view" class="kb-article-card hidden" style="display: flex; flex-direction: column; gap: 15px; height: 100%;">
+                            <div class="kb-article-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 10px;">
+                                <span class="kb-article-category-badge" id="kb-view-category" style="background: #fff8e8; color: #ff9900; font-size: 0.78rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #ffeeba; display: inline-block; margin-bottom: 8px;">Western Union</span>
+                                <h1 id="kb-view-title" style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0;">عنوان المقال</h1>
+                            </div>
+                            <div class="kb-article-body" id="kb-view-content" style="flex: 1; font-size: 0.95rem; color: #334155; line-height: 1.7; white-space: pre-line; overflow-y: auto;">
+                                <!-- Loaded dynamically -->
+                            </div>
+                            <div class="kb-article-footer" style="margin-top: auto; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                                <div class="kb-classification-box" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px;">
+                                    <h4 style="font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 8px;"><i class="fa-solid fa-tags" style="color: var(--primary);"></i> التصنيف المعتمد في تذاكر الدعم:</h4>
+                                    <div class="classification-badges" style="display: flex; gap: 8px;">
+                                        <span class="disp-badge main-disp" id="kb-view-correct-disp" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;">WU Issue</span>
+                                        <span class="disp-badge sub-disp" id="kb-view-correct-sub" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;">Hold Transaction Issue</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </main>
+                </div>
+
+                <!-- Smart AI Assistant floating panel -->
+                <button class="kb-ai-floating-btn" id="kb-ai-chat-btn" title="اسأل المساعد الذكي" style="position: fixed; bottom: 25px; right: 25px; z-index: 1000; background: linear-gradient(135deg, #ff9900 0%, #ff6600 100%); color: #ffffff; border: none; padding: 12px 20px; border-radius: 30px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3); transition: all 0.3s ease;">
+                    <i class="fa-solid fa-comment-dots" style="font-size: 1.1rem;"></i>
+                    <span>اسأل الذكاء الاصطناعي</span>
+                </button>
+
+                <div class="kb-ai-chat-panel hidden" id="kb-ai-chat-panel" style="position: fixed; bottom: 85px; right: 25px; width: 360px; height: 480px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); z-index: 1000; display: flex; flex-direction: column; overflow: hidden; font-family: var(--font-ar); direction: rtl; text-align: right; transition: all 0.3s ease;">
+                    <div class="kb-ai-chat-header" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                        <div class="ai-header-left" style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-robot" style="font-size: 1.3rem; color: var(--primary);"></i>
+                            <div>
+                                <h4 style="margin: 0; font-size: 0.85rem; font-weight: 700;">مساعد زين كاش الذكي</h4>
+                                <span class="status" style="font-size: 0.65rem; color: #10b981; display: flex; align-items: center; gap: 3px;"><span style="width:6px; height:6px; background:#10b981; border-radius:50%; display:inline-block;"></span> متصل (Gemini AI)</span>
+                            </div>
+                        </div>
+                        <button class="close-chat-btn" id="kb-ai-close-btn" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+                    </div>
+                    <div class="kb-ai-chat-body" id="kb-ai-chat-body" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8fafc;">
+                        <div class="chat-msg ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #1e293b; border-top-right-radius: 0;">
+                            <p style="margin: 0;">أهلاً بك عيني! أنا المساعد الذكي لخدمة المشتركين. اسألني عن أي إجراء أو مشكلة بالعامية العراقية وسأقوم بالبحث في دليل المعرفة وإجابتك فوراً.</p>
+                        </div>
+                    </div>
+                    <div class="kb-ai-chat-footer" style="padding: 10px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; background: #ffffff; align-items: center; flex-shrink: 0;">
+                        <input type="text" id="kb-ai-chat-input" placeholder="اكتب سؤالك بالعامية العراقية هنا..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.8rem; outline: none; background: #f8fafc; font-family: inherit;">
+                        <button class="btn btn-primary" id="kb-ai-send-btn" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0;">
+                            <i class="fa-solid fa-paper-plane" style="font-size: 0.85rem; transform: rotate(180deg);"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 0.5: Training Center Portal -->
+            <div class="amy-tab-pane" id="tab-training-center">
+                <div class="training-center-welcome-screen" id="training-center-welcome" style="max-width: 900px; margin: 0 auto; padding: 30px 15px; font-family: var(--font-ar); direction: rtl; text-align: center;">
+                    <div class="tc-welcome-header" style="margin-bottom: 35px;">
+                        <h2 style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">مركز التدريب والتقييم لخدمة العملاء</h2>
+                        <p style="font-size: 0.95rem; color: #64748b;">اختر أحد مسارات التدريب والتقييم المتاحة لتطوير مهاراتك وقياس أدائك الحواري.</p>
+                    </div>
+                    
+                    <div class="tc-pathways-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                        <!-- Card 1: Interactive Slides -->
+                        <div class="tc-path-card" id="btn-start-slides" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
+                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 50%; background: #fff8e8; color: #ff9900; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #ffeeba;">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </div>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">التدريب التفاعلي (Slides)</h3>
+                            <p style="font-size: 0.8rem; color: #64748b; line-height: 1.5; margin-bottom: 20px; flex: 1;">تعلم القواعد الأساسية واللهجة العراقية لخدمة المشتركين من خلال جولات تفاعلية سريعة.</p>
+                            <span class="btn btn-primary" style="font-size: 0.8rem; font-weight: bold; width: 100%; padding: 8px 0;">ابدأ التعلم الآن</span>
+                        </div>
+
+                        <!-- Card 2: Multitask Simulator -->
+                        <div class="tc-path-card" id="btn-start-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
+                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 50%; background: #eff6ff; color: #1e40af; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #bfdbfe;">
+                                <i class="fa-solid fa-comments"></i>
+                            </div>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">محاكي الدردشة (Chat Simulator)</h3>
+                            <p style="font-size: 0.8rem; color: #64748b; line-height: 1.5; margin-bottom: 20px; flex: 1;">تدرب على إدارة 3 محادثات خدمة عملاء متزامنة في نفس الوقت مع التقييم والتصنيف الفوري.</p>
+                            <span class="btn btn-primary" style="font-size: 0.8rem; font-weight: bold; width: 100%; padding: 8px 0;">ابدأ المحاكاة</span>
+                        </div>
+
+                        <!-- Card 3: AI Agent Coach -->
+                        <div class="tc-path-card" id="btn-start-ai-agent" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
+                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 50%; background: #f0fdf4; color: #166534; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #dcfce7;">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">مقيّم الذكاء الاصطناعي (AI Coach)</h3>
+                            <p style="font-size: 0.8rem; color: #64748b; line-height: 1.5; margin-bottom: 20px; flex: 1;">أجرِ محادثة حرة مع زبون ذكي وخذ تقييماً تفصيلياً صارماً لأدائك وتصنيفك للتذاكر.</p>
+                            <span class="btn btn-primary" style="font-size: 0.8rem; font-weight: bold; width: 100%; padding: 8px 0;">ابدأ التقييم الذكي</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- TAB 1: Slides Training -->
-            <div class="amy-tab-pane active" id="tab-slides">
+            <div class="amy-tab-pane" id="tab-slides">
+                <!-- Training Center Header -->
+                <div class="tc-back-banner" style="margin-bottom: 10px; display: flex; justify-content: flex-start; font-family: var(--font-ar); direction: rtl; text-align: right;">
+                    <button class="btn btn-secondary btn-back-to-tc" style="background: #64748b; color: #fff; border: none; font-size: 0.78rem; padding: 5px 12px; display: flex; align-items: center; gap: 6px; border-radius: 6px;">
+                        <i class="fa-solid fa-arrow-right" style="transform: rotate(180deg);"></i>
+                        <span>العودة لمركز التدريب والتقييم</span>
+                    </button>
+                </div>
                 <!-- Main Slider Wrapper -->
                 <main class="presentation-wrapper">
                     <div id="dynamic-slides-container" style="width: 100%; height: 100%;"></div>
@@ -98,6 +241,12 @@
             
             <!-- TAB 2: Simulator Tab Panel -->
             <div class="amy-tab-pane" id="tab-simulator">
+                <div class="tc-back-banner" style="margin-bottom: 10px; display: flex; justify-content: flex-start; font-family: var(--font-ar); direction: rtl; text-align: right;">
+                    <button class="btn btn-secondary btn-back-to-tc" style="background: #64748b; color: #fff; border: none; font-size: 0.78rem; padding: 5px 12px; display: flex; align-items: center; gap: 6px; border-radius: 6px;">
+                        <i class="fa-solid fa-arrow-right" style="transform: rotate(180deg);"></i>
+                        <span>العودة لمركز التدريب والتقييم</span>
+                    </button>
+                </div>
                 <div class="simulator-header-bar">
                     <div class="sim-header-title">
                         <h2>Live Multitask Chat Simulator</h2>
@@ -147,6 +296,12 @@
 
             <!-- TAB 3: AI Agent Trainer Tab Page -->
             <div class="amy-tab-pane" id="tab-ai-agent">
+                <div class="tc-back-banner" style="margin-bottom: 10px; display: flex; justify-content: flex-start; font-family: var(--font-ar); direction: rtl; text-align: right;">
+                    <button class="btn btn-secondary btn-back-to-tc" style="background: #64748b; color: #fff; border: none; font-size: 0.78rem; padding: 5px 12px; display: flex; align-items: center; gap: 6px; border-radius: 6px;">
+                        <i class="fa-solid fa-arrow-right" style="transform: rotate(180deg);"></i>
+                        <span>العودة لمركز التدريب والتقييم</span>
+                    </button>
+                </div>
                 <div class="ai-agent-wrapper">
                     
                     <!-- AI Start Screen -->
@@ -298,6 +453,9 @@
                         <button class="admin-tab-btn" data-tab="tab-ai-settings">
                             <i class="fa-solid fa-robot"></i> AI Agent Settings
                         </button>
+                        <button class="admin-tab-btn" data-tab="tab-admin-kb">
+                            <i class="fa-solid fa-book-bookmark"></i> Manage Knowledge Base
+                        </button>
                     </div>
                     
                     <!-- TAB contents inside page -->
@@ -317,13 +475,15 @@
                                 </ul>
                             </aside>
                             
-                            <!-- Main Area: Edit Form -->
-                            <main class="admin-form-area">
-                                <div id="no-scenario-selected" class="no-selection-message">
-                                    <i class="fa-solid fa-edit"></i>
-                                    <p>Select a scenario from the sidebar to edit it, or click "Add New".</p>
-                                </div>
-                                <form id="scenario-edit-form" class="hidden">
+                            <!-- Main Area: Edit Form & Live Preview Split Pane -->
+                            <main class="admin-form-area split-preview-container" style="display: flex; gap: 20px;">
+                                <!-- Left Form -->
+                                <div class="split-left-form" style="flex: 1; min-width: 0;">
+                                    <div id="no-scenario-selected" class="no-selection-message">
+                                        <i class="fa-solid fa-edit"></i>
+                                        <p>Select a scenario from the sidebar to edit it, or click "Add New".</p>
+                                    </div>
+                                    <form id="scenario-edit-form" class="hidden">
                                     <input type="hidden" id="edit-scenario-id">
                                     
                                     <div class="form-row-double">
@@ -437,7 +597,40 @@
                                             <i class="fa-solid fa-trash-can"></i> Delete This Scenario
                                         </button>
                                     </div>
-                                </form>
+                                    </form>
+                                </div>
+
+                                <!-- Right Live Preview -->
+                                <div class="split-right-preview hidden" id="mcq-live-preview-panel" style="width: 320px; border-right: 1px solid #e2e8f0; padding-right: 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; direction: rtl; text-align: right;">
+                                    <div class="preview-header-label" style="font-size: 0.85rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px; font-family: var(--font-ar);">
+                                        <i class="fa-solid fa-eye" style="color: var(--primary);"></i> معاينة المحاكي الفورية
+                                    </div>
+                                    
+                                    <div class="sim-preview-frame" style="background: #efeae2; border: 1px solid #cbd5e1; border-radius: 12px; height: 380px; display: flex; flex-direction: column; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01); font-family: var(--font-ar);">
+                                        <!-- Mini Chat Header -->
+                                        <div class="mini-chat-header" style="background: #075e54; color: white; padding: 10px; display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #eceff1; color: #546e7a; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;" id="mcq-preview-avatar">C</div>
+                                            <div>
+                                                <div style="font-size: 0.78rem; font-weight: bold; line-height: 1.2;" id="mcq-preview-name">Mohammad</div>
+                                                <div style="font-size: 0.6rem; color: rgba(255,255,255,0.85);" id="mcq-preview-meta">WhatsApp Chat • Tone</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Mini Chat Body -->
+                                        <div class="mini-chat-body" style="flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.72rem;">
+                                            <!-- Customer Message -->
+                                            <div class="mini-msg customer" style="align-self: flex-start; background: white; padding: 6px 10px; border-radius: 8px; border-top-right-radius: 0; max-width: 85%; box-shadow: 0 1px 1px rgba(0,0,0,0.05); white-space: pre-wrap;" id="mcq-preview-cust-msg">رسالة المشترك هنا...</div>
+                                            
+                                            <!-- MCQ Options as employee options -->
+                                            <div style="margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                                                <div style="font-size: 0.6rem; color: #7f8c8d; font-weight: bold; margin-bottom: 2px;">خيارات الإجابة للموظف:</div>
+                                                <div class="mini-option" id="mcq-preview-opt1" style="background: rgba(255, 153, 0, 0.08); border: 1px solid rgba(255, 153, 0, 0.2); padding: 5px; border-radius: 4px; color: #e67e22; font-size: 0.65rem;">Option 1</div>
+                                                <div class="mini-option" id="mcq-preview-opt2" style="background: white; border: 1px solid #cbd5e1; padding: 5px; border-radius: 4px; color: #7f8c8d; font-size: 0.65rem;">Option 2</div>
+                                                <div class="mini-option" id="mcq-preview-opt3" style="background: white; border: 1px solid #cbd5e1; padding: 5px; border-radius: 4px; color: #7f8c8d; font-size: 0.65rem;">Option 3</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </main>
                         </div>
                         
@@ -473,14 +666,15 @@
                                 </ul>
                             </aside>
                             
-                            <!-- Main Area: Edit Form -->
-                            <main class="admin-form-area">
-                                <div id="no-ai-scenario-selected" class="no-selection-message">
-                                    <i class="fa-solid fa-brain"></i>
-                                    <p>Select an AI scenario from the sidebar to edit it, or click "Add New".</p>
-                                </div>
-                                
-                                <form id="ai-scenario-edit-form" class="hidden">
+                            <!-- Main Area: Edit Form & Live Preview Split Pane -->
+                            <main class="admin-form-area split-preview-container" style="display: flex; gap: 20px;">
+                                <!-- Left Form -->
+                                <div class="split-left-form" style="flex: 1; min-width: 0;">
+                                    <div id="no-ai-scenario-selected" class="no-selection-message">
+                                        <i class="fa-solid fa-brain"></i>
+                                        <p>Select an AI scenario from the sidebar to edit it, or click "Add New".</p>
+                                    </div>
+                                    <form id="ai-scenario-edit-form" class="hidden">
                                     <input type="hidden" id="edit-ai-scenario-id">
                                     
                                     <div class="form-row-double" style="display: flex; gap: 15px; margin-bottom: 15px;">
@@ -526,7 +720,47 @@
                                             <i class="fa-solid fa-circle-check"></i> Save Scenario
                                         </button>
                                     </div>
-                                </form>
+                                    </form>
+                                </div>
+
+                                <!-- Right Live Preview -->
+                                <div class="split-right-preview hidden" id="ai-live-preview-panel" style="width: 320px; border-right: 1px solid #e2e8f0; padding-right: 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; direction: rtl; text-align: right;">
+                                    <div class="preview-header-label" style="font-size: 0.85rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px; font-family: var(--font-ar);">
+                                        <i class="fa-solid fa-eye" style="color: var(--primary);"></i> معاينة الأيجنت الفورية
+                                    </div>
+                                    
+                                    <div class="ai-preview-frame" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; height: 380px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: var(--font-ar);">
+                                        <!-- Welcome Header Card -->
+                                        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 15px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                                            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,153,0,0.15); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                                                <i class="fa-solid fa-robot"></i>
+                                            </div>
+                                            <div style="font-size: 0.9rem; font-weight: 800;">مدرب زين كاش الذكي</div>
+                                        </div>
+                                        
+                                        <!-- Customer Details Area -->
+                                        <div style="flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.72rem; overflow-y: auto;">
+                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                                                <div style="font-weight: 700; color: #475569; margin-bottom: 4px;">شخصية الزبون الافتراضية:</div>
+                                                <div style="font-size: 0.8rem; color: var(--text-primary); font-weight: 800;" id="ai-preview-cust-name">الزبون: -</div>
+                                                <div style="font-size: 0.75rem; color: #ff9900; margin-top: 2px;" id="ai-preview-cust-tone">نبرة الصوت: -</div>
+                                            </div>
+                                            
+                                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px;">
+                                                <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">الرسالة الأولى للمشترك:</div>
+                                                <div style="font-size: 0.75rem; color: #1e293b; white-space: pre-wrap;" id="ai-preview-cust-msg">رسالة البدء...</div>
+                                            </div>
+                                            
+                                            <div style="border-top: 1px dashed #e2e8f0; padding-top: 8px; margin-top: auto;">
+                                                <div style="font-weight: 700; color: #475569; font-size: 0.65rem; margin-bottom: 4px;">التصنيف الصحيح المتوقع للتقييم:</div>
+                                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                                    <span id="ai-preview-correct-disp" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: bold;">Main Disp</span>
+                                                    <span id="ai-preview-correct-sub" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: bold;">Sub Disp</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </main>
                         </div>
                     </div>
@@ -727,13 +961,15 @@
                                 </ul>
                             </aside>
                             
-                            <!-- Main Area: Edit Form -->
-                            <main class="admin-form-area">
-                                <div id="no-slide-selected" class="no-selection-message">
-                                    <i class="fa-solid fa-edit"></i>
-                                    <p>Select a slide from the sidebar to edit its content.</p>
-                                </div>
-                                <form id="slide-edit-form" class="hidden">
+                            <!-- Main Area: Edit Form & Live Preview Split Pane -->
+                            <main class="admin-form-area split-preview-container" style="display: flex; gap: 20px;">
+                                <!-- Left Form -->
+                                <div class="split-left-form" style="flex: 1; min-width: 0;">
+                                    <div id="no-slide-selected" class="no-selection-message">
+                                        <i class="fa-solid fa-edit"></i>
+                                        <p>Select a slide from the sidebar to edit its content.</p>
+                                    </div>
+                                    <form id="slide-edit-form" class="hidden">
                                     <input type="hidden" id="edit-slide-id">
                                     <input type="hidden" id="edit-slide-type">
                                     
@@ -886,7 +1122,21 @@
                                             <i class="fa-solid fa-floppy-disk"></i> Save Slide Changes
                                         </button>
                                     </div>
-                                </form>
+                                    </form>
+                                </div>
+
+                                <!-- Right Live Preview -->
+                                <div class="split-right-preview hidden" id="slides-live-preview-panel" style="width: 320px; border-right: 1px solid #e2e8f0; padding-right: 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; direction: rtl; text-align: right;">
+                                    <div class="preview-header-label" style="font-size: 0.85rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px; font-family: var(--font-ar);">
+                                        <i class="fa-solid fa-eye" style="color: var(--primary);"></i> معاينة السلايد الفورية
+                                    </div>
+                                    
+                                    <div class="slide-preview-frame" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; height: 380px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: var(--font-ar);">
+                                        <div id="mini-slide-render-container" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.72rem; background: #fafafa;">
+                                            <!-- Miniature Slide content -->
+                                        </div>
+                                    </div>
+                                </div>
                             </main>
                         </div>
                     </div>
@@ -971,6 +1221,109 @@
                                 </div>
                             </div>
 
+                        </div>
+                    </div>
+
+                    <!-- TAB 6: Manage Knowledge Base -->
+                    <div class="admin-tab-content" id="tab-admin-kb">
+                        <div class="admin-modal-body" style="display: flex; gap: 20px; height: calc(100vh - 200px); min-height: 500px; font-family: var(--font-ar); direction: rtl; text-align: right;">
+                            <!-- Sidebar: Articles List -->
+                            <aside class="admin-sidebar" style="width: 280px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0;">
+                                <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">دليل مقالات المعرفة</h3>
+                                    <button class="btn-add-scenario" id="add-new-kb-btn" type="button" style="background: linear-gradient(135deg, #ff9900 0%, #ff6600 100%); color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(255, 102, 0, 0.15);">
+                                        <i class="fa-solid fa-plus"></i> إضافة مقال
+                                    </button>
+                                </div>
+                                <ul class="admin-scenarios-list" id="admin-kb-list-ul" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto;">
+                                    <!-- Loaded dynamically -->
+                                </ul>
+                            </aside>
+                            
+                            <!-- Main Area: Edit Form & Live Preview Split Pane -->
+                            <main class="admin-form-area split-preview-container" style="flex: 1; display: flex; gap: 20px; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+                                <!-- Form Left -->
+                                <div class="split-left-form" style="flex: 1; min-width: 0; overflow-y: auto; padding-left: 10px;">
+                                    <div id="no-kb-selected" class="no-selection-message" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8; text-align: center;">
+                                        <i class="fa-solid fa-book-bookmark" style="font-size: 3rem; margin-bottom: 15px; color: #cbd5e1;"></i>
+                                        <p style="font-size: 0.9rem;">اختر مقالاً من القائمة الجانبية للتعديل، أو اضغط على "إضافة مقال جديد".</p>
+                                    </div>
+                                    
+                                    <form id="kb-edit-form" class="hidden" style="display: flex; flex-direction: column; gap: 15px;">
+                                        <input type="hidden" id="edit-kb-id">
+                                        
+                                        <div class="form-row-double" style="display: flex; gap: 15px;">
+                                            <div class="form-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                                                <label for="edit-kb-title" style="font-size: 0.82rem; font-weight: 700; color: #475569;">عنوان المقال المعرفي:</label>
+                                                <input type="text" id="edit-kb-title" required placeholder="مثال: خطوات تنشيط بطاقات الماستر" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; font-family: inherit;">
+                                            </div>
+                                            <div class="form-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                                                <label for="edit-kb-category" style="font-size: 0.82rem; font-weight: 700; color: #475569;">الفئة / القسم:</label>
+                                                <select id="edit-kb-category" style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
+                                                    <option value="MasterCard & Visa">MasterCard & Visa</option>
+                                                    <option value="Western Union">Western Union</option>
+                                                    <option value="Wallet & App">Wallet & App</option>
+                                                    <option value="Agents & Merchants">Agents & Merchants</option>
+                                                    <option value="Digital Goods">Digital Goods</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                            <label for="edit-kb-content" style="font-size: 0.82rem; font-weight: 700; color: #475569;">محتوى المقال التفصيلي (الخطوات والإجراءات):</label>
+                                            <textarea id="edit-kb-content" required placeholder="اكتب التعليمات والخطوات بوضوح..." style="min-height: 180px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; font-family: inherit; resize: vertical; line-height: 1.6;"></textarea>
+                                        </div>
+
+                                        <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                            <label for="edit-kb-keywords" style="font-size: 0.82rem; font-weight: 700; color: #475569;">الكلمات المفتاحية للبحث (مفصولة بفاصلة):</label>
+                                            <input type="text" id="edit-kb-keywords" placeholder="مثال: ماستر، قفل، كرت، تجميد" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; font-family: inherit;">
+                                        </div>
+
+                                        <div class="form-row-double" style="display: flex; gap: 15px;">
+                                            <div class="form-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                                                <label for="edit-kb-correct-disp" style="font-size: 0.82rem; font-weight: 700; color: #475569;">التصنيف الرئيسي (Main):</label>
+                                                <select id="edit-kb-correct-disp" required style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
+                                                    <!-- Loaded dynamically -->
+                                                </select>
+                                            </div>
+                                            <div class="form-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                                                <label for="edit-kb-correct-sub" style="font-size: 0.82rem; font-weight: 700; color: #475569;">التصنيف الفرعي (Sub):</label>
+                                                <select id="edit-kb-correct-sub" required style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
+                                                    <!-- Loaded dynamically -->
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                                            <button type="button" class="btn btn-secondary" id="delete-kb-btn" style="background: #ef4444; color: white; border: none; font-size: 0.8rem;">
+                                                <i class="fa-solid fa-trash-can"></i> حذف المقال
+                                            </button>
+                                            <button type="submit" class="btn btn-primary" style="font-size: 0.8rem;">
+                                                <i class="fa-solid fa-circle-check"></i> حفظ المقال
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Live Preview Right -->
+                                <div class="split-right-preview hidden" id="kb-live-preview-panel" style="width: 320px; border-right: 1px solid #e2e8f0; padding-right: 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0;">
+                                    <div class="preview-header-label" style="font-size: 0.85rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px;">
+                                        <i class="fa-solid fa-eye" style="color: var(--primary);"></i> معاينة المقال الفورية
+                                    </div>
+                                    <div class="kb-article-preview-card" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 15px; min-height: 300px; display: flex; flex-direction: column; gap: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
+                                        <div class="preview-category" id="kb-preview-category" style="background: #fff8e8; color: #ff9900; font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffeeba; align-self: flex-start;">Category</div>
+                                        <h2 class="preview-title" id="kb-preview-title" style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin: 0;">Title</h2>
+                                        <div class="preview-content" id="kb-preview-content" style="flex: 1; font-size: 0.8rem; color: #475569; line-height: 1.6; white-space: pre-line; overflow-y: auto;">Content</div>
+                                        <div class="preview-classification" style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px;">
+                                            <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 4px;">التصنيف المعتمد:</div>
+                                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                                <span class="preview-badge-main" id="kb-preview-main-badge" style="background: #eff6ff; color: #1e40af; font-size: 0.68rem; font-weight: 700; padding: 1px 6px; border-radius: 3px;">Main Disp</span>
+                                                <span class="preview-badge-sub" id="kb-preview-sub-badge" style="background: #f1f5f9; color: #475569; font-size: 0.68rem; font-weight: 700; padding: 1px 6px; border-radius: 3px;">Sub Disp</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </main>
                         </div>
                     </div>
 

@@ -1202,6 +1202,68 @@ ${transcript3}`;
         }, 3000);
     }
 
+    window.askKnowledgeBaseAI = async function(userMessage, conversationHistory, articles) {
+        const articlesContext = articles.map(a => `
+مقال: ${a.title} (الفئة: ${a.category})
+المحتوى:
+${a.content}
+التصنيف المعتمد: الرئيسي [${a.correctDisp || 'غير محدد'}] / الفرعي [${a.correctSubDisp || 'غير محدد'}]
+الكتابة المفتاحية: ${a.keywords || ''}
+---
+`).join('\n');
+
+        const systemPrompt = `
+أنت المساعد الذكي لخدمة عملاء زين كاش (Zain Cash).
+مهمتك هي الإجابة على أسئلة الموظفين بالعامية العراقية وبأسلوب مهذب ومساعد للغاية.
+معلومات مهمة جداً:
+- يجب أن تجيب على السؤال بالاعتماد **فقط** على المقالات المعرفية المرفقة أدناه.
+- إذا سألك الموظف عن إجراء أو مشكلة، فاشرح له الإجراء خطوة بخطوة بالعامية العراقية، واذكر له دائماً في نهاية الإجابة "التصنيف المعتمد في التذاكر" (Main & Sub Disposition) كما هو مكتوب في المقال المعرفي المرفق.
+- إذا لم تكن الإجابة موجودة في المقالات المعرفية المرفقة، قل للموظف بلطف وبلهجة عراقية: "عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي. تقدر تبحث بغير صيغة أو تسأل الأدمن يضيفها."
+
+دليل المقالات المعرفية المتاحة:
+${articlesContext}
+`;
+
+        // Construct request body for Gemini
+        const contents = [];
+        // Add history
+        conversationHistory.forEach(h => {
+            contents.push({
+                role: h.role === 'user' ? 'user' : 'model',
+                parts: [{ text: h.text }]
+            });
+        });
+        // Add current message
+        contents.push({
+            role: 'user',
+            parts: [{ text: userMessage }]
+        });
+
+        const requestBody = {
+            contents: contents,
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
+            },
+            generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 800
+            }
+        };
+
+        try {
+            const response = await fetchWithRotation(requestBody);
+            const resJson = await response.json();
+            const responseText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!responseText) {
+                throw new Error('Empty response from Gemini');
+            }
+            return responseText;
+        } catch (e) {
+            console.error("Gemini KB Assistant failed", e);
+            throw e;
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
         const keyInput = document.getElementById('ai-settings-api-key');
         if (keyInput) {

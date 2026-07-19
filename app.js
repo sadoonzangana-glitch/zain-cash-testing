@@ -1788,47 +1788,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const navTabs = document.querySelector('.amy-nav-tabs');
         if (navTabs) navTabs.classList.remove('hidden'); // Show navigation tabs for everyone
 
-        const navBtnSim = document.getElementById('nav-btn-simulator');
-        const navBtnAI = document.getElementById('nav-btn-ai-agent');
-
         if (currentUser.role === 'Admin') {
             if (openAdminBtn) openAdminBtn.classList.remove('hidden');
-            if (navBtnSim) navBtnSim.style.display = '';
-            if (navBtnAI) navBtnAI.style.display = '';
         } else {
             if (openAdminBtn) openAdminBtn.classList.add('hidden');
-            if (navBtnSim) navBtnSim.style.display = 'none'; // Hide simulator tab initially for employees
-            if (navBtnAI) navBtnAI.style.display = 'none';   // Hide AI Sandbox completely for employees
         }
         
         await loadSlidesData();
         await checkTestAssignment();
         await loadScenariosFromStorage();
+        await initKb(); // Initialize Knowledge Base
 
         // Notify AI agent of logged-in user
         if (typeof window.onAIUserLoggedIn === 'function') {
             window.onAIUserLoggedIn(currentUser);
         }
 
-        // Switch to slides first on login
-        switchTab('tab-slides');
+        // Switch to Knowledge Base first on login
+        switchTab('tab-kb');
     }
     
     async function checkTestAssignment() {
-        const navBtnSim = document.getElementById('nav-btn-simulator');
-        const navBtnAI = document.getElementById('nav-btn-ai-agent');
-        const navBtnHome = document.querySelector('.amy-nav-btn[data-amy-tab="tab-slides"]');
+        const navBtnKb = document.querySelector('.amy-nav-btn[data-amy-tab="tab-kb"]');
+        const navBtnTC = document.querySelector('.amy-nav-btn[data-amy-tab="tab-training-center"]');
+        const navBtnSimHidden = document.getElementById('nav-btn-simulator-hidden');
+        const navBtnAIHidden = document.getElementById('nav-btn-ai-agent-hidden');
+        const backBtns = document.querySelectorAll('.btn-back-to-tc');
 
         if (!currentUser || currentUser.role === 'Admin') {
-            if (activeTestBanner) activeTestBanner.classList.add('hidden');
+            const banner = document.getElementById('active-test-banner');
+            if (banner) banner.classList.add('hidden');
             isTestAssigned = false;
             isAiTestAssigned = false;
             window.isTestAssigned = false;
             window.isAiTestAssigned = false;
             
-            if (navBtnSim) navBtnSim.style.display = '';
-            if (navBtnAI) navBtnAI.style.display = '';
-            if (navBtnHome) navBtnHome.style.display = '';
+            if (navBtnKb) navBtnKb.style.display = '';
+            if (navBtnTC) navBtnTC.style.display = '';
+            if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+            if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+            backBtns.forEach(btn => btn.style.display = '');
             return;
         }
         
@@ -1844,35 +1843,39 @@ document.addEventListener('DOMContentLoaded', () => {
             window.isAiTestAssigned = isAiTestAssigned;
             
             const banner = document.getElementById('active-test-banner');
-            const bannerText = document.getElementById('active-test-banner-text');
+            const bannerText = document.getElementById('active-test-banner-text') || (banner ? banner.querySelector('span') : null);
             
             if (isTestAssigned || isAiTestAssigned) {
                 if (banner) banner.classList.remove('hidden');
+                backBtns.forEach(btn => btn.style.display = 'none'); // Hide back buttons during tests
+                
+                // Hide normal navigation buttons to lock user
+                if (navBtnKb) navBtnKb.style.display = 'none';
+                if (navBtnTC) navBtnTC.style.display = 'none';
                 
                 if (isTestAssigned && isAiTestAssigned) {
-                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة والأيجنت الذكي! يرجى إكمالهما.";
-                    if (navBtnSim) navBtnSim.style.display = '';
-                    if (navBtnAI) navBtnAI.style.display = '';
-                    if (navBtnHome) navBtnHome.style.display = 'none';
+                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة والأيجنت الذكي! يرجى إكمالهما لتسجيل درجاتك.";
+                    if (navBtnSimHidden) { navBtnSimHidden.style.display = ''; navBtnSimHidden.textContent = 'اختبار المحاكي النشط'; }
+                    if (navBtnAIHidden) { navBtnAIHidden.style.display = ''; navBtnAIHidden.textContent = 'اختبار الأيجنت النشط'; }
                     switchTab('tab-simulator');
                 } else if (isTestAssigned) {
                     if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة! يرجى إكمال جميع المحادثات وتصنيفها.";
-                    if (navBtnSim) navBtnSim.style.display = '';
-                    if (navBtnAI) navBtnAI.style.display = 'none';
-                    if (navBtnHome) navBtnHome.style.display = 'none';
+                    if (navBtnSimHidden) { navBtnSimHidden.style.display = ''; navBtnSimHidden.textContent = 'اختبار المحاكي النشط'; }
+                    if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
                     switchTab('tab-simulator');
                 } else {
-                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في الأيجنت الذكي! يرجى إكمال التدريب والتصنيف.";
-                    if (navBtnSim) navBtnSim.style.display = 'none';
-                    if (navBtnAI) navBtnAI.style.display = '';
-                    if (navBtnHome) navBtnHome.style.display = 'none';
+                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في الأيجنت الذكي! يرجى إكمال التقييم وتصنيف التذكرة.";
+                    if (navBtnSimHidden) { navBtnSimHidden.style.display = 'none'; }
+                    if (navBtnAIHidden) { navBtnAIHidden.style.display = ''; navBtnAIHidden.textContent = 'اختبار الأيجنت النشط'; }
                     switchTab('tab-ai-agent');
                 }
             } else {
                 if (banner) banner.classList.add('hidden');
-                if (navBtnSim) navBtnSim.style.display = '';
-                if (navBtnAI) navBtnAI.style.display = '';
-                if (navBtnHome) navBtnHome.style.display = '';
+                if (navBtnKb) navBtnKb.style.display = '';
+                if (navBtnTC) navBtnTC.style.display = '';
+                if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+                if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                backBtns.forEach(btn => btn.style.display = '');
             }
         } catch (e) {
             console.error("Failed to check assignments", e);
@@ -2488,6 +2491,667 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("Failed to load SMTP settings:", err);
         }
+    }
+
+    // ==========================================
+    // KNOWLEDGE BASE (NOLGE BASIC) LOGIC
+    // ==========================================
+    let kbArticles = [];
+    let selectedKbCategory = 'all';
+    let selectedKbArticleId = null;
+    let kbArticleListAdmin = [];
+
+    async function initKb() {
+        try {
+            kbArticles = await apiCall('/api/kb', 'GET');
+            renderKbCategories();
+            renderKbPopularArticles();
+            bindKbSearchEvents();
+            if (currentUser && currentUser.role === 'Admin') {
+                initAdminKb();
+                initLivePreviews();
+            }
+        } catch (err) {
+            console.error("Failed to load Knowledge Base:", err);
+        }
+    }
+
+    function renderKbCategories() {
+        const ul = document.getElementById('kb-categories-ul');
+        if (!ul) return;
+
+        const categories = [
+            { id: 'all', name: 'الكل (All)', icon: 'fa-cubes' },
+            { id: 'MasterCard & Visa', name: 'MasterCard & Visa', icon: 'fa-credit-card' },
+            { id: 'Western Union', name: 'Western Union', icon: 'fa-globe' },
+            { id: 'Wallet & App', name: 'Wallet & App', icon: 'fa-wallet' },
+            { id: 'Agents & Merchants', name: 'Agents & Merchants', icon: 'fa-store' },
+            { id: 'Digital Goods', name: 'Digital Goods', icon: 'fa-gamepad' }
+        ];
+
+        ul.innerHTML = categories.map(cat => `
+            <li class="${selectedKbCategory === cat.id ? 'active' : ''}" data-cat-id="${cat.id}">
+                <i class="fa-solid ${cat.icon}"></i>
+                <span>${cat.name}</span>
+            </li>
+        `).join('');
+
+        ul.querySelectorAll('li').forEach(li => {
+            li.addEventListener('click', () => {
+                ul.querySelectorAll('li').forEach(item => item.classList.remove('active'));
+                li.classList.add('active');
+                selectedKbCategory = li.getAttribute('data-cat-id');
+                filterAndRenderKbArticles();
+            });
+        });
+    }
+
+    function filterAndRenderKbArticles() {
+        const searchInput = document.getElementById('kb-search-input');
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        
+        let filtered = kbArticles;
+        if (selectedKbCategory !== 'all') {
+            filtered = filtered.filter(a => a.category === selectedKbCategory);
+        }
+        if (query) {
+            filtered = filtered.filter(a => 
+                a.title.toLowerCase().includes(query) || 
+                a.content.toLowerCase().includes(query) || 
+                (a.keywords && a.keywords.toLowerCase().includes(query))
+            );
+        }
+
+        const viewArea = document.querySelector('.kb-content-area');
+        if (!viewArea) return;
+
+        if (selectedKbCategory !== 'all' || query) {
+            document.getElementById('kb-no-article-selected').classList.add('hidden');
+            document.getElementById('kb-article-view').classList.add('hidden');
+            
+            let listHtml = `
+                <div class="kb-results-container" style="display:flex; flex-direction:column; gap:15px; width:100%;">
+                    <h2 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:5px;">نتائج البحث والتصفح (${filtered.length} مقال)</h2>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            `;
+            if (filtered.length === 0) {
+                listHtml += `<p style="grid-column: span 2; text-align:center; color:#94a3b8; padding:30px;"><i class="fa-solid fa-circle-info" style="font-size:2rem; margin-bottom:10px;"></i><br/>عذراً، لم نجد أي نتائج تطابق بحثك.</p>`;
+            } else {
+                listHtml += filtered.map(a => `
+                    <div class="kb-article-preview-item" data-art-id="${a.id}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:15px; cursor:pointer; transition:all 0.2s; text-align:right; display:flex; flex-direction:column; gap:8px;">
+                        <span style="background: #fff8e8; color: #ff9900; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffeeba; align-self: flex-start;">${a.category}</span>
+                        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin:0;">${a.title}</h3>
+                        <p style="font-size: 0.78rem; color:#64748b; margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.5;">${a.content}</p>
+                    </div>
+                `).join('');
+            }
+            listHtml += `</div></div>`;
+            
+            const oldResults = viewArea.querySelector('.kb-results-container');
+            if (oldResults) oldResults.remove();
+            
+            const welcomeDiv = document.getElementById('kb-no-article-selected');
+            welcomeDiv.insertAdjacentHTML('afterend', listHtml);
+            
+            viewArea.querySelectorAll('.kb-article-preview-item').forEach(card => {
+                card.addEventListener('click', () => {
+                    const artId = parseInt(card.getAttribute('data-art-id'));
+                    viewKbArticle(artId);
+                });
+            });
+        } else {
+            const oldResults = viewArea.querySelector('.kb-results-container');
+            if (oldResults) oldResults.remove();
+            
+            document.getElementById('kb-no-article-selected').classList.remove('hidden');
+            document.getElementById('kb-article-view').classList.add('hidden');
+        }
+    }
+
+    function renderKbPopularArticles() {
+        const grid = document.getElementById('kb-popular-grid');
+        if (!grid) return;
+
+        grid.innerHTML = kbArticles.slice(0, 4).map(a => `
+            <div class="popular-item" data-art-id="${a.id}">
+                <i class="fa-solid fa-circle-play" style="color:var(--primary);"></i>
+                <span>${a.title}</span>
+            </div>
+        `).join('');
+
+        grid.querySelectorAll('.popular-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const artId = parseInt(item.getAttribute('data-art-id'));
+                viewKbArticle(artId);
+            });
+        });
+    }
+
+    function viewKbArticle(articleId) {
+        const article = kbArticles.find(a => a.id === articleId);
+        if (!article) return;
+
+        selectedKbArticleId = articleId;
+        
+        document.getElementById('kb-no-article-selected').classList.add('hidden');
+        const results = document.querySelector('.kb-results-container');
+        if (results) results.remove();
+
+        const view = document.getElementById('kb-article-view');
+        view.classList.remove('hidden');
+
+        document.getElementById('kb-view-category').textContent = article.category;
+        document.getElementById('kb-view-title').textContent = article.title;
+        document.getElementById('kb-view-content').textContent = article.content;
+        document.getElementById('kb-view-correct-disp').textContent = article.correctDisp || 'N/A';
+        document.getElementById('kb-view-correct-sub').textContent = article.correctSubDisp || 'N/A';
+    }
+
+    function bindKbSearchEvents() {
+        const searchInput = document.getElementById('kb-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                filterAndRenderKbArticles();
+            });
+        }
+
+        const welcomeSearchInput = document.getElementById('kb-welcome-search-input');
+        const welcomeSearchBtn = document.getElementById('kb-welcome-search-btn');
+        
+        if (welcomeSearchBtn && welcomeSearchInput) {
+            const handleWelcomeSearch = () => {
+                const val = welcomeSearchInput.value.trim();
+                if (searchInput) {
+                    searchInput.value = val;
+                    filterAndRenderKbArticles();
+                }
+            };
+            welcomeSearchBtn.addEventListener('click', handleWelcomeSearch);
+            welcomeSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleWelcomeSearch();
+            });
+        }
+    }
+
+    // ==========================================
+    // AI CHAT BOT LOGIC FOR KNOWLEDGE BASE
+    // ==========================================
+    let kbAiHistory = [];
+    const chatBtn = document.getElementById('kb-ai-chat-btn');
+    const chatPanel = document.getElementById('kb-ai-chat-panel');
+    const closeBtn = document.getElementById('kb-ai-close-btn');
+    const sendBtn = document.getElementById('kb-ai-send-btn');
+    const chatInput = document.getElementById('kb-ai-chat-input');
+    const chatBody = document.getElementById('kb-ai-chat-body');
+
+    if (chatBtn && chatPanel) {
+        chatBtn.addEventListener('click', () => {
+            chatPanel.classList.toggle('hidden');
+            if (!chatPanel.classList.contains('hidden') && chatInput) {
+                chatInput.focus();
+            }
+        });
+    }
+
+    if (closeBtn && chatPanel) {
+        closeBtn.addEventListener('click', () => {
+            chatPanel.classList.add('hidden');
+        });
+    }
+
+    async function handleKbAiChat() {
+        if (!chatInput || !chatBody) return;
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+
+        chatInput.value = '';
+        
+        const userMsgDiv = document.createElement('div');
+        userMsgDiv.className = 'chat-msg';
+        userMsgDiv.style.alignSelf = 'flex-end';
+        userMsgDiv.innerHTML = `
+            <div class="user-msg">
+                <p style="margin:0;">${msg}</p>
+            </div>
+        `;
+        chatBody.appendChild(userMsgDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'chat-msg';
+        typingDiv.style.alignSelf = 'flex-start';
+        typingDiv.innerHTML = `
+            <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #64748b; border-top-right-radius: 0;">
+                <p style="margin:0;"><i class="fa-solid fa-spinner fa-spin"></i> جاري البحث في دليل المعرفة...</p>
+            </div>
+        `;
+        chatBody.appendChild(typingDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        try {
+            const reply = await window.askKnowledgeBaseAI(msg, kbAiHistory, kbArticles);
+            typingDiv.remove();
+
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = 'chat-msg';
+            aiMsgDiv.style.alignSelf = 'flex-start';
+            aiMsgDiv.innerHTML = `
+                <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #1e293b; border-top-right-radius: 0;">
+                    <p style="margin:0; white-space: pre-line;">${reply}</p>
+                </div>
+            `;
+            chatBody.appendChild(aiMsgDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            kbAiHistory.push({ role: 'user', text: msg });
+            kbAiHistory.push({ role: 'model', text: reply });
+        } catch (err) {
+            typingDiv.remove();
+            const errDiv = document.createElement('div');
+            errDiv.className = 'chat-msg';
+            errDiv.style.alignSelf = 'flex-start';
+            errDiv.innerHTML = `
+                <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #c62828; border-top-right-radius: 0;">
+                    <p style="margin:0;">⚠️ عذراً عيني، واجهت مشكلة بالاتصال بالذكاء الاصطناعي. يرجى التأكد من مفتاح API في الإعدادات.</p>
+                </div>
+            `;
+            chatBody.appendChild(errDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    }
+
+    if (sendBtn) sendBtn.addEventListener('click', handleKbAiChat);
+    if (chatInput) chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleKbAiChat(); });
+
+    // ==========================================
+    // TRAINING CENTER HUB NAVIGATION
+    // ==========================================
+    const startSlides = document.getElementById('btn-start-slides');
+    const startSimulator = document.getElementById('btn-start-simulator');
+    const startAiAgent = document.getElementById('btn-start-ai-agent');
+
+    if (startSlides) startSlides.addEventListener('click', () => switchTab('tab-slides'));
+    if (startSimulator) startSimulator.addEventListener('click', () => switchTab('tab-simulator'));
+    if (startAiAgent) startAiAgent.addEventListener('click', () => switchTab('tab-ai-agent'));
+
+    document.querySelectorAll('.btn-back-to-tc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchTab('tab-training-center');
+        });
+    });
+
+    // ==========================================
+    // ADMIN KNOWLEDGE BASE MANAGEMENT
+    // ==========================================
+    async function initAdminKb() {
+        const listUl = document.getElementById('admin-kb-list-ul');
+        if (!listUl) return;
+
+        kbArticleListAdmin = [...kbArticles];
+        renderAdminKbList();
+        
+        populateKBDispositionsDropdowns();
+
+        const addNewBtn = document.getElementById('add-new-kb-btn');
+        if (addNewBtn) {
+            addNewBtn.addEventListener('click', () => {
+                listUl.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+                document.getElementById('no-kb-selected').classList.add('hidden');
+                const form = document.getElementById('kb-edit-form');
+                form.classList.remove('hidden');
+                form.reset();
+                document.getElementById('edit-kb-id').value = 'new';
+                document.getElementById('delete-kb-btn').style.display = 'none';
+                updateKBLivePreview();
+            });
+        }
+
+        const editForm = document.getElementById('kb-edit-form');
+        if (editForm) {
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const idVal = document.getElementById('edit-kb-id').value;
+                const title = document.getElementById('edit-kb-title').value.trim();
+                const category = document.getElementById('edit-kb-category').value;
+                const content = document.getElementById('edit-kb-content').value.trim();
+                const keywords = document.getElementById('edit-kb-keywords').value.trim();
+                const mainDisp = document.getElementById('edit-kb-correct-disp').value;
+                const subDisp = document.getElementById('edit-kb-correct-sub').value;
+
+                if (idVal === 'new') {
+                    const newArt = {
+                        id: Date.now(),
+                        title,
+                        category,
+                        content,
+                        keywords,
+                        correctDisp: mainDisp,
+                        correctSubDisp: subDisp
+                    };
+                    kbArticleListAdmin.push(newArt);
+                } else {
+                    const artId = parseInt(idVal);
+                    const art = kbArticleListAdmin.find(a => a.id === artId);
+                    if (art) {
+                        art.title = title;
+                        art.category = category;
+                        art.content = content;
+                        art.keywords = keywords;
+                        art.correctDisp = mainDisp;
+                        art.correctSubDisp = subDisp;
+                    }
+                }
+                await saveAdminKbArticles();
+            });
+        }
+
+        const deleteBtn = document.getElementById('delete-kb-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async () => {
+                const idVal = document.getElementById('edit-kb-id').value;
+                if (idVal !== 'new' && confirm('هل أنت متأكد من رغبتك في حذف هذا المقال المعرفي نهائياً؟')) {
+                    const artId = parseInt(idVal);
+                    kbArticleListAdmin = kbArticleListAdmin.filter(a => a.id !== artId);
+                    await saveAdminKbArticles();
+                }
+            });
+        }
+    }
+
+    function renderAdminKbList() {
+        const listUl = document.getElementById('admin-kb-list-ul');
+        if (!listUl) return;
+
+        listUl.innerHTML = kbArticleListAdmin.map(a => `
+            <li data-art-id="${a.id}">
+                <div style="font-size:0.65rem; color:#ff9900; font-weight:700;">${a.category}</div>
+                <div style="font-size:0.8rem; font-weight:700; margin-top:2px;">${a.title}</div>
+            </li>
+        `).join('');
+
+        listUl.querySelectorAll('li').forEach(li => {
+            li.addEventListener('click', () => {
+                listUl.querySelectorAll('li').forEach(item => item.classList.remove('active'));
+                li.classList.add('active');
+                
+                const artId = parseInt(li.getAttribute('data-art-id'));
+                const art = kbArticleListAdmin.find(a => a.id === artId);
+                if (art) {
+                    document.getElementById('no-kb-selected').classList.add('hidden');
+                    const form = document.getElementById('kb-edit-form');
+                    form.classList.remove('hidden');
+                    document.getElementById('delete-kb-btn').style.display = 'block';
+
+                    document.getElementById('edit-kb-id').value = art.id;
+                    document.getElementById('edit-kb-title').value = art.title;
+                    document.getElementById('edit-kb-category').value = art.category;
+                    document.getElementById('edit-kb-content').value = art.content;
+                    document.getElementById('edit-kb-keywords').value = art.keywords || '';
+                    document.getElementById('edit-kb-correct-disp').value = art.correctDisp || '';
+                    
+                    populateKBSubDispositions();
+                    document.getElementById('edit-kb-correct-sub').value = art.correctSubDisp || '';
+
+                    updateKBLivePreview();
+                }
+            });
+        });
+    }
+
+    async function saveAdminKbArticles() {
+        try {
+            await apiCall('/api/kb', 'POST', kbArticleListAdmin);
+            showToast('✅ تم حفظ مقالات المعرفة بنجاح!', 'success');
+            kbArticles = [...kbArticleListAdmin];
+            renderKbCategories();
+            renderKbPopularArticles();
+            renderAdminKbList();
+            document.getElementById('kb-edit-form').classList.add('hidden');
+            document.getElementById('no-kb-selected').classList.remove('hidden');
+            document.getElementById('kb-live-preview-panel').classList.add('hidden');
+        } catch (err) {
+            console.error("Failed to save articles", err);
+            showToast('❌ عذراً، فشل حفظ التعديلات!', 'error');
+        }
+    }
+
+    function populateKBDispositionsDropdowns() {
+        const mainSel = document.getElementById('edit-kb-correct-disp');
+        const subSel = document.getElementById('edit-kb-correct-sub');
+        if (!mainSel || !subSel) return;
+
+        mainSel.innerHTML = '<option value="">اختر التصنيف الرئيسي</option>' + 
+            Object.keys(TICKET_DISPOSITIONS).map(k => `<option value="${k}">${k}</option>`).join('');
+
+        mainSel.addEventListener('change', () => {
+            populateKBSubDispositions();
+            updateKBLivePreview();
+        });
+        subSel.addEventListener('change', () => {
+            updateKBLivePreview();
+        });
+    }
+
+    function populateKBSubDispositions() {
+        const mainSel = document.getElementById('edit-kb-correct-disp');
+        const subSel = document.getElementById('edit-kb-correct-sub');
+        if (!mainSel || !subSel) return;
+
+        const mainVal = mainSel.value;
+        if (mainVal && TICKET_DISPOSITIONS[mainVal]) {
+            subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>' + 
+                TICKET_DISPOSITIONS[mainVal].map(s => `<option value="${s}">${s}</option>`).join('');
+        } else {
+            subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>';
+        }
+    }
+
+    // ==========================================
+    // ADMIN LIVE PREVIEWS BINDINGS
+    // ==========================================
+    function initLivePreviews() {
+        const mcqForm = document.getElementById('scenario-edit-form');
+        if (mcqForm) {
+            const inputs = [
+                'edit-customer-name', 'edit-cust-msg', 
+                'edit-opt1-text', 'edit-opt2-text', 'edit-opt3-text',
+                'edit-opt1-correct', 'edit-opt2-correct', 'edit-opt3-correct'
+            ];
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updateMCQLivePreview);
+                    el.addEventListener('change', updateMCQLivePreview);
+                }
+            });
+            // Update on scenario selector change
+            const selectList = document.getElementById('admin-scenarios-list-ul');
+            if (selectList) {
+                selectList.addEventListener('click', () => setTimeout(updateMCQLivePreview, 100));
+            }
+        }
+
+        const aiForm = document.getElementById('ai-scenario-edit-form');
+        if (aiForm) {
+            const inputs = [
+                'edit-ai-cust-name', 'edit-ai-cust-tone', 
+                'edit-ai-initial-msg', 'edit-ai-correct-disp', 'edit-ai-correct-sub'
+            ];
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updateAILivePreview);
+                    el.addEventListener('change', updateAILivePreview);
+                }
+            });
+            const aiSelectList = document.getElementById('admin-ai-scenarios-list-ul');
+            if (aiSelectList) {
+                aiSelectList.addEventListener('click', () => setTimeout(updateAILivePreview, 100));
+            }
+        }
+
+        const slideForm = document.getElementById('slide-edit-form');
+        if (slideForm) {
+            slideForm.addEventListener('input', updateSlideLivePreview);
+            slideForm.addEventListener('change', updateSlideLivePreview);
+            
+            const slideSelectList = document.getElementById('admin-slides-list-ul');
+            if (slideSelectList) {
+                slideSelectList.addEventListener('click', () => setTimeout(updateSlideLivePreview, 100));
+            }
+        }
+
+        const kbForm = document.getElementById('kb-edit-form');
+        if (kbForm) {
+            kbForm.addEventListener('input', updateKBLivePreview);
+            kbForm.addEventListener('change', updateKBLivePreview);
+        }
+    }
+
+    function updateMCQLivePreview() {
+        const name = document.getElementById('edit-customer-name').value || 'Mohammad';
+        const msg = document.getElementById('edit-cust-msg').value || 'رسالة المشترك هنا...';
+        const opt1 = document.getElementById('edit-opt1-text').value || 'Option 1';
+        const opt2 = document.getElementById('edit-opt2-text').value || 'Option 2';
+        const opt3 = document.getElementById('edit-opt3-text').value || 'Option 3';
+        
+        const opt1Correct = document.getElementById('edit-opt1-correct').checked;
+        const opt2Correct = document.getElementById('edit-opt2-correct').checked;
+        const opt3Correct = document.getElementById('edit-opt3-correct').checked;
+
+        const panel = document.getElementById('mcq-live-preview-panel');
+        if (panel) panel.classList.remove('hidden');
+
+        document.getElementById('mcq-preview-name').textContent = name;
+        document.getElementById('mcq-preview-avatar').textContent = name ? name.charAt(0).toUpperCase() : 'C';
+        document.getElementById('mcq-preview-cust-msg').textContent = msg;
+        
+        const o1El = document.getElementById('mcq-preview-opt1');
+        const o2El = document.getElementById('mcq-preview-opt2');
+        const o3El = document.getElementById('mcq-preview-opt3');
+
+        if (o1El) {
+            o1El.style.background = opt1Correct ? 'rgba(255, 153, 0, 0.12)' : 'white';
+            o1El.style.borderColor = opt1Correct ? 'var(--primary)' : '#cbd5e1';
+            o1El.style.color = opt1Correct ? 'var(--primary)' : '#475569';
+            o1El.innerHTML = (opt1Correct ? '<i class="fa-solid fa-circle-check"></i> ' : '') + opt1;
+        }
+        if (o2El) {
+            o2El.style.background = opt2Correct ? 'rgba(255, 153, 0, 0.12)' : 'white';
+            o2El.style.borderColor = opt2Correct ? 'var(--primary)' : '#cbd5e1';
+            o2El.style.color = opt2Correct ? 'var(--primary)' : '#475569';
+            o2El.innerHTML = (opt2Correct ? '<i class="fa-solid fa-circle-check"></i> ' : '') + opt2;
+        }
+        if (o3El) {
+            o3El.style.background = opt3Correct ? 'rgba(255, 153, 0, 0.12)' : 'white';
+            o3El.style.borderColor = opt3Correct ? 'var(--primary)' : '#cbd5e1';
+            o3El.style.color = opt3Correct ? 'var(--primary)' : '#475569';
+            o3El.innerHTML = (opt3Correct ? '<i class="fa-solid fa-circle-check"></i> ' : '') + opt3;
+        }
+    }
+
+    function updateAILivePreview() {
+        const name = document.getElementById('edit-ai-cust-name').value || '-';
+        const tone = document.getElementById('edit-ai-cust-tone').value || '-';
+        const msg = document.getElementById('edit-ai-initial-msg').value || 'رسالة البدء...';
+        const disp = document.getElementById('edit-ai-correct-disp').value || 'Main Disp';
+        const sub = document.getElementById('edit-ai-correct-sub').value || 'Sub Disp';
+
+        const panel = document.getElementById('ai-live-preview-panel');
+        if (panel) panel.classList.remove('hidden');
+
+        document.getElementById('ai-preview-cust-name').textContent = `الزبون: ${name}`;
+        document.getElementById('ai-preview-cust-tone').textContent = `نبرة الصوت: ${tone}`;
+        document.getElementById('ai-preview-cust-msg').textContent = msg;
+        document.getElementById('ai-preview-correct-disp').textContent = disp;
+        document.getElementById('ai-preview-correct-sub').textContent = sub;
+    }
+
+    function updateKBLivePreview() {
+        const title = document.getElementById('edit-kb-title').value || 'العنوان...';
+        const category = document.getElementById('edit-kb-category').value || 'Category';
+        const content = document.getElementById('edit-kb-content').value || 'محتوى المقال هنا...';
+        const disp = document.getElementById('edit-kb-correct-disp').value || 'Main Disp';
+        const sub = document.getElementById('edit-kb-correct-sub').value || 'Sub Disp';
+
+        const panel = document.getElementById('kb-live-preview-panel');
+        if (panel) panel.classList.remove('hidden');
+
+        document.getElementById('kb-preview-title').textContent = title;
+        document.getElementById('kb-preview-category').textContent = category;
+        document.getElementById('kb-preview-content').textContent = content;
+        document.getElementById('kb-preview-main-badge').textContent = disp;
+        document.getElementById('kb-preview-sub-badge').textContent = sub;
+    }
+
+    function updateSlideLivePreview() {
+        const title = document.getElementById('edit-slide-title').value || 'العنوان...';
+        const subtitle = document.getElementById('edit-slide-subtitle').value || 'الوصف...';
+        const type = document.getElementById('edit-slide-type').value;
+
+        const panel = document.getElementById('slides-live-preview-panel');
+        if (panel) panel.classList.remove('hidden');
+
+        const container = document.getElementById('mini-slide-render-container');
+        if (!container) return;
+
+        let html = `<h3 style="font-size:0.95rem; color:var(--primary); font-weight:800; margin-bottom:5px; text-align:right; font-family:var(--font-ar);">${title}</h3>`;
+        html += `<p style="font-size:0.75rem; color:#64748b; margin-bottom:12px; text-align:right; font-family:var(--font-ar);">${subtitle}</p>`;
+
+        if (type === 'comparison') {
+            const rTitle = document.getElementById('edit-comp-right-title').value || 'الرد المقبول';
+            const rText = document.getElementById('edit-comp-right-text').value || '';
+            const w1Text = document.getElementById('edit-comp-wrong-1-text').value || '';
+            const tip = document.getElementById('edit-comp-tip').value || '';
+
+            html += `<div style="background:#e8f5e9; border:1px solid #c8e6c9; padding:8px; border-radius:6px; margin-bottom:6px; color:#2e7d32; text-align:right; font-family:var(--font-ar);">
+                <strong>✓ ${rTitle}</strong><br/>${rText}
+            </div>`;
+            if (w1Text) {
+                html += `<div style="background:#ffebee; border:1px solid #ffcdd2; padding:8px; border-radius:6px; margin-bottom:6px; color:#c62828; text-align:right; font-family:var(--font-ar);">
+                    <strong>✗ غير مقبول</strong><br/>${w1Text}
+                </div>`;
+            }
+            if (tip) {
+                html += `<div style="background:#fff9c4; border:1px solid #fff59d; padding:8px; border-radius:6px; font-size:0.65rem; color:#f57f17; text-align:right; font-family:var(--font-ar);">
+                    💡 ${tip}
+                </div>`;
+            }
+        } else if (type === 'comparison_context') {
+            const ctx = document.getElementById('edit-ctx-context').value || '';
+            const rTitle = document.getElementById('edit-ctx-right-title').value || 'الرد المقبول';
+            const rText = document.getElementById('edit-ctx-right-text').value || '';
+            const wText = document.getElementById('edit-ctx-wrong-text').value || '';
+
+            if (ctx) html += `<div style="background:#f1f5f9; padding:6px; border-radius:4px; font-size:0.7rem; margin-bottom:8px; text-align:right; font-family:var(--font-ar);">السياق: ${ctx}</div>`;
+            html += `<div style="background:#e8f5e9; border:1px solid #c8e6c9; padding:8px; border-radius:6px; margin-bottom:6px; color:#2e7d32; text-align:right; font-family:var(--font-ar);">
+                <strong>✓ ${rTitle}</strong><br/>${rText}
+            </div>`;
+            if (wText) {
+                html += `<div style="background:#ffebee; border:1px solid #ffcdd2; padding:8px; border-radius:6px; margin-bottom:6px; color:#c62828; text-align:right; font-family:var(--font-ar);">
+                    <strong>✗ غير مقبول</strong><br/>${wText}
+                </div>`;
+            }
+        } else if (type === 'steps') {
+            const s1 = document.getElementById('edit-steps-1-title').value || '';
+            const s2 = document.getElementById('edit-steps-2-title').value || '';
+            const s3 = document.getElementById('edit-steps-3-title').value || '';
+            const ctx = document.getElementById('edit-steps-context').value || '';
+            const rText = document.getElementById('edit-steps-right-text').value || '';
+
+            html += `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px; direction:rtl;">`;
+            if (s1) html += `<div style="background:#eceff1; padding:5px; border-radius:4px; font-size:0.62rem; text-align:center;">1. ${s1}</div>`;
+            if (s2) html += `<div style="background:#eceff1; padding:5px; border-radius:4px; font-size:0.62rem; text-align:center;">2. ${s2}</div>`;
+            if (s3) html += `<div style="background:#eceff1; padding:5px; border-radius:4px; font-size:0.62rem; text-align:center;">3. ${s3}</div>`;
+            html += `</div>`;
+
+            if (ctx) html += `<div style="background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:6px; text-align:right; font-family:var(--font-ar);">
+                <strong>مثال تطبيقي:</strong><br/>سؤال: ${ctx}<br/><span style="color:#2e7d32;">✓ الرد: ${rText}</span>
+            </div>`;
+        }
+
+        container.innerHTML = html;
     }
 
     // Initial session check

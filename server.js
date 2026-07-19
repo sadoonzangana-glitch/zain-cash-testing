@@ -82,12 +82,86 @@ const defaultUsers = [
     { id: "ZC699", name: "Ameen saad nasef", role: "Inbound", email: "ameen.saad@zaincash.iq" }
 ];
 
+const defaultKb = [
+    {
+        id: 1,
+        title: "تفعيل بطاقة الماستر كارد المقفلة",
+        category: "MasterCard & Visa",
+        content: `خطوات تفعيل بطاقات الدفع المغلقة أو المجمدة:
+1. تحقق أولاً من هوية صاحب الحساب من خلال طلب معلوماته الرسمية.
+2. ادخل على لوحة تحكم البطاقات في النظام للتحقق من سبب الإغلاق.
+3. إذا كان السبب خطأ في الرمز السري 3 مرات، اضغط على زر "إعادة التنشيط".
+4. اطلب من الزبون الانتظار لمدة 5 دقائق ثم تجربة البطاقة مرة أخرى.
+
+التصنيف الصحيح للتذكرة:
+- القسم الرئيسي: MC/Visa Issue
+- القسم الفرعي: Activation Issue`,
+        keywords: "ماستر كارد, ماستركارد, تفعيل, بطاقة, مجمدة, قفل, تجميد, ماستر, فيزا",
+        correctDisp: "MC/Visa Issue",
+        correctSubDisp: "Activation Issue"
+    },
+    {
+        id: 2,
+        title: "إجراءات الحوالات المعلقة ويسترن يونيون",
+        category: "Western Union",
+        content: `كيفية التعامل مع الحوالات الدولية المعلقة (Western Union):
+1. اطلب من الزبون تزويدك بالرقم المرجعي للحوالة (MTCN) واسم المرسل بالكامل.
+2. افحص حالة الحوالة في النظام؛ إذا كانت تظهر بحالة "معلقة لأسباب أمنية" (Security Hold):
+   - وضح للزبون أن الحوالة تخضع لمراجعة الامتثال من ويسترن يونيون.
+   - اطلب منه تزويدنا بالمستندات المطلوبة (مثل إثبات مصدر الأموال وعلاقة القرابة) لإرسالها للامتثال.
+   - افتح تذكرة للدعم الفني بالقسم المالي فوراً وأرفق التفاصيل.
+
+التصنيف الصحيح للتذكرة:
+- القسم الرئيسي: WU Issue
+- القسم الفرعي: Hold Transaction Issue`,
+        keywords: "ويسترن, يونيون, حوالة, معلقة, مرجعي, أمنية, امتثال, ام تي سي ان, mtcn",
+        correctDisp: "WU Issue",
+        correctSubDisp: "Hold Transaction Issue"
+    },
+    {
+        id: 3,
+        title: "مشاكل تسجيل الدخول إلى تطبيق المحفظة",
+        category: "Wallet & App",
+        content: `دليل حل مشاكل تسجيل الدخول وتوقف تطبيق زين كاش:
+1. تأكد من أن الزبون يستخدم أحدث إصدار من التطبيق في متجر التطبيقات.
+2. اطلب منه إلغاء تفعيل شبكة VPN وتجربة تسجيل الدخول باستخدام شبكة بيانات الهاتف (عراقنا/زين) بدلاً من الواي فاي في حال تعثر الاتصال.
+3. إذا ظهرت رسالة "الحساب مغلق"، يرجى التحقق من حالة المحفظة في النظام للتأكد من عدم وجود تكرار أو حظر احترازي.
+4. لإعادة تعيين رمز PIN، اطلب منه اتباع خيار "نسيت الرمز السري" واتباع خطوات التحقق من الوجه.
+
+التصنيف الصحيح للتذكرة:
+- القسم الرئيسي: Wallet/App Issue
+- القسم الفرعي: Login Issue`,
+        keywords: "تطبيق, تسجيل, دخول, محفظة, pin, رمز سري, مغلق, تسجيل الدخول",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Login Issue"
+    },
+    {
+        id: 4,
+        title: "مشاكل عمولة الوكلاء والشحن الإضافي",
+        category: "Agents & Merchants",
+        content: `الإجراء القانوني عند زيادة عمولة السحب أو الشحن من قبل الوكيل:
+1. يُحظر تماماً على أي وكيل مرخص استقطاع أي عمولة إضافية خارج النسب الرسمية المحددة في التطبيق.
+2. في حال تقديم شكوى ضد وكيل يفرض رسوماً إضافية:
+   - خذ اسم الوكيل، ورقم هاتفه، وعنوان محله بالتفصيل.
+   - اطلب من الزبون إرسال صورة من وصل العملية أو تفاصيل المعاملة.
+   - افتح شكوى فنية في قسم "إدارة الوكلاء" للتحقيق الميداني ومعاقبة الوكيل.
+
+التصنيف الصحيح للتذكرة:
+- القسم الرئيسي: Wallet/App Issue
+- القسم الفرعي: Agent's extra charges issues`,
+        keywords: "وكيل, وكلاء, عمولة, إضافية, استقطاع, سحب, شحن, رسوم, شكوى",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Agent's extra charges issues"
+    }
+];
+
 async function readDb() {
     try {
         const raw = await fs.readFile(dbPath, 'utf8');
         const clean = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
         const db = JSON.parse(clean.trim());
         db.aiScenarios = db.aiScenarios || [];
+        db.knowledgeBase = db.knowledgeBase || defaultKb;
         return db;
     } catch (e) {
         const initial = {
@@ -97,6 +171,7 @@ async function readDb() {
             results: [],
             scenarios: null,
             aiScenarios: [],
+            knowledgeBase: defaultKb,
             aiResults: []
         };
         await fs.writeFile(dbPath, JSON.stringify(initial, null, 4), 'utf8');
@@ -174,6 +249,18 @@ app.get('/api/ai-scenarios', async (req, res) => {
 app.post('/api/ai-scenarios', async (req, res) => {
     const db = await readDb();
     db.aiScenarios = req.body;
+    await writeDb(db);
+    res.json({ success: true });
+});
+
+app.get('/api/kb', async (req, res) => {
+    const db = await readDb();
+    res.json(db.knowledgeBase || defaultKb);
+});
+
+app.post('/api/kb', async (req, res) => {
+    const db = await readDb();
+    db.knowledgeBase = req.body;
     await writeDb(db);
     res.json({ success: true });
 });
