@@ -302,131 +302,51 @@
                         <span>العودة لمركز التدريب والتقييم</span>
                     </button>
                 </div>
-                <div class="ai-agent-wrapper">
-                    
-                    <!-- AI Start Screen -->
-                    <div class="ai-start-screen" id="ai-start-screen">
-                        <div class="ai-start-card">
-                            <div class="ai-start-icon-ring">
-                                <i class="fa-solid fa-robot"></i>
-                            </div>
-                            <h1 class="ai-start-title">
-                                <span class="ai-badge-gemini">Gemini</span>
-                                المدرب الذكي الافتراضي
-                            </h1>
-                            <p class="ai-start-subtitle">
-                                تفاعل مع مدرب الذكاء الاصطناعي الافتراضي لتقييم مهاراتك في خدمة العملاء ومحاكاة المحادثات بشكل فوري ومستقل.
-                            </p>
-                            <div class="ai-start-features">
-                                <div class="ai-feature-item">
-                                    <i class="fa-solid fa-bolt"></i>
-                                    <span>تصحيح فوري للأخطاء</span>
-                                </div>
-                                <div class="ai-feature-item">
-                                    <i class="fa-solid fa-comments"></i>
-                                    <span>محادثة حية تفاعلية</span>
-                                </div>
-                                <div class="ai-feature-item">
-                                    <i class="fa-solid fa-star"></i>
-                                    <span>تقييم بالدرجات والتقدير</span>
-                                </div>
-                                <div class="ai-feature-item">
-                                    <i class="fa-solid fa-user-shield"></i>
-                                    <span>إرشادات تفصيلية بشرية</span>
-                                </div>
-                            </div>
-                            <button class="ai-start-btn" id="ai-start-btn">
-                                <i class="fa-solid fa-play"></i> ابدأ الجلسة التدريبية
-                            </button>
-                        </div>
+                
+                <div class="simulator-header-bar">
+                    <div class="sim-header-title">
+                        <h2>AI Agent Live Coach</h2>
+                        <p>Simulate handling 3 customer tickets with live AI customers concurrently. Speak in professional Iraqi Arabic.</p>
                     </div>
+                    <button class="btn btn-primary" id="btn-submit-ai-session">
+                        <i class="fa-solid fa-cloud-upload-alt"></i> Submit AI Session & Get Evaluation
+                    </button>
+                </div>
 
-                    <!-- AI Chat Area -->
-                    <div class="ai-chat-area hidden" id="ai-chat-area">
-                        <!-- Stats Bar -->
-                        <div class="ai-stats-bar" id="ai-stats-bar">
-                            <div class="ai-stats-left">
-                                <div class="ai-stat-chip">
-                                    <i class="fa-solid fa-circle-question"></i>
-                                    <span>التقدم: <span id="ai-progress-label">0/4 Scenarios</span></span>
-                                </div>
+                <div class="multitask-chat-grid" id="ai-multitask-chat-grid">
+                    <!-- Dynamic live AI chat columns rendered in app.js -->
+                </div>
+
+                <!-- AI Evaluation Results Screen -->
+                <div class="results-overlay hidden" id="ai-results-overlay">
+                    <div class="results-card">
+                        <div class="success-icon-wrapper">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <h2 class="result-title text-gradient">AI Training Session Completed!</h2>
+                        <p class="result-desc">
+                            تهانينا! لقد تم تقييم محادثاتك الحية مع الذكاء الاصطناعي بواسطة مدربنا الذكي.
+                        </p>
+                        <div class="result-stats-grid">
+                            <div class="res-stat">
+                                <span class="res-label">Overall Score</span>
+                                <span class="res-val" id="ai-res-score">0%</span>
                             </div>
-                            <div class="ai-progress-track">
-                                <div class="ai-progress-fill" id="ai-progress-fill" style="width: 0%"></div>
+                            <div class="res-stat">
+                                <span class="res-label">Incorrect Attempts</span>
+                                <span class="res-val" id="ai-res-errors">0</span>
                             </div>
-                            <div class="ai-stats-right">
-                                <button class="ai-restart-btn" id="ai-restart-btn">
-                                    <i class="fa-solid fa-rotate-left"></i> إعادة البدء
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Messages Container -->
-                        <div class="ai-chat-messages" id="ai-chat-messages">
-                            <!-- Dynamically loaded messages -->
-                        </div>
-
-                        <!-- Typing Indicator -->
-                        <div class="ai-typing-indicator hidden" id="ai-typing-indicator">
-                            <div class="ai-typing-dots">
-                                <span></span><span></span><span></span>
+                            <div class="res-stat">
+                                <span class="res-label">Final Evaluation</span>
+                                <span class="res-val text-gradient" id="ai-res-grade">Certified Agent</span>
                             </div>
                         </div>
-
-
-                        <!-- AI Ticket Disposition Selector Row -->
-                        <div class="ai-disposition-row" id="ai-disposition-row" style="display: flex; gap: 10px; padding: 10px 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; direction: rtl; justify-content: flex-start; align-items: center; border-radius: 8px; margin-bottom: 10px;">
-                            <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">تصنيف التذكرة:</span>
-                            <select id="ai-disp-select" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; width: 160px; outline: none; background: #ffffff;">
-                                <option value="">الموضوع الرئيسي</option>
-                            </select>
-                            <select id="ai-sub-disp-select" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; width: 160px; outline: none; background: #ffffff;">
-                                <option value="">الموضوع الفرعي</option>
-                            </select>
-                        </div>
-
-                        <!-- Input Row -->
-                        <div class="ai-input-row">
-                            <textarea class="ai-input-textarea" id="ai-employee-input" placeholder="اكتب ردك هنا..." rows="1"></textarea>
-                            <button class="ai-send-btn" id="ai-send-btn">
-                                <i class="fa-solid fa-paper-plane"></i>
-                            </button>
-                        </div>
+                        <p class="result-notes-card" id="ai-res-notes-text" style="font-size:0.9rem; line-height:1.5; margin-bottom:20px; color:#475569; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:15px; text-align:right; font-family:var(--font-ar); direction:rtl;"></p>
+                        <button class="btn btn-primary" id="btn-restart-ai-training-final">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>Restart AI Training Path</span>
+                        </button>
                     </div>
-
-                    <!-- AI Final Results Overlay -->
-                    <div class="ai-final-overlay hidden" id="ai-final-overlay">
-                        <div class="ai-final-card">
-                            <div class="ai-final-icon">
-                                <i class="fa-solid fa-trophy"></i>
-                            </div>
-                            <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">اكتمل التقييم التدريبي!</h2>
-                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px;">لقد أكملت الإجابة على جميع السيناريوهات المطلوبة، إليك تفاصيل تقييمك:</p>
-                            
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem;">
-                                    <span style="color: var(--text-secondary); font-weight: 600;">النسبة الكلية:</span>
-                                    <span style="font-weight: 800; color: var(--primary);"><span id="ai-res-score">0%</span></span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem;">
-                                    <span style="color: var(--text-secondary); font-weight: 600;">المجموع:</span>
-                                    <span style="font-weight: 800; color: var(--primary);"><span id="ai-res-total">0/40</span></span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem;">
-                                    <span style="color: var(--text-secondary); font-weight: 600;">التقدير العام:</span>
-                                    <span style="font-weight: 800; color: #16a34a;" id="ai-res-grade">-</span>
-                                </div>
-                                <div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 12px; text-align: right; font-size: 0.85rem; line-height: 1.6; color: #475569; direction: rtl;" id="ai-res-notes">
-                                    <!-- Notes -->
-                                </div>
-                            </div>
-
-                            <button class="btn btn-primary" id="ai-restart-final-btn" style="width: 100%; border-radius: 50px; padding: 12px;">
-                                <i class="fa-solid fa-rotate-left"></i> بدء تدريب جديد
-                            </button>
-                        </div>
-                    </div>
-
                 </div>
             </div>
 

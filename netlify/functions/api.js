@@ -165,6 +165,69 @@ const defaultKb = [
         keywords: "وكيل, وكلاء, عمولة, إضافية, استقطاع, سحب, شحن, رسوم, شكوى",
         correctDisp: "Wallet/App Issue",
         correctSubDisp: "Agent's extra charges issues"
+    },
+    {
+        id: 5,
+        title: "خدمة الاستثمار وتداول الأسهم الأمريكية",
+        category: "Wallet & App",
+        content: `دليل خدمة الاستثمار وتداول الأسهم الأمريكية في تطبيق زين كاش:
+1. خدمة الاستثمار: تتيح للمشتركين فتح حساب استثماري وشراء وبيع الأسهم الأمريكية المدرجة في البورصات الأمريكية (NYSE, Nasdaq) عبر تطبيق زين كاش بالتعاون مع شركة الوساطة الأمريكية المرخصة Alpaca (الخاضعة لرقابة SEC وعضو FINRA و SIPC).
+2. شروط التسجيل والمتطلبات:
+   - امتلاك محفظة أفراد مفعلة وموافَق عليها.
+   - توفر بريد إلكتروني شخصي فعال وغير مستخدم مسبقاً.
+   - الفئات غير المؤهلة: الأشخاص الأمريكيون (حاملو الجنسية أو البطاقة الخضراء أو SSN/TIN)، الأشخاص المعرضون سياسياً (PEP)، وحاملو الجنسيات المحظورة (إيران، أفغانستان، السودان، أوكرانيا، روسيا، ليبيا، اليمن، كوريا الشمالية، كوبا، ميانمار).
+3. رسوم الخدمة والاشتراك:
+   - قيمة الاشتراك الشهري: 5,000 دينار عراقي (لا توجد عمولات إضافية على البيع أو الشراء).
+   - التجديد بعد 30 يوم (يدوي وغير تلقائي). في حال انتهاء الاشتراك، تتقيد الصلاحيات فقط لبيع الأسهم وسحب القوة الشرائية المتاحة.
+4. مقاييس الحساب في التطبيق:
+   - النقد (Cash): الرصيد الكلي بالدولار الأمريكي (يشمل الرصيد قيد التسوية).
+   - القيمة السوقية (Market Value): القيمة الحالية للأسهم المملوكة.
+   - صافي قيمة المحفظة (NAV): النقد + القيمة السوقية للأسهم.
+   - القوة الشرائية (Buying Power): الرصيد المتاح حالياً لشراء أسهم جديدة.
+   - الرصيد النقدي المتاح للسحب: النقد الحر المتاح لتحويله فوراً إلى محفظة زين كاش بالدينار العراقي (الأموال الناتجة عن بيع الأسهم تحتاج لوقت تسوية لتصبح قابلة للسحب).
+5. حدود الإيداع والسحب:
+   - الحد الأدنى للعملية: 1 دولار أمريكي.
+   - الحد الأقصى الشهري للإيداع أو السحب: ما يعادل 20 مليون دينار عراقي بالدولار الأمريكي وفق سعر الصرف المعتمد.
+6. أنواع الأوامر وصلاحياتها:
+   - أمر السوق (Market Order): التنفيذ فوراً بأفضل سعر متاح.
+   - الأمر المحدد (Limit Order): التنفيذ بسعر محدد من قبل العميل أو أفضل.
+   - Day: صالح ليوم تداول واحد.
+   - GTC: صالح ومستمر حتى الإلغاء.
+   - FOK: تنفيذ كامل وفوري أو إلغاء كلي.
+
+التصنيف الصحيح للتذكرة:
+- القسم الرئيسي: Wallet/App Issue
+- القسم الفرعي: Other issues`,
+        keywords: "اسهم, أسهم, استثمار, تداول, البورصة, ناسداك, شراء سهم, بيع سهم, البورصة الأمريكية, alpaca, البيع, الشراء, البورصه",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Other issues"
+    }
+];
+
+const defaultAiScenarios = [
+    {
+        id: 1,
+        customerName: "أبو حيدر",
+        customerTone: "Polite & Inquiring (مستفسر ومهذب)",
+        initialMessage: "سمعت بجديد تداول الأسهم بالتطبيق، شلون أفتح حساب وأشتري سهم أبل؟ وهل عليها عمولات؟",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Other issues"
+    },
+    {
+        id: 2,
+        customerName: "حسن",
+        customerTone: "Angry & Demanding (غاضب ومستعجل)",
+        initialMessage: "أريد أحول 50 ألف دينار لأخوي بس رصيدي بس 30 ألف والتطبيق ما يقبل السحب أو التحويل ويطلعلي خطأ!",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Trx Issue"
+    },
+    {
+        id: 3,
+        customerName: "فاطمة",
+        customerTone: "Polite & Inquiring (مهذب ومستفسر)",
+        initialMessage: "أريد أرسل كاش من 3 أيام لزوجي بالويسترن يونيون وما وصله لحد الآن، شنو المشكلة؟ هاي الـ MTCN: 12345678",
+        correctDisp: "WU Issue",
+        correctSubDisp: "Hold Transaction Issue"
     }
 ];
 
@@ -173,7 +236,7 @@ async function getDb() {
         const res = await httpReq(BLOB_URL, 'GET');
         if (res.statusCode === 200) {
             const db = JSON.parse(res.body);
-            db.aiScenarios = db.aiScenarios || [];
+            db.aiScenarios = db.aiScenarios && db.aiScenarios.length > 0 ? db.aiScenarios : defaultAiScenarios;
             db.knowledgeBase = db.knowledgeBase || defaultKb;
             return db;
         }
@@ -186,7 +249,7 @@ async function getDb() {
         aiAssignments: [],
         results: [],
         scenarios: null,
-        aiScenarios: [],
+        aiScenarios: defaultAiScenarios,
         knowledgeBase: defaultKb,
         aiResults: []
     };

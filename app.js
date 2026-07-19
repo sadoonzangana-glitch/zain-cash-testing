@@ -624,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Toast helper for app.js
     function showToast(message, type = 'success') {
+        window.showToast = showToast;
         const existing = document.getElementById('app-toast-popup');
         if (existing) existing.remove();
 
@@ -1823,6 +1824,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function checkTestAssignment() {
+        window.checkTestAssignment = checkTestAssignment;
         const navBtnKb = document.querySelector('.amy-nav-btn[data-amy-tab="tab-kb"]');
         const navBtnTC = document.querySelector('.amy-nav-btn[data-amy-tab="tab-training-center"]');
         const navBtnSimHidden = document.getElementById('nav-btn-simulator-hidden');

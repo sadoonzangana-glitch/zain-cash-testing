@@ -663,14 +663,13 @@ ${transcript3}`;
         if (agent) agent.loadSettings();
     };
 
+    let aiDisposedChats = {};
+    let aiChatHistories = {};
+    let aiScenariosList = [];
+
     window.onAITabActivated = function () {
         if (agent) agent.loadSettings();
-        if (agent && !agent.apiKey) {
-            showNoKeyWarning();
-        } else {
-            hideNoKeyWarning();
-        }
-        loadAISessionsTable();
+        initAiAgentSimulator();
     };
 
     // ─────────────────────────────────────────────
@@ -695,52 +694,12 @@ ${transcript3}`;
     };
 
     function initAIAgentUI() {
-        bindClick('ai-start-btn', handleStartSession);
-        bindClick('ai-send-btn', handleSendMessage);
-        bindClick('ai-restart-btn', handleRestart);
-        bindClick('ai-restart-final-btn', handleRestart);
-
-        const dispSelect = document.getElementById('ai-disp-select');
-        const subDispSelect = document.getElementById('ai-sub-disp-select');
-
-        if (dispSelect && subDispSelect) {
-            dispSelect.innerHTML = '<option value="">الموضوع الرئيسي (Main)</option>';
-            subDispSelect.innerHTML = '<option value="">الموضوع الفرعي (Sub)</option>';
-
-            Object.keys(DISPOSITION_DATA).forEach(disp => {
-                const opt = document.createElement('option');
-                opt.value = disp;
-                opt.textContent = disp;
-                dispSelect.appendChild(opt);
-            });
-
-            dispSelect.addEventListener('change', () => {
-                const val = dispSelect.value;
-                subDispSelect.innerHTML = '<option value="">الموضوع الفرعي (Sub)</option>';
-                if (val && DISPOSITION_DATA[val]) {
-                    DISPOSITION_DATA[val].forEach(sub => {
-                        const opt = document.createElement('option');
-                        opt.value = sub;
-                        opt.textContent = sub;
-                        subDispSelect.appendChild(opt);
-                    });
-                }
-            });
-        }
-
-        const inputEl = document.getElementById('ai-employee-input');
-        if (inputEl) {
-            inputEl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                }
-            });
-            inputEl.addEventListener('input', () => {
-                inputEl.style.height = 'auto';
-                inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
-            });
-        }
+        bindClick('btn-submit-ai-session', handleEvaluateAiSession);
+        bindClick('btn-restart-ai-training-final', () => {
+            const overlay = document.getElementById('ai-results-overlay');
+            if (overlay) overlay.classList.add('hidden');
+            initAiAgentSimulator();
+        });
 
         bindClick('btn-save-ai-settings', handleSaveAISettings);
         bindClick('btn-test-api-key', handleTestAPIKey);
@@ -1369,6 +1328,544 @@ ${articlesContext}
             throw e;
         }
     };
+
+    // ==========================================
+    // MULTITASK LIVE AI COACH ENGINE
+    // ==========================================
+    async function initAiAgentSimulator() {
+        const apiKey = localStorage.getItem('amyo_gemini_api_key') || '';
+        if (!apiKey) {
+            showAIToast('⚠️ يرجى ضبط مفتاح API الخاص بـ Gemini في إعدادات المسؤول أولاً!', 'error');
+            return;
+        }
+
+        let scenarios = [];
+        if (window.apiCall) {
+            try {
+                scenarios = await window.apiCall('/api/ai-scenarios', 'GET');
+            } catch(e) {
+                console.error("Failed to load AI scenarios", e);
+            }
+        }
+
+        if (!scenarios || scenarios.length === 0) {
+            scenarios = defaultAiScenarios;
+        }
+
+        aiScenariosList = scenarios;
+        aiDisposedChats = {};
+        aiChatHistories = {};
+
+        const grid = document.getElementById('ai-multitask-chat-grid');
+        if (grid) {
+            grid.innerHTML = '';
+            scenarios.forEach((chat, idx) => {
+                const i = idx + 1;
+                aiDisposedChats[i] = false;
+                
+                aiChatHistories[i] = [
+                    { role: 'user', parts: [{ text: `System: Customer initiates live AI chat.` }] },
+                    { role: 'model', parts: [{ text: chat.initialMessage || 'مرحباً' }] }
+                ];
+
+                const colHtml = generateAiChatColumnHtml(chat, i);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = colHtml.trim();
+                const colEl = tempDiv.firstChild;
+                grid.appendChild(colEl);
+            });
+        }
+
+        const chatWindows = document.querySelectorAll('#ai-multitask-chat-grid .floating-chat-window');
+        chatWindows.forEach(win => {
+            win.addEventListener('click', () => {
+                chatWindows.forEach(w => w.classList.remove('active-window'));
+                win.classList.add('active-window');
+            });
+        });
+        if (chatWindows[0]) chatWindows[0].classList.add('active-window');
+
+        for (let i = 1; i <= scenarios.length; i++) {
+            const inputEl = document.getElementById(`ai-chat-input-${i}`);
+            const sendBtn = document.getElementById(`ai-chat-send-${i}`);
+            const closeBtn = document.getElementById(`ai-chat-close-${i}`);
+            const backBtn = document.getElementById(`ai-chat-back-${i}`);
+            const profileBtn = document.getElementById(`ai-chat-profile-${i}`);
+            
+            const dispPanel = document.getElementById(`ai-disposition-panel-${i}`);
+            const profPanel = document.getElementById(`ai-profile-panel-${i}`);
+            const selectDisp = document.getElementById(`ai-disp-select-${i}`);
+            const selectSub = document.getElementById(`ai-sub-disp-select-${i}`);
+            const saveBtn = document.getElementById(`ai-btn-save-dispose-${i}`);
+
+            if (inputEl) {
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAiSendMessage(i);
+                    }
+                });
+            }
+
+            if (sendBtn) {
+                sendBtn.addEventListener('click', () => {
+                    handleAiSendMessage(i);
+                });
+            }
+
+            if (selectDisp) {
+                selectDisp.innerHTML = '<option value="">Select a Disposition</option>';
+                Object.keys(DISPOSITION_DATA).forEach(disp => {
+                    const opt = document.createElement('option');
+                    opt.value = disp;
+                    opt.textContent = disp;
+                    selectDisp.appendChild(opt);
+                });
+            }
+
+            const populateSubDispositions = (dispVal) => {
+                if (!selectSub) return;
+                selectSub.innerHTML = '<option value="">Select a Sub Disposition</option>';
+                if (dispVal && DISPOSITION_DATA[dispVal]) {
+                    DISPOSITION_DATA[dispVal].forEach(sub => {
+                        const opt = document.createElement('option');
+                        opt.value = sub;
+                        opt.textContent = sub;
+                        selectSub.appendChild(opt);
+                    });
+                }
+            };
+
+            if (selectDisp) {
+                selectDisp.addEventListener('change', () => {
+                    populateSubDispositions(selectDisp.value);
+                    checkFormValidity();
+                });
+            }
+            if (selectSub) {
+                selectSub.addEventListener('change', checkFormValidity);
+            }
+
+            const checkFormValidity = () => {
+                if (selectDisp && selectSub && selectDisp.value && selectSub.value) {
+                    saveBtn.disabled = false;
+                    saveBtn.classList.add('active');
+                } else {
+                    saveBtn.disabled = true;
+                    saveBtn.classList.remove('active');
+                }
+            };
+
+            const quickButtons = document.querySelectorAll(`.ai-quick-disp-btn[data-chat="${i}"]`);
+            quickButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const dispVal = btn.getAttribute('data-disp');
+                    const subVal = btn.getAttribute('data-sub');
+
+                    if (selectDisp) {
+                        selectDisp.value = dispVal;
+                        populateSubDispositions(dispVal);
+                    }
+                    if (selectSub) selectSub.value = subVal;
+
+                    quickButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    checkFormValidity();
+                });
+            });
+
+            if (closeBtn && dispPanel) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (aiDisposedChats[i]) return;
+                    dispPanel.classList.toggle('hidden');
+                    if (profPanel) profPanel.classList.add('hidden');
+                });
+            }
+
+            if (profileBtn && profPanel) {
+                profileBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    profPanel.classList.toggle('hidden');
+                    if (dispPanel) dispPanel.classList.add('hidden');
+                });
+            }
+
+            if (backBtn) {
+                backBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (dispPanel) dispPanel.classList.add('hidden');
+                    if (profPanel) profPanel.classList.add('hidden');
+                });
+            }
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    if (selectDisp.value && selectSub.value) {
+                        aiDisposedChats[i] = true;
+                        if (dispPanel) dispPanel.classList.add('hidden');
+                        
+                        const disposedOverlay = document.getElementById(`ai-disposed-overlay-${i}`);
+                        if (disposedOverlay) {
+                            disposedOverlay.classList.remove('hidden');
+                        }
+                        showAIToast(`Chat ${i} disposed successfully.`, 'success');
+                    }
+                });
+            }
+        }
+    }
+
+    function generateAiChatColumnHtml(chat, i) {
+        let iconHtml = '<i class="fa-brands fa-whatsapp whatsapp-icon" style="color: #25d366;"></i>';
+        let channelName = 'WhatsApp Chat';
+        let channelBadge = `phone${i}`;
+
+        const initialMsg = chat.initialMessage || 'مرحباً';
+
+        return `
+        <div class="chat-column">
+            <div class="column-meta-info">
+                <span class="meta-channel">${channelBadge}</span>
+                <span class="meta-detail">${channelName}</span>
+            </div>
+            <div class="floating-chat-window static-window">
+                <div class="chat-header">
+                    <div class="chat-header-left">
+                        ${iconHtml}
+                        <span class="chat-customer-name">${escapeHtml(chat.customerName)}</span>
+                        <span class="status-dot online"></span>
+                    </div>
+                    <div class="chat-header-right">
+                        <i class="fa-solid fa-arrow-right-left" id="ai-chat-back-${i}" style="cursor:pointer;" title="Back to Chat"></i>
+                        <i class="fa-solid fa-user" id="ai-chat-profile-${i}" style="cursor:pointer;" title="Customer Profile"></i>
+                        <i class="fa-solid fa-xmark" id="ai-chat-close-${i}" style="cursor:pointer;" title="Close & Dispose"></i>
+                    </div>
+                </div>
+                <div class="chat-body" id="ai-chat-body-${i}">
+                    <div class="system-message">
+                        <span>[Session started via ${channelName}]</span>
+                    </div>
+                    <div class="system-message">
+                        <span>نبرة الزبون: ${escapeHtml(chat.customerTone || 'اعتيادية')}</span>
+                    </div>
+                    <div class="message message-customer">
+                        <p>${escapeHtml(initialMsg)}</p>
+                        <span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                </div>
+                <div class="typing-indicator-wrapper hidden" id="ai-typing-indicator-${i}">
+                    <div class="typing-bubble">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    </div>
+                </div>
+                <div class="chat-footer-mock live-footer" style="padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; border-top: 1px solid #e2e8f0; height: auto; min-height: 120px; align-items: stretch;">
+                    <textarea class="live-chat-input" id="ai-chat-input-${i}" placeholder="اكتب ردك هنا... (Enter للإرسال)" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; resize: none; min-height: 50px; outline: none; font-family: var(--font-ar); direction: rtl; text-align: right;"></textarea>
+                    <div style="display: flex; justify-content: flex-end; width: 100%;">
+                        <button class="btn btn-primary" id="ai-chat-send-${i}" style="padding: 4px 12px; font-size: 0.75rem; border-radius: 6px;">إرسال</button>
+                    </div>
+                </div>
+
+                <!-- Customer Profile Panel -->
+                <div class="profile-panel hidden" id="ai-profile-panel-${i}">
+                    <div class="profile-form">
+                        <div class="profile-field">
+                            <label>الاسم</label>
+                            <div class="profile-value">
+                                ${iconHtml}
+                                <span>${escapeHtml(chat.customerName)}</span>
+                            </div>
+                        </div>
+                        <div class="profile-field">
+                            <label>النبرة</label>
+                            <div class="profile-value">${escapeHtml(chat.customerTone || 'اعتيادي')}</div>
+                        </div>
+                        <div class="profile-field">
+                            <label>الهاتف</label>
+                            <div class="profile-value">9647700000${i}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disposition Panel -->
+                <div class="disposition-panel hidden" id="ai-disposition-panel-${i}">
+                    <div class="disposition-form">
+                        <div class="form-group">
+                            <label>Disposition</label>
+                            <select class="disposition-select" id="ai-disp-select-${i}">
+                                <option value="">Select a Disposition</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sub Disposition</label>
+                            <select class="sub-disposition-select" id="ai-sub-disp-select-${i}">
+                                <option value="">Select a Sub Disposition</option>
+                            </select>
+                        </div>
+                        <div class="quick-dispositions-grid">
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Issue" data-sub="Top-up or Transfer Issue">Refund Delay</button>
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Issue" data-sub="Reset PIN request">Reset PIN request</button>
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Inquiry" data-sub="MC/Visa Inquiry">Card Inquiry</button>
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Other" data-sub="Junk call">Junk call</button>
+                        </div>
+                        <div class="ticket-status-row">
+                            <span class="section-title">Ticket</span>
+                            <div class="ticket-pills">
+                                <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-save-dispose" id="ai-btn-save-dispose-${i}" disabled>Save and Dispose</button>
+                    </div>
+                </div>
+
+                <!-- Disposed Overlay -->
+                <div class="disposed-overlay hidden" id="ai-disposed-overlay-${i}">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <h3>تم تصنيف وإغلاق التذكرة</h3>
+                    <p>المحادثة منتهية ومحفوظة بنجاح.</p>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    async function handleAiSendMessage(chatId) {
+        if (aiDisposedChats[chatId]) {
+            showAIToast("This chat is resolved and closed.", "error");
+            return;
+        }
+
+        const inputEl = document.getElementById(`ai-chat-input-${chatId}`);
+        const chatBody = document.getElementById(`ai-chat-body-${chatId}`);
+        const typingIndicator = document.getElementById(`ai-typing-indicator-${chatId}`);
+
+        if (!inputEl || !chatBody) return;
+
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        inputEl.value = '';
+        inputEl.disabled = true;
+
+        const empMsgEl = document.createElement('div');
+        empMsgEl.className = 'message message-employee';
+        empMsgEl.innerHTML = `<p>${escapeHtml(text)}</p><span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+        chatBody.appendChild(empMsgEl);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        if (typingIndicator) typingIndicator.classList.remove('hidden');
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        aiChatHistories[chatId].push({
+            role: 'user',
+            parts: [{ text: text }]
+        });
+
+        const sc = aiScenariosList[chatId - 1];
+        const homePageUrl = window.location.origin;
+        const systemInstructionText = `أنت الزبون "${sc.customerName}"، تتواصل مع دعم زين كاش في العراق.
+نبرتك وشخصيتك: ${sc.customerTone || 'اعتيادية'}.
+قصتك ومشكلتك الأساسية: ${sc.initialMessage}.
+قواعد الرد الصارمة:
+- تقمص دور هذا الزبون بالكامل وبلهجة عراقية دارجة تماماً (مثل: عيني، فدوة، ما صار، بلا زحمة).
+- لا تخرج عن نطاق مشكلتك وعن المعلومات المتوفرة في المقالات.
+- اجعل ردودك قصيرة وتلقائية (جملة أو جملتين فقط).
+- ⚠️ إذا كتب لك الموظف أي كلام غير مفهوم أو خارج سياق مشكلتك، رد عليه كزبون منزعج أو متعجب باللهجة العراقية.
+`;
+
+        const requestBody = {
+            systemInstruction: {
+                parts: [{ text: systemInstructionText }]
+            },
+            contents: aiChatHistories[chatId],
+            generationConfig: {
+                temperature: 0.75,
+                maxOutputTokens: 300,
+                topP: 0.9
+            }
+        };
+
+        try {
+            const response = await fetchWithRotation(requestBody);
+            const data = await response.json();
+            const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!replyText) throw new Error("لم يستجب نموذج الذكاء الاصطناعي");
+
+            aiChatHistories[chatId].push({
+                role: 'model',
+                parts: [{ text: replyText }]
+            });
+
+            if (typingIndicator) typingIndicator.classList.add('hidden');
+
+            const custMsgEl = document.createElement('div');
+            custMsgEl.className = 'message message-customer';
+            custMsgEl.innerHTML = `<p>${escapeHtml(replyText)}</p><span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+            chatBody.appendChild(custMsgEl);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+        } catch (err) {
+            if (typingIndicator) typingIndicator.classList.add('hidden');
+            const errMsgEl = document.createElement('div');
+            errMsgEl.className = 'system-message';
+            errMsgEl.innerHTML = `<span style="color: var(--error);">Error: ${escapeHtml(err.message)}</span>`;
+            chatBody.appendChild(errMsgEl);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        } finally {
+            inputEl.disabled = false;
+            inputEl.focus();
+        }
+    }
+
+    async function handleEvaluateAiSession() {
+        const totalChats = aiScenariosList.length;
+        for (let i = 1; i <= totalChats; i++) {
+            if (!aiDisposedChats[i]) {
+                showAIToast('يرجى تصنيف وإغلاق كافة التذاكر الثلاثة قبل تقديم التقييم!', 'error');
+                return;
+            }
+        }
+
+        const submitBtn = document.getElementById('btn-submit-ai-session');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Evaluating...';
+        }
+
+        showAIToast('جاري تحليل المحادثات الحية بواسطة خبير التقييم الذكي...', 'info');
+
+        try {
+            let evaluationPrompt = `أنت خبير تقييم موظفي خدمة عملاء زين كاش في العراق.
+يرجى تقييم أداء الموظف في 3 محادثات حية جرت مع زبائن ذكاء اصطناعي.
+
+المعايير المحددة للتقييم:
+`;
+
+            for (let i = 1; i <= totalChats; i++) {
+                const sc = aiScenariosList[i - 1];
+                const selectedDisp = document.getElementById(`ai-disp-select-${i}`)?.value || '';
+                const selectedSub = document.getElementById(`ai-sub-disp-select-${i}`)?.value || '';
+
+                const transcript = aiChatHistories[i]
+                    .filter(h => !h.parts[0].text.startsWith('System:'))
+                    .map(h => `${h.role === 'user' ? 'الموظف' : 'الزبون'}: ${h.parts[0].text}`)
+                    .join('\n');
+
+                evaluationPrompt += `
+الزبون ${i}: ${sc.customerName}
+التصنيف المتوقع: الرئيسي="${sc.correctDisp}"، الفرعي="${sc.correctSubDisp}"
+التصنيف الذي اختاره الموظف: الرئيسي="${selectedDisp}"، الفرعي="${selectedSub}"
+مجرى المحادثة الحية:
+${transcript}
+───────────────────
+`;
+            }
+
+            evaluationPrompt += `
+يرجى احتساب درجة التقييم الكلية (من 0 إلى 100) بناءً على:
+1. جودة الحوار والرد المهذب واللهجة العراقية ومساعدة الزبون.
+2. دقة تصنيف التذاكر.
+
+يجب أن تكون المخرجات عبارة عن نص JSON صالح ومطابق تماماً للهيكل التالي بدون أي نصوص خارج القوسين:
+{
+  "overallScore": 85,
+  "grade": "جيد جداً",
+  "notes": "التقرير التفصيلي باللغة العربية يوضح نقاط القوة والضعف لكل زبون وتصحيح الأخطاء بالتفصيل."
+}
+`;
+
+            const requestBody = {
+                contents: [
+                    { role: 'user', parts: [{ text: evaluationPrompt }] }
+                ],
+                generationConfig: {
+                    temperature: 0.3,
+                    maxOutputTokens: 1500,
+                    responseMimeType: "application/json"
+                }
+            };
+
+            const response = await fetchWithRotation(requestBody);
+            const data = await response.json();
+            const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!replyText) throw new Error("No response from evaluation agent");
+
+            let evaluation;
+            try {
+                evaluation = JSON.parse(replyText.trim());
+            } catch(e) {
+                const jsonMatch = replyText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    evaluation = JSON.parse(jsonMatch[0]);
+                } else {
+                    throw new Error("فشل في تحليل نتائج التقييم");
+                }
+            }
+
+            const scoreEl = document.getElementById('ai-res-score');
+            const gradeEl = document.getElementById('ai-res-grade');
+            const notesEl = document.getElementById('ai-res-notes-text');
+            const overlay = document.getElementById('ai-results-overlay');
+
+            if (scoreEl) scoreEl.textContent = `${evaluation.overallScore}%`;
+            if (gradeEl) {
+                gradeEl.textContent = evaluation.grade;
+                if (evaluation.overallScore >= 75) gradeEl.className = 'res-val text-green';
+                else if (evaluation.overallScore >= 60) gradeEl.className = 'res-val text-gradient';
+                else gradeEl.className = 'res-val text-red';
+            }
+            if (notesEl) {
+                notesEl.innerHTML = evaluation.notes.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            }
+
+            if (overlay) overlay.classList.remove('hidden');
+
+            const userStr = localStorage.getItem('amyo_user');
+            const currentUser = userStr ? JSON.parse(userStr) : null;
+            if (currentUser) {
+                const resultData = {
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    score: evaluation.overallScore,
+                    errorsCount: 0,
+                    grade: evaluation.grade
+                };
+                try {
+                    await apiCall('/api/ai-results', 'POST', resultData);
+                    
+                    if (window.isAiTestAssigned) {
+                        let assignments = await apiCall('/api/ai-assignments', 'GET');
+                        assignments = assignments.filter(id => id !== currentUser.id && id !== 'all');
+                        await apiCall('/api/ai-assignments', 'POST', assignments);
+                        window.isAiTestAssigned = false;
+                        if (window.checkTestAssignment) {
+                            await window.checkTestAssignment();
+                        }
+                    }
+                } catch(e) {
+                    console.error("Failed to save AI results to server", e);
+                }
+            }
+
+        } catch (err) {
+            showAIToast('Evaluation failed: ' + err.message, 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Submit AI Session & Get Evaluation';
+            }
+        }
+    }
+
+    function showAIToast(message, type = 'success') {
+        if (window.showToast) {
+            window.showToast(message, type);
+        } else {
+            console.log(`[AI Toast] ${type}: ${message}`);
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         const keyInput = document.getElementById('ai-settings-api-key');
