@@ -180,6 +180,36 @@ async function fetchWithRotation(requestBody) {
 }
 
 // =========================================================
+// 📋 Default AI Scenarios (Fallback)
+// =========================================================
+const defaultAiScenarios = [
+    {
+        id: 1,
+        customerName: "أبو حيدر",
+        customerTone: "Polite & Inquiring (مستفسر ومهذب)",
+        initialMessage: "سمعت بجديد تداول الأسهم بالتطبيق، شلون أفتح حساب وأشتري سهم أبل؟ وهل عليها عمولات؟",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Other issues"
+    },
+    {
+        id: 2,
+        customerName: "حسن",
+        customerTone: "Angry & Demanding (غاضب ومستعجل)",
+        initialMessage: "أريد أحول 50 ألف دينار لأخوي بس رصيدي بس 30 ألف والتطبيق ما يقبل السحب أو التحويل ويطلعلي خطأ!",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Trx Issue"
+    },
+    {
+        id: 3,
+        customerName: "فاطمة",
+        customerTone: "Polite & Inquiring (مهذب ومستفسر)",
+        initialMessage: "أرسلت كاش من 3 أيام لزوجي بالويسترن يونيون وما وصله لحد الآن، شنو المشكلة؟ هاي الـ MTCN: 12345678",
+        correctDisp: "WU Issue",
+        correctSubDisp: "Hold Transaction Issue"
+    }
+];
+
+// =========================================================
 // 🤖 GeminiTrainerAgent — Single Sandbox AI Agent
 // =========================================================
 class GeminiTrainerAgent {
@@ -1833,12 +1863,12 @@ ${transcript}
                     grade: evaluation.grade
                 };
                 try {
-                    await apiCall('/api/ai-results', 'POST', resultData);
+                    await window.apiCall('/api/ai-results', 'POST', resultData);
                     
                     if (window.isAiTestAssigned) {
-                        let assignments = await apiCall('/api/ai-assignments', 'GET');
+                        let assignments = await window.apiCall('/api/ai-assignments', 'GET');
                         assignments = assignments.filter(id => id !== currentUser.id && id !== 'all');
-                        await apiCall('/api/ai-assignments', 'POST', assignments);
+                        await window.apiCall('/api/ai-assignments', 'POST', assignments);
                         window.isAiTestAssigned = false;
                         if (window.checkTestAssignment) {
                             await window.checkTestAssignment();
