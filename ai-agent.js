@@ -405,6 +405,7 @@ class MultiChatAgent {
                     id: idx + 1,
                     customerName: sc.customerName,
                     systemPrompt: systemPrompt,
+                    originalScenario: sc,
                     history: [
                         { role: 'user', parts: [{ text: `System: Customer initiates chat ${idx + 1}.` }] },
                         { role: 'model', parts: [{ text: firstTurn.customerText }] }
@@ -417,7 +418,42 @@ class MultiChatAgent {
                 {
                     id: 1,
                     customerName: "Rahif Zaman",
-                    systemPrompt: SYSTEM_PROMPT_RAHIF,
+                    systemPrompt: "System Prompt",
+                    originalScenario: {
+                        customerName: "Rahif Zaman",
+                        channel: "WhatsApp Chat",
+                        correctDisp: "MC/Visa Issue",
+                        correctSubDisp: "Top-up or Transfer Issue",
+                        turns: [
+                            {
+                                step: 1,
+                                customerText: "فلوسي مال البطاقة لحد الآن ما رجعت",
+                                options: [
+                                    { text: "أهلاً بك عيني، ممكن تزودني برقم البطاقة والاسم الكامل حتى أشوفها بالسيستم؟", isCorrect: true, feedback: "ممتاز! طلب المعلومات بلطف واحترافية." },
+                                    { text: "ليش مرجعت؟ منو كلك ترجع؟", isCorrect: false, feedback: "أسلوب غير مهذب مع الزبون." },
+                                    { text: "انتظر شوية هسة ترجع تلقائي", isCorrect: false, feedback: "رد سلبي لا يساعد المشترك." }
+                                ]
+                            },
+                            {
+                                step: 2,
+                                customerText: "هاي رقم بطاقتي 4205-XXXX والاسم رهيف زمان",
+                                options: [
+                                    { text: "تمام عيني رهيف، جاي أفحص حركة الحساب بالسيستم.. ثواني من وقتك بلا زحمة.", isCorrect: true, feedback: "ممتاز! طمأنة الزبون باسمه الشخصي." },
+                                    { text: "ليش كاتبها هيج؟ اكتبها بدون فواصل عيني", isCorrect: false, feedback: "توجيه غير لبق." },
+                                    { text: "ما يشتغل هذا الرقم جيب غيره", isCorrect: false, feedback: "رد محبط ومستعجل." }
+                                ]
+                            },
+                            {
+                                step: 3,
+                                customerText: "أوكي عيني، انتظر وأتمنى تنحل اليوم لأن محتاجها",
+                                options: [
+                                    { text: "تمت معالجة الحوالة المعلقة ورجعت الفلوس لمحفظتك عيني. هل تحتاج مساعدة أخرى؟", isCorrect: true, feedback: "ممتاز! تم حل المشكلة وإغلاق التذكرة بلطف." },
+                                    { text: "سديت التذكرة باي", isCorrect: false, feedback: "إنهاء جاف وغير مقبول." },
+                                    { text: "روح للوكيل هو يحلها الك", isCorrect: false, feedback: "تهرب من المسؤولية." }
+                                ]
+                            }
+                        ]
+                    },
                     history: [
                         { role: 'user', parts: [{ text: "System: Customer initiates WhatsApp chat." }] },
                         { role: 'model', parts: [{ text: "فلوسي مال البطاقة لحد الآن ما رجعت" }] }
@@ -426,18 +462,88 @@ class MultiChatAgent {
                 {
                     id: 2,
                     customerName: "علي",
-                    systemPrompt: SYSTEM_PROMPT_ALI,
+                    systemPrompt: "System Prompt",
+                    originalScenario: {
+                        customerName: "علي",
+                        channel: "WhatsApp Chat",
+                        correctDisp: "MC/Visa Issue",
+                        correctSubDisp: "Activation Issue",
+                        turns: [
+                            {
+                                step: 1,
+                                customerText: "هسه اشتريت بطاقه بلي اول شي طلع فشل نوب طلع تم",
+                                options: [
+                                    { text: "يا هلا بيك عيني علي، ولا يهمك. ممكن تزودني برقم المحفظة ورقم بطاقة بلي؟", isCorrect: true, feedback: "ممتاز! تحديد المشكلة وطلب البيانات المطلوبة." },
+                                    { text: "روح فعلها من التطبيق عيني", isCorrect: false, feedback: "رد جاف لا يحتوي على شرح أو تفاعل." },
+                                    { text: "شسويلك يعني؟ المشكلة من المتجر", isCorrect: false, feedback: "أسلوب عدواني وغير لائق." }
+                                ]
+                            },
+                            {
+                                step: 2,
+                                customerText: "محفظتي 07700000000 والبطاقة رقمها 987654",
+                                options: [
+                                    { text: "شكراً الك عيني. جاي أتأكد من حالة التفعيل بالسيستم.. لحظات وياك.", isCorrect: true, feedback: "ممتاز! طمأنة الزبون وبدء المعالجة." },
+                                    { text: "انتظر ساعة وجرب", isCorrect: false, feedback: "تصريف للزبون دون فحص." },
+                                    { text: "البطاقة مفعلوها زين كاش روح اشتري غيرها", isCorrect: false, feedback: "رد خاطئ ومحبط للزبون." }
+                                ]
+                            },
+                            {
+                                step: 3,
+                                customerText: "تمام عيني أنتظرك",
+                                options: [
+                                    { text: "تم تفعيل البطاقة بالكامل عيني وصارت جاهزة للاستخدام. هل هناك شي آخر أقدر أساعدك بي؟", isCorrect: true, feedback: "ممتاز! إنجاز الطلب والتأكد من رضا المشترك." },
+                                    { text: "خلاص تفعلت يلا مع السلامة", isCorrect: false, feedback: "إنهاء غير مهذب." },
+                                    { text: "روح جرب هسة وإذا ما اشتغلت اتصل بعدين", isCorrect: false, feedback: "عدم تأكيد الحل." }
+                                ]
+                            }
+                        ]
+                    },
                     history: [
-                        { role: 'user', parts: [{ text: "System: Customer initiates Instagram DM." }] },
+                        { role: 'user', parts: [{ text: "System: Customer initiates WhatsApp chat." }] },
                         { role: 'model', parts: [{ text: "هسه اشتريت بطاقه بلي اول شي طلع فشل نوب طلع تم" }] }
                     ]
                 },
                 {
                     id: 3,
                     customerName: "Khatab Omar",
-                    systemPrompt: SYSTEM_PROMPT_KHATAB,
+                    systemPrompt: "System Prompt",
+                    originalScenario: {
+                        customerName: "Khatab Omar",
+                        channel: "WhatsApp Chat",
+                        correctDisp: "Wallet/App Issue",
+                        correctSubDisp: "App Issue",
+                        turns: [
+                            {
+                                step: 1,
+                                customerText: "شنو سبب تطبيق زين كاش ما يفتح عندي؟",
+                                options: [
+                                    { text: "أهلاً بك عيني خطاب، يرجى التأكد من تحديث التطبيق لأحدث نسخة وتوفر الاتصال بالإنترنت.", isCorrect: true, feedback: "ممتاز! تقديم الحلول الأساسية المباشرة." },
+                                    { text: "التطبيق شغال الخلل بموبايلك", isCorrect: false, feedback: "إلقاء اللوم على الزبون بأسلوب غير لبق." },
+                                    { text: "امسح التطبيق ولتنزله بعد", isCorrect: false, feedback: "رد غير مقبول نهائياً." }
+                                ]
+                            },
+                            {
+                                step: 2,
+                                customerText: "حدثته وما زال يطلعلي خطأ بالاتصال بالشبكة",
+                                options: [
+                                    { text: "صار عيني، يرجى تجربة إطفاء الواي فاي وتشغيل بيانات الهاتف (3G/4G) والمحاولة مرة أخرى.", isCorrect: true, feedback: "ممتاز! حل بديل وفعال لمشاكل الشبكة المعتادة." },
+                                    { text: "انتظر لحد ما يتصلح الإنترنت", isCorrect: false, feedback: "رد سلبي لا يقدم حلولاً." },
+                                    { text: "اتصل بشركة الإنترنت مالتك", isCorrect: false, feedback: "تهرب من تقديم الدعم الفني." }
+                                ]
+                            },
+                            {
+                                step: 3,
+                                customerText: "فتحت على البيانات واشتغل فوراً! شكراً جزيلاً",
+                                options: [
+                                    { text: "الحمد لله عيني خطاب، بالخدمة دائماً. هل عندك أي استفسار آخر يخص خدمات زين كاش؟", isCorrect: true, feedback: "ممتاز! إغلاق التذكرة بترحيب ولطف." },
+                                    { text: "عفواً، مع السلامة", isCorrect: false, feedback: "رد مختصر جداً." },
+                                    { text: "سديت الموضوع", isCorrect: false, feedback: "غير مهذب." }
+                                ]
+                            }
+                        ]
+                    },
                     history: [
-                        { role: 'user', parts: [{ text: "System: Customer comments on Instagram post." }] },
+                        { role: 'user', parts: [{ text: "System: Customer initiates WhatsApp chat." }] },
                         { role: 'model', parts: [{ text: "شنو سبب" }] }
                     ]
                 }

@@ -654,16 +654,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let channelName = 'WhatsApp Chat';
         let channelBadge = `phone${i}`;
 
-        if (chat.customerName.includes('علي') || chat.id === 2) {
-            iconHtml = '<i class="fa-brands fa-instagram instagram-icon" style="color: #e1306c;"></i>';
-            channelName = 'Instagram DM';
-            channelBadge = 'instagram';
-        } else if (chat.id === 3) {
-            iconHtml = '<i class="fa-brands fa-instagram instagram-icon" style="color: #e1306c;"></i>';
-            channelName = 'Instagram Post';
-            channelBadge = 'instagrampost';
-        }
-
         const initialMsg = chat.history && chat.history[1] ? chat.history[1].parts[0].text : 'مرحباً';
 
         return `
@@ -699,25 +689,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
                     </div>
                 </div>
-                <div class="chat-footer-mock live-footer">
-                    <i class="fa-solid fa-paperclip"></i>
-                    <textarea class="live-chat-input" id="chat-input-${i}" placeholder="Type your reply here... (Enter to Send)"></textarea>
-                    <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-${i}" style="cursor:pointer;" title="Insert Emoji"></i>
-                    <button class="btn-send-mock live-send-btn" id="chat-send-${i}">Send</button>
-                </div>
-
-                <!-- Emoji Picker Panel -->
-                <div class="emoji-picker hidden" id="emoji-picker-${i}">
-                    <span class="emoji-item">😊</span>
-                    <span class="emoji-item">😂</span>
-                    <span class="emoji-item">👍</span>
-                    <span class="emoji-item">🌹</span>
-                    <span class="emoji-item">🙏</span>
-                    <span class="emoji-item">❤️</span>
-                    <span class="emoji-item">👋</span>
-                    <span class="emoji-item">✨</span>
-                    <span class="emoji-item">🔥</span>
-                    <span class="emoji-item">🙌</span>
+                <div class="chat-footer-mock live-footer" style="padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; border-top: 1px solid #e2e8f0; height: auto; min-height: 120px; align-items: stretch;">
+                    <div id="chat-options-container-${i}" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                        <!-- Dynamic options buttons -->
+                    </div>
                 </div>
 
                 <!-- Customer Profile Panel -->
@@ -828,25 +803,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const numChats = multiChatAgent.chats.length;
 
-        for (let i = 1; i <= numChats; i++) {
-            const inputEl = document.getElementById(`chat-input-${i}`);
-            const sendBtn = document.getElementById(`chat-send-${i}`);
+        // Clear MCQ state maps
+        simulatorTurnMap = {};
+        simulatorCorrectCountMap = {};
+        simulatorSelectedAnswers = {};
 
-            if (inputEl) {
-                inputEl.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSimulatorSendMessage(i);
-                    }
-                });
-            }
-
-            if (sendBtn) {
-                sendBtn.addEventListener('click', () => {
-                    handleSimulatorSendMessage(i);
-                });
-            }
-        }
+        multiChatAgent.chats.forEach(chat => {
+            const i = chat.id;
+            disposedChats[i] = false;
+            simulatorTurnMap[i] = 0;
+            simulatorCorrectCountMap[i] = 0;
+            simulatorSelectedAnswers[i] = [];
+            
+            // Render Turn 1 options immediately!
+            renderSimulatorTurnOptions(i, 0);
+        });
 
         const DISPOSITION_DATA = {
             "WU Inquiry": ["WU Inquiry"],
@@ -1117,10 +1088,59 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Evaluating...';
         }
 
-        showToast('Connecting to evaluator coach...', 'info');
-
         try {
-            const evaluation = await multiChatAgent.evaluateSession();
+            let totalPoints = 0;
+            let maxPoints = 0;
+            let detailsHtml = '<div style="direction: rtl; text-align: right; font-family: var(--font-ar); line-height: 1.6;">';
+            let errorsCount = 0;
+
+            multiChatAgent.chats.forEach(chat => {
+                const sc = chat.originalScenario;
+                const totalTurns = sc.turns ? sc.turns.length : 3;
+                const correctCount = simulatorCorrectCountMap[chat.id] || 0;
+                
+                // MCQ Score (60 points max)
+                const mcqPct = totalTurns > 0 ? (correctCount / totalTurns) : 1;
+                let chatScore = mcqPct * 60;
+
+                // Classification Score (40 points max)
+                const selectedDisp = document.getElementById(`disp-select-${chat.id}`)?.value || '';
+                const selectedSub = document.getElementById(`sub-disp-select-${chat.id}`)?.value || '';
+
+                const expectedDisp = sc.correctDisp || '';
+                const expectedSub = sc.correctSubDisp || '';
+
+                let classScore = 0;
+                if (selectedDisp === expectedDisp && expectedDisp) classScore += 20;
+                if (selectedSub === expectedSub && expectedSub) classScore += 20;
+
+                const finalChatScore = Math.round(chatScore + classScore);
+                totalPoints += finalChatScore;
+                maxPoints += 100;
+
+                if (finalChatScore < 70) errorsCount++;
+
+                detailsHtml += `
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 12px;">
+                        <h4 style="margin: 0 0 8px 0; color: var(--primary); font-size: 0.95rem; font-weight: 800;">الزبون: ${escapeHtml(chat.customerName)}</h4>
+                        <ul style="margin: 0; padding-right: 20px; font-size: 0.8rem; color: #475569; display: flex; flex-direction: column; gap: 4px;">
+                            <li>الإجابات الصحيحة للأسئلة: <strong style="color: ${correctCount === totalTurns ? '#16a34a' : '#ea580c'};">${correctCount} من ${totalTurns}</strong></li>
+                            <li>التصنيف الرئيسي (Main): ${selectedDisp === expectedDisp ? '<span style="color:#16a34a; font-weight:bold;">صحيح ✓</span>' : `<span style="color:#dc2626; font-weight:bold;">خاطئ ✗ (المتوقع: ${expectedDisp || 'غير محدد'})</span>`}</li>
+                            <li>التصنيف الفرعي (Sub): ${selectedSub === expectedSub ? '<span style="color:#16a34a; font-weight:bold;">صحيح ✓</span>' : `<span style="color:#dc2626; font-weight:bold;">خاطئ ✗ (المتوقع: ${expectedSub || 'غير محدد'})</span>`}</li>
+                            <li style="border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 6px; font-weight: 700;">درجة هذه المحادثة: <span style="font-size: 0.9rem; color: ${finalChatScore >= 70 ? '#16a34a' : '#dc2626'}">${finalChatScore}%</span></li>
+                        </ul>
+                    </div>
+                `;
+            });
+
+            const overallScore = Math.round((totalPoints / maxPoints) * 100);
+            let grade = 'مقبول';
+            if (overallScore >= 90) grade = 'امتياز';
+            else if (overallScore >= 75) grade = 'جيد جداً';
+            else if (overallScore >= 60) grade = 'جيد';
+            else grade = 'ضعيف / يحتاج تدريب';
+
+            detailsHtml += '</div>';
 
             const resScore = document.getElementById('res-score');
             const resErrors = document.getElementById('res-errors');
@@ -1128,35 +1148,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const resNotes = document.getElementById('res-notes-text');
             const resultsOverlay = document.getElementById('results-overlay');
 
-            if (resScore) resScore.textContent = `${evaluation.overallScore}%`;
-            if (resErrors) {
-                let errors = 0;
-                if (evaluation.score1 < 7) errors++;
-                if (evaluation.score2 < 7) errors++;
-                if (evaluation.score3 < 7) errors++;
-                resErrors.textContent = errors;
-            }
+            if (resScore) resScore.textContent = `${overallScore}%`;
+            if (resErrors) resErrors.textContent = errorsCount;
             if (resGrade) {
-                resGrade.textContent = evaluation.grade;
-                if (evaluation.overallScore >= 80) {
-                    resGrade.className = 'res-val text-gradient';
-                } else if (evaluation.overallScore >= 60) {
+                resGrade.textContent = grade;
+                if (overallScore >= 75) {
                     resGrade.className = 'res-val text-green';
+                } else if (overallScore >= 60) {
+                    resGrade.className = 'res-val text-gradient';
                 } else {
                     resGrade.className = 'res-val text-red';
                 }
             }
             if (resNotes) {
-                resNotes.innerHTML = evaluation.notes.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                resNotes.innerHTML = detailsHtml;
             }
 
             if (currentUser) {
                 const resultData = {
                     userId: currentUser.id,
                     userName: currentUser.name,
-                    score: evaluation.overallScore,
-                    errorsCount: 0,
-                    grade: evaluation.grade
+                    score: overallScore,
+                    errorsCount: errorsCount,
+                    grade: grade
                 };
                 try {
                     await apiCall('/api/results', 'POST', resultData);
@@ -3152,6 +3166,134 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         container.innerHTML = html;
+    }
+
+    // Global maps to keep track of simulator state
+    let simulatorTurnMap = {};
+    let simulatorCorrectCountMap = {};
+    let simulatorSelectedAnswers = {};
+
+    function renderSimulatorTurnOptions(chatId, turnIdx) {
+        const chat = multiChatAgent.chats.find(c => c.id === chatId);
+        if (!chat) return;
+
+        const sc = chat.originalScenario;
+        const container = document.getElementById(`chat-options-container-${chatId}`);
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (!sc || !sc.turns || !sc.turns[turnIdx]) {
+            container.innerHTML = `
+                <div style="text-align: center; color: #16a34a; font-size: 0.8rem; font-weight: 700; padding: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-family: var(--font-ar); direction: rtl;">
+                    <i class="fa-solid fa-circle-check"></i> اكتملت المحادثة! يرجى إغلاقها وتصنيف التذكرة من الأعلى (X).
+                </div>
+            `;
+            const dispPanel = document.getElementById(`disposition-panel-${chatId}`);
+            const profPanel = document.getElementById(`profile-panel-${chatId}`);
+            if (dispPanel) {
+                dispPanel.classList.remove('hidden');
+            }
+            if (profPanel) {
+                profPanel.classList.add('hidden');
+            }
+            return;
+        }
+
+        const turn = sc.turns[turnIdx];
+        
+        turn.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'chat-option-btn';
+            btn.innerHTML = `<span>${escapeHtml(opt.text)}</span>`;
+            
+            btn.addEventListener('click', () => {
+                handleSimulatorOptionClick(chatId, turnIdx, idx);
+            });
+            
+            container.appendChild(btn);
+        });
+    }
+
+    async function handleSimulatorOptionClick(chatId, turnIdx, optionIdx) {
+        const chat = multiChatAgent.chats.find(c => c.id === chatId);
+        if (!chat) return;
+
+        const sc = chat.originalScenario;
+        const turn = sc.turns[turnIdx];
+        const selectedOpt = turn.options[optionIdx];
+
+        const chatBody = document.getElementById(`chat-body-${chatId}`);
+        if (chatBody) {
+            const empMsgEl = document.createElement('div');
+            empMsgEl.className = 'message message-employee';
+            empMsgEl.innerHTML = `<p>${escapeHtml(selectedOpt.text)}</p><span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+            chatBody.appendChild(empMsgEl);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        if (!simulatorSelectedAnswers[chatId]) simulatorSelectedAnswers[chatId] = [];
+        simulatorSelectedAnswers[chatId][turnIdx] = optionIdx;
+
+        if (selectedOpt.isCorrect) {
+            simulatorCorrectCountMap[chatId] = (simulatorCorrectCountMap[chatId] || 0) + 1;
+        }
+
+        if (chatBody) {
+            const fbEl = document.createElement('div');
+            fbEl.className = 'system-message';
+            fbEl.style.padding = '8px 12px';
+            fbEl.style.borderRadius = '8px';
+            fbEl.style.fontSize = '0.78rem';
+            fbEl.style.marginTop = '6px';
+            fbEl.style.marginBottom = '6px';
+            fbEl.style.fontFamily = 'var(--font-ar)';
+            fbEl.style.direction = 'rtl';
+            fbEl.style.textAlign = 'right';
+            
+            if (selectedOpt.isCorrect) {
+                fbEl.style.background = '#d1fae5';
+                fbEl.style.color = '#065f46';
+                fbEl.style.border = '1px solid #a7f3d0';
+                fbEl.innerHTML = `<strong>💡 تقييم المدرب:</strong> رد ممتاز! ${escapeHtml(selectedOpt.feedback)}`;
+            } else {
+                fbEl.style.background = '#fee2e2';
+                fbEl.style.color = '#991b1b';
+                fbEl.style.border = '1px solid #fca5a5';
+                fbEl.innerHTML = `<strong>💡 تقييم المدرب:</strong> رد غير دقيق. ${escapeHtml(selectedOpt.feedback)}`;
+            }
+            chatBody.appendChild(fbEl);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        const container = document.getElementById(`chat-options-container-${chatId}`);
+        if (container) container.innerHTML = '';
+
+        const nextTurnIdx = turnIdx + 1;
+        simulatorTurnMap[chatId] = nextTurnIdx;
+
+        if (sc.turns && sc.turns[nextTurnIdx]) {
+            const typingIndicator = document.getElementById(`typing-indicator-${chatId}`);
+            if (typingIndicator) typingIndicator.classList.remove('hidden');
+            if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+
+            setTimeout(() => {
+                if (typingIndicator) typingIndicator.classList.add('hidden');
+                
+                const nextTurn = sc.turns[nextTurnIdx];
+                if (chatBody) {
+                    const custMsgEl = document.createElement('div');
+                    custMsgEl.className = 'message message-customer';
+                    custMsgEl.innerHTML = `<p>${escapeHtml(nextTurn.customerText)}</p><span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+                    chatBody.appendChild(custMsgEl);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }
+
+                renderSimulatorTurnOptions(chatId, nextTurnIdx);
+            }, 1200);
+        } else {
+            renderSimulatorTurnOptions(chatId, nextTurnIdx);
+        }
     }
 
     // Initial session check

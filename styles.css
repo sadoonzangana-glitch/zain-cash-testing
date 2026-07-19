@@ -3681,9 +3681,38 @@ body {
 
 /* Split Pane Form Layout */
 .split-preview-container {
-    display: flex;
+    display: flex !important;
+    flex-direction: row !important;
     gap: 20px;
     align-items: stretch;
+}
+
+/* MCQ Option Buttons Style */
+.chat-option-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--font-ar);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 4px;
+    direction: rtl;
+}
+
+.chat-option-btn:hover {
+    background: #fff8e8 !important;
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
+    transform: translateY(-1px);
 }
 
 .split-left-form {
