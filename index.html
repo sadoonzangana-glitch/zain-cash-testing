@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Excellence Guide - Zain Cash Customer Care (Amyo System)</title>
+    <!-- Google Fonts: Cairo for Arabic, Inter for UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for professional icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Brand Header Bar (Amyo Style) -->
+        <header class="brand-header">
+            <div class="brand-logo-container">
+                <!-- Zain Brand Colorful Strip -->
+                <div class="zain-color-bar"></div>
+                <div class="logo-flex">
+                    <img src="logo.png" alt="Zain Cash Logo" class="brand-logo">
+                    <span class="brand-subtext">Amyo Customer Care System</span>
+                </div>
+            </div>
+
+            <!-- Amyo Header Tabs -->
+            <div class="amy-nav-tabs">
+                <button class="amy-nav-btn active" data-amy-tab="tab-slides">
+                    <i class="fa-solid fa-graduation-cap"></i> Home (Training)
+                </button>
+                <button class="amy-nav-btn" data-amy-tab="tab-simulator" id="nav-btn-simulator">
+                    <i class="fa-solid fa-comments"></i> Chat Simulator
+                </button>
+                
+                <button class="amy-nav-btn hidden" id="open-admin-btn" data-amy-tab="tab-admin">
+                    <i class="fa-solid fa-gears"></i> Admin Panel
+                </button>
+            </div>
+            
+            <div class="header-right-controls">
+                <!-- User Profile Display -->
+                <div class="user-profile-display hidden" id="header-user-profile">
+                    <div class="user-status-dot"></div>
+                    <span id="header-user-name">Employee Name</span>
+                    <button class="logout-btn" id="logout-btn" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Active Assignment Banner -->
+        <div class="active-test-banner hidden" id="active-test-banner">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span><strong>Active Test Assigned:</strong> You have been assigned an evaluation test by Admin. Complete the simulator to record your score.</span>
+        </div>
+
+        <!-- Main Dashboard Content Area -->
+        <div class="amyo-main-wrapper">
+            
+            <!-- TAB 1: Slides Training -->
+            <div class="amy-tab-pane active" id="tab-slides">
+                <!-- Main Slider Wrapper -->
+                <main class="presentation-wrapper">
+                    <div id="dynamic-slides-container" style="width: 100%; height: 100%;"></div>
+                </main>
+                
+                <!-- Navigation Footer Controls -->
+                <footer class="footer-navigation">
+                    <button class="nav-btn prev-btn" id="prev-slide-btn" disabled>
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Previous</span>
+                    </button>
+
+                    <!-- Slide Progress dots -->
+                    <div class="progress-indicator">
+                        <div class="progress-bar-outer">
+                            <div class="progress-bar-inner" id="progress-bar-fill"></div>
+                        </div>
+                        <div class="slide-counter">
+                            Slide <span id="current-slide-num">1</span> of <span id="total-slides-num">6</span>
+                        </div>
+                    </div>
+
+                    <button class="nav-btn next-btn" id="next-slide-btn">
+                        <span>Next</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </footer>
+            </div>
+            
+            <!-- TAB 2: Simulator Tab Panel -->
+            <div class="amy-tab-pane" id="tab-simulator">
+                <div class="simulator-header-bar">
+                    <div class="sim-header-title">
+                        <h2>Live Multitask Chat Simulator</h2>
+                        <p>Simulate handling 3 customer tickets concurrently in real-time. Speak in professional Iraqi Arabic.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-submit-session">
+                        <i class="fa-solid fa-cloud-upload-alt"></i> Submit Session & Get Evaluation
+                    </button>
+                </div>
+
+                <div class="multitask-chat-grid">
+                    <!-- Column 1: Rahif Zaman -->
+                    <div class="chat-column">
+                        <div class="column-meta-info">
+                            <span class="meta-channel">phone1</span>
+                            <span class="meta-detail">WhatsApp Chat</span>
+                        </div>
+                        <div class="floating-chat-window static-window">
+                            <div class="chat-header">
+                                <div class="chat-header-left">
+                                    <i class="fa-brands fa-whatsapp whatsapp-icon" style="color: #25d366;"></i>
+                                    <span class="chat-customer-name">Rahif Zaman</span>
+                                    <span class="status-dot online"></span>
+                                </div>
+                                <div class="chat-header-right">
+                                    <i class="fa-solid fa-arrow-right-left" id="chat-back-1" style="cursor:pointer;" title="Back to Chat"></i>
+                                    <i class="fa-solid fa-user" id="chat-profile-1" style="cursor:pointer;" title="Customer Profile"></i>
+                                    <i class="fa-solid fa-xmark" id="chat-close-1" style="cursor:pointer;" title="Close & Dispose"></i>
+                                </div>
+                            </div>
+                            <div class="chat-body" id="chat-body-1">
+                                <!-- Messages for Rahif loaded here -->
+                            </div>
+                            <div class="typing-indicator-wrapper hidden" id="typing-indicator-1">
+                                <div class="typing-bubble">
+                                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                                </div>
+                            </div>
+                            <div class="chat-footer-mock live-footer">
+                                <i class="fa-solid fa-paperclip"></i>
+                                <textarea class="live-chat-input" id="chat-input-1" placeholder="Type your reply here... (Enter to Send)"></textarea>
+                                <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-1" style="cursor:pointer;" title="Insert Emoji"></i>
+                                <button class="btn-send-mock live-send-btn" id="chat-send-1">Send</button>
+                            </div>
+
+                            <!-- Emoji Picker Panel -->
+                            <div class="emoji-picker hidden" id="emoji-picker-1">
+                                <span class="emoji-item">😊</span>
+                                <span class="emoji-item">😂</span>
+                                <span class="emoji-item">👍</span>
+                                <span class="emoji-item">🌹</span>
+                                <span class="emoji-item">🙏</span>
+                                <span class="emoji-item">❤️</span>
+                                <span class="emoji-item">👋</span>
+                                <span class="emoji-item">✨</span>
+                                <span class="emoji-item">🔥</span>
+                                <span class="emoji-item">🙌</span>
+                            </div>
+
+                            <!-- Customer Profile Panel -->
+                            <div class="profile-panel hidden" id="profile-panel-1">
+                                <div class="profile-form">
+                                    <div class="profile-field">
+                                        <label>Name</label>
+                                        <div class="profile-value">
+                                            <i class="fa-brands fa-whatsapp" style="color: #25d366; margin-right: 6px; font-size: 1.1rem;"></i>
+                                            <span>Rahif Zaman</span>
+                                        </div>
+                                    </div>
+                                    <div class="profile-field">
+                                        <label>Email</label>
+                                        <div class="profile-value">-</div>
+                                    </div>
+                                    <div class="profile-field">
+                                        <label>Phone</label>
+                                        <div class="profile-value">9647727900402</div>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button type="button" class="btn-create-new"><i class="fa-solid fa-plus"></i> Create New</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Disposition Panel -->
+                            <div class="disposition-panel hidden" id="disposition-panel-1">
+                                <div class="disposition-form">
+                                    <div class="form-group">
+                                        <label>Disposition</label>
+                                        <select class="disposition-select" id="disp-select-1">
+                                            <option value="">Select a Disposition</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Sub Disposition</label>
+                                        <select class="sub-disposition-select" id="sub-disp-select-1">
+                                            <option value="">Select a Sub Disposition</option>
+                                        </select>
+                                    </div>
+                                    <div class="quick-dispositions-grid">
+                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="MC/Visa Issue" data-sub="Top-up or Transfer Issue">Refund Delay</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="MC/Visa Issue" data-sub="Reset PIN request">Reset PIN request</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="MC/Visa Inquiry" data-sub="MC/Visa Inquiry">Card Inquiry</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="Other" data-sub="Junk call">Junk call</button>
+                                    </div>
+                                    <div class="ticket-status-row">
+                                        <span class="section-title">Ticket</span>
+                                        <div class="ticket-pills">
+                                            <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
+                                        </div>
+                                        <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
+                                    </div>
+                                    <button type="button" class="btn-save-dispose" id="btn-save-dispose-1" disabled>Save and Dispose</button>
+                                </div>
+                            </div>
+
+                            <!-- Disposed Overlay -->
+                            <div class="disposed-overlay hidden" id="disposed-overlay-1">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <h3>Ticket Disposed & Closed</h3>
+                                <p>This conversation has been classified and resolved.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Ali -->
+                    <div class="chat-column">
+                        <div class="column-meta-info">
+                            <span class="meta-channel">instagram</span>
+                            <span class="meta-detail">Direct Message</span>
+                        </div>
+                        <div class="floating-chat-window static-window">
+                            <div class="chat-header">
+                                <div class="chat-header-left">
+                                    <i class="fa-brands fa-instagram instagram-icon" style="color: #e1306c;"></i>
+                                    <span class="chat-customer-name">علي</span>
+                                    <span class="status-dot online"></span>
+                                </div>
+                                <div class="chat-header-right">
+                                    <i class="fa-solid fa-arrow-right-left" id="chat-back-2" style="cursor:pointer;" title="Back to Chat"></i>
+                                    <i class="fa-solid fa-user" id="chat-profile-2" style="cursor:pointer;" title="Customer Profile"></i>
+                                    <i class="fa-solid fa-xmark" id="chat-close-2" style="cursor:pointer;" title="Close & Dispose"></i>
+                                </div>
+                            </div>
+                            <div class="chat-body" id="chat-body-2">
+                                <!-- Messages for Ali loaded here -->
+                            </div>
+                            <div class="typing-indicator-wrapper hidden" id="typing-indicator-2">
+                                <div class="typing-bubble">
+                                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                                </div>
+                            </div>
+                            <div class="chat-footer-mock live-footer">
+                                <i class="fa-solid fa-paperclip"></i>
+                                <textarea class="live-chat-input" id="chat-input-2" placeholder="Type your reply here... (Enter to Send)"></textarea>
+                                <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-2" style="cursor:pointer;" title="Insert Emoji"></i>
+                                <button class="btn-send-mock live-send-btn" id="chat-send-2">Send</button>
+                            </div>
+
+                            <!-- Emoji Picker Panel -->
+                            <div class="emoji-picker hidden" id="emoji-picker-2">
+                                <span class="emoji-item">😊</span>
+                                <span class="emoji-item">😂</span>
+                                <span class="emoji-item">👍</span>
+                                <span class="emoji-item">🌹</span>
+                                <span class="emoji-item">🙏</span>
+                                <span class="emoji-item">❤️</span>
+                                <span class="emoji-item">👋</span>
+                                <span class="emoji-item">✨</span>
+                                <span class="emoji-item">🔥</span>
+                                <span class="emoji-item">🙌</span>
+                            </div>
+
+                            <!-- Customer Profile Panel -->
+                            <div class="profile-panel hidden" id="profile-panel-2">
+                                <div class="profile-form">
+                                    <div class="profile-field">
+                                        <label>Name</label>
+                                        <div class="profile-value">
+                                            <i class="fa-brands fa-instagram" style="color: #e1306c; margin-right: 6px; font-size: 1.1rem;"></i>
+                                            <span>علي</span>
+                                        </div>
+                                    </div>
+                                    <div class="profile-field">
+                                        <label>Email</label>
+                                        <div class="profile-value">-</div>
+                                    </div>
+                                    <div class="profile-field">
+                                        <label>Phone</label>
+                                        <div class="profile-value">9647802345678</div>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button type="button" class="btn-create-new"><i class="fa-solid fa-plus"></i> Create New</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Disposition Panel -->
+                            <div class="disposition-panel hidden" id="disposition-panel-2">
+                                <div class="disposition-form">
+                                    <div class="form-group">
+                                        <label>Disposition</label>
+                                        <select class="disposition-select" id="disp-select-2">
+                                            <option value="">Select a Disposition</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Sub Disposition</label>
+                                        <select class="sub-disposition-select" id="sub-disp-select-2">
+                                            <option value="">Select a Sub Disposition</option>
+                                        </select>
+                                    </div>
+                                    <div class="quick-dispositions-grid">
+                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Digital Goods Issue" data-sub="Purchaes issue">Purchase Fail</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Digital Goods Issue" data-sub="Redeem Issue">Redeem Issue</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Wallet/App Issue" data-sub="App Issue">App Issue</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Other" data-sub="Junk call">Junk call</button>
+                                    </div>
+                                    <div class="ticket-status-row">
+                                        <span class="section-title">Ticket</span>
+                                        <div class="ticket-pills">
+                                            <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
+                                        </div>
+                                        <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
+                                    </div>
+                                    <button type="button" class="btn-save-dispose" id="btn-save-dispose-2" disabled>Save and Dispose</button>
+                                </div>
+                            </div>
+
+                            <!-- Disposed Overlay -->
+                            <div class="disposed-overlay hidden" id="disposed-overlay-2">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <h3>Ticket Disposed & Closed</h3>
+                                <p>This conversation has been classified and resolved.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Khatab Omar -->
+                    <div class="chat-column">
+                        <div class="column-meta-info">
+                            <span class="meta-channel">instagrampost</span>
+                            <span class="meta-detail">Post Comment</span>
+                        </div>
+                        <div class="floating-chat-window static-window">
+                            <div class="chat-header">
+                                <div class="chat-header-left">
+                                    <i class="fa-solid fa-hashtag instagram-icon" style="color: #4f46e5;"></i>
+                                    <span class="chat-customer-name">Khatab Omar</span>
+                                    <span class="status-dot online"></span>
+                                </div>
+                                <div class="chat-header-right">
+                                    <i class="fa-solid fa-arrow-right-left" id="chat-back-3" style="cursor:pointer;" title="Back to Chat"></i>
+                                    <i class="fa-solid fa-user" id="chat-profile-3" style="cursor:pointer;" title="Customer Profile"></i>
+                                    <i class="fa-solid fa-xmark" id="chat-close-3" style="cursor:pointer;" title="Close & Dispose"></i>
+                                </div>
+                            </div>
+                            <div class="chat-body" id="chat-body-3">
+                                <!-- Messages for Khatab loaded here -->
+                            </div>
+                            <div class="typing-indicator-wrapper hidden" id="typing-indicator-3">
+                                <div class="typing-bubble">
+                                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                                </div>
+                            </div>
+                            <div class="chat-footer-mock live-footer">
+                                <i class="fa-solid fa-paperclip"></i>
+                                <textarea class="live-chat-input" id="chat-input-3" placeholder="Type your reply here... (Enter to Send)"></textarea>
+                                <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-3" style="cursor:pointer;" title="Insert Emoji"></i>
+                                <button class="btn-send-mock live-send-btn" id="chat-send-3">Send</button>
+                            </div>
+
+                            <!-- Emoji Picker Panel -->
+                            <div class="emoji-picker hidden" id="emoji-picker-3">
+                                <span class="emoji-item">😊</span>
+                                <span class="emoji-item">😂</span>
+                                <span class="emoji-item">👍</span>
+                                <span class="emoji-item">🌹</span>
+                                <span class="emoji-item">🙏</span>
+                                <span class="emoji-item">❤️</span>
+                                <span class="emoji-item">👋</span>
+                                <span class="emoji-item">✨</span>
+                                <span class="emoji-item">🔥</span>
+                                <span class="emoji-item">🙌</span>
+                            </div>
+
+                            <!-- Customer Profile Panel -->
+                            <div class="profile-panel hidden" id="profile-panel-3">
+                                <div class="profile-form">
+                                    <div class="profile-field">
+                                        <label>Name</label>
+                                        <div class="profile-value">
+                                            <i class="fa-solid fa-hashtag" style="color: #4f46e5; margin-right: 6px; font-size: 1.1rem;"></i>
+                                            <span>Khatab Omar</span>
+                                        </div>
+                                    </div>
+                                    <div class="profile-field">
+                                        <label>Email</label>
+                                        <div class="profile-value">-</div>
+                                    </div>
+                                    <div class="profile-field">
+                                        <label>Phone</label>
+                                        <div class="profile-value">9647719876543</div>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button type="button" class="btn-create-new"><i class="fa-solid fa-plus"></i> Create New</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Disposition Panel -->
+                            <div class="disposition-panel hidden" id="disposition-panel-3">
+                                <div class="disposition-form">
+                                    <div class="form-group">
+                                        <label>Disposition</label>
+                                        <select class="disposition-select" id="disp-select-3">
+                                            <option value="">Select a Disposition</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Sub Disposition</label>
+                                        <select class="sub-disposition-select" id="sub-disp-select-3">
+                                            <option value="">Select a Sub Disposition</option>
+                                        </select>
+                                    </div>
+                                    <div class="quick-dispositions-grid">
+                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Wallet/App Issue" data-sub="Trx Issue">Failed Trx</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Wallet/Registration Inquiry" data-sub="Wallet/Registration Inquiry">Registration</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Wallet/App Issue" data-sub="App Issue">App Issue</button>
+                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Other" data-sub="Junk call">Junk call</button>
+                                    </div>
+                                    <div class="ticket-status-row">
+                                        <span class="section-title">Ticket</span>
+                                        <div class="ticket-pills">
+                                            <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
+                                        </div>
+                                        <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
+                                    </div>
+                                    <button type="button" class="btn-save-dispose" id="btn-save-dispose-3" disabled>Save and Dispose</button>
+                                </div>
+                            </div>
+
+                            <!-- Disposed Overlay -->
+                            <div class="disposed-overlay hidden" id="disposed-overlay-3">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <h3>Ticket Disposed & Closed</h3>
+                                <p>This conversation has been classified and resolved.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certificate / Final Results Screen (Hidden initially) -->
+                <div class="results-overlay hidden" id="results-overlay">
+                    <div class="results-card">
+                        <div class="success-icon-wrapper">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <h2 class="result-title text-gradient">Training Session Completed!</h2>
+                        <p class="result-desc" id="result-description-text">
+                            Congratulations! Your multitask chat simulation results have been evaluated by our AI Coach.
+                        </p>
+                        <div class="result-stats-grid">
+                            <div class="res-stat">
+                                <span class="res-label">Overall Score</span>
+                                <span class="res-val" id="res-score">100%</span>
+                            </div>
+                            <div class="res-stat">
+                                <span class="res-label">Incorrect Attempts</span>
+                                <span class="res-val" id="res-errors">0</span>
+                            </div>
+                            <div class="res-stat">
+                                <span class="res-label">Final Evaluation</span>
+                                <span class="res-val text-gradient" id="res-grade">Certified Agent</span>
+                            </div>
+                        </div>
+                        <p class="result-notes-card" id="res-notes-text" style="font-size:0.9rem; line-height:1.5; margin-bottom:20px; color:#475569; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:15px; text-align:right; font-family:var(--font-ar); direction:rtl;"></p>
+                        <button class="btn btn-primary restart-training-btn-final">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>Restart Training Path</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: Admin Panel Tab Page -->
+            <div class="amy-tab-pane" id="tab-admin">
+                <div class="admin-tab-container-page">
+                    <!-- Admin Panel Sub tabs -->
+                    <div class="admin-tabs-nav">
+                        <button class="admin-tab-btn active" data-tab="tab-scenarios">
+                            <i class="fa-solid fa-file-signature"></i> Manage Scenarios
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-assignments">
+                            <i class="fa-solid fa-clipboard-list"></i> Assign Tests
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-results">
+                            <i class="fa-solid fa-chart-line"></i> Employee Results
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-edit-slides">
+                            <i class="fa-solid fa-book-open"></i> Edit Slides
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-ai-settings">
+                            <i class="fa-solid fa-robot"></i> AI Agent Settings
+                        </button>
+                    </div>
+                    
+                    <!-- TAB contents inside page -->
+                    <!-- TAB 1: Scenarios Manager -->
+                    <div class="admin-tab-content active" id="tab-scenarios">
+                        <div class="admin-modal-body">
+                            <!-- Sidebar: Scenarios List -->
+                            <aside class="admin-sidebar">
+                                <div class="sidebar-header">
+                                    <h3>Current Scenarios</h3>
+                                    <button class="btn-add-scenario" id="add-new-scenario-btn">
+                                        <i class="fa-solid fa-plus"></i> Add New
+                                    </button>
+                                </div>
+                                <ul class="admin-scenarios-list" id="admin-scenarios-list-ul">
+                                    <!-- Loaded dynamically -->
+                                </ul>
+                            </aside>
+                            
+                            <!-- Main Area: Edit Form -->
+                            <main class="admin-form-area">
+                                <div id="no-scenario-selected" class="no-selection-message">
+                                    <i class="fa-solid fa-edit"></i>
+                                    <p>Select a scenario from the sidebar to edit it, or click "Add New".</p>
+                                </div>
+                                <form id="scenario-edit-form" class="hidden">
+                                    <input type="hidden" id="edit-scenario-id">
+                                    
+                                    <div class="form-row-double">
+                                        <div class="form-group">
+                                            <label for="edit-customer-name">Customer Name:</label>
+                                            <input type="text" id="edit-customer-name" required placeholder="e.g. Mohammad">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edit-scenario-turn-select">Conversation Turn:</label>
+                                            <select id="edit-scenario-turn-select" class="form-select" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-ar); font-size: 0.9rem; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); cursor: pointer; outline: none;">
+                                                <option value="0">Turn 1 (Beginning of Conversation)</option>
+                                                <option value="1">Turn 2</option>
+                                                <option value="2">Turn 3</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
+                                        <label for="edit-customer-query">Customer message in this turn:</label>
+                                        <input type="text" id="edit-customer-query" required placeholder="e.g. My Master card has been frozen">
+                                    </div>
+                                    
+                                    <div class="options-edit-section">
+                                        <h3>Suggested Responses (Employee Choices)</h3>
+                                        
+                                        <!-- Option 1 -->
+                                        <div class="option-edit-card" data-option-index="0">
+                                            <div class="option-card-header">
+                                                <span class="option-number-label">Option 1</span>
+                                                <label class="radio-label">
+                                                    <input type="radio" name="correct-option-radio" value="0" id="correct-opt-0">
+                                                    <span>Is Correct Option</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-opt-0-text">Suggested Response Text:</label>
+                                                <textarea id="edit-opt-0-text" required placeholder="e.g. Hello Mohammad, I will help you..."></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-opt-0-feedback">Coach Feedback:</label>
+                                                <textarea id="edit-opt-0-feedback" required placeholder="Explain why this is correct/incorrect..."></textarea>
+                                            </div>
+                                        </div>
+ 
+                                        <!-- Option 2 -->
+                                        <div class="option-edit-card" data-option-index="1">
+                                            <div class="option-card-header">
+                                                <span class="option-number-label">Option 2</span>
+                                                <label class="radio-label">
+                                                    <input type="radio" name="correct-option-radio" value="1" id="correct-opt-1">
+                                                    <span>Is Correct Option</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-opt-1-text">Suggested Response Text:</label>
+                                                <textarea id="edit-opt-1-text" required placeholder="e.g. Second option text..."></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-opt-1-feedback">Coach Feedback:</label>
+                                                <textarea id="edit-opt-1-feedback" required placeholder="Explain why this is correct/incorrect..."></textarea>
+                                            </div>
+                                        </div>
+ 
+                                        <!-- Option 3 -->
+                                        <div class="option-edit-card" data-option-index="2">
+                                            <div class="option-card-header">
+                                                <span class="option-number-label">Option 3</span>
+                                                <label class="radio-label">
+                                                    <input type="radio" name="correct-option-radio" value="2" id="correct-opt-2">
+                                                    <span>Is Correct Option</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-opt-2-text">Suggested Response Text:</label>
+                                                <textarea id="edit-opt-2-text" required placeholder="e.g. Third option text..."></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-opt-2-feedback">Coach Feedback:</label>
+                                                <textarea id="edit-opt-2-feedback" required placeholder="Explain why this is correct/incorrect..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-save-scenario">
+                                            <i class="fa-solid fa-floppy-disk"></i> Save Scenario
+                                        </button>
+                                        <button type="button" class="btn btn-delete-scenario text-red" id="delete-scenario-btn">
+                                            <i class="fa-solid fa-trash-can"></i> Delete This Scenario
+                                        </button>
+                                    </div>
+                                </form>
+                            </main>
+                        </div>
+                        
+                        <footer class="admin-modal-footer">
+                            <div class="footer-info">
+                                <i class="fa-solid fa-info-circle"></i>
+                                <span>After modifications, download the new scenarios.js file and replace it in the project folder to save your changes permanently.</span>
+                            </div>
+                            <div class="footer-buttons">
+                                <button class="btn btn-secondary" id="reset-defaults-btn">
+                                    <i class="fa-solid fa-rotate-left"></i> Restore Defaults
+                                </button>
+                                <button class="btn btn-primary" id="export-scenarios-btn">
+                                    <i class="fa-solid fa-file-arrow-down"></i> Download scenarios.js
+                                </button>
+                            </div>
+                        </footer>
+                    </div>
+
+                    <!-- TAB 2: Assignments Manager -->
+                    <div class="admin-tab-content" id="tab-assignments">
+                        <div class="admin-assignments-container">
+                            <div class="assignment-controls">
+                                <div class="assignment-title-block">
+                                    <h3>Assign Employee Test</h3>
+                                    <p>Select employees required to take the test. When selected employees log in, they will be in test mode and their final score will be recorded automatically.</p>
+                                </div>
+                                
+                                <div class="assignment-actions-row">
+                                    <div class="assignment-options-row">
+                                        <label class="radio-label">
+                                            <input type="radio" name="assign-target-radio" value="all" checked id="assign-all-radio">
+                                            <span>All Employees</span>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="assign-target-radio" value="specific" id="assign-specific-radio">
+                                            <span>Specific Employees</span>
+                                        </label>
+                                    </div>
+                                    <button class="btn btn-primary" id="btn-save-assignments">
+                                        <i class="fa-solid fa-check-double"></i> Save & Activate Assignment
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="specific-users-list-wrapper hidden" id="specific-users-list-wrapper">
+                                <div class="list-search-bar">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                        <input type="text" id="users-search-input" placeholder="Search by employee name or code...">
+                                    </div>
+                                    <div class="list-select-actions">
+                                        <button type="button" class="btn btn-secondary btn-sm" id="btn-select-all-users">Select All</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="btn-deselect-all-users">Deselect All</button>
+                                    </div>
+                                </div>
+                                <div class="users-selection-grid" id="users-selection-grid">
+                                    <!-- Loaded dynamically from /api/users -->
+                                </div>
+                            </div>
+
+                            <!-- SMTP Settings Card -->
+                            <div class="smtp-settings-card" style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #cbd5e1; margin-top: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px; cursor:pointer;" id="smtp-settings-header">
+                                    <h3 style="font-size:1.1rem; color:var(--primary); font-weight:800; display:flex; align-items:center; gap:8px;">
+                                        <i class="fa-solid fa-envelope-open-text"></i> SMTP Server Settings (Optional)
+                                    </h3>
+                                    <i class="fa-solid fa-chevron-down" id="smtp-chevron" style="transition: transform 0.3s;"></i>
+                                </div>
+                                <div id="smtp-settings-body" class="hidden" style="transition: all 0.3s ease;">
+                                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">Configure SMTP credentials to send actual email invitations to your team. If left empty, sending an invitation will print the quick login URL for you to copy.</p>
+                                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:15px; margin-bottom:15px;">
+                                        <div>
+                                            <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">SMTP Server / Host</label>
+                                            <input type="text" id="smtp-host" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" placeholder="e.g. smtp.zain.com or smtp.gmail.com">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">Port</label>
+                                            <input type="number" id="smtp-port" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" placeholder="587">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">Security (SSL/TLS)</label>
+                                            <select id="smtp-ssl" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                                                <option value="true">SSL / TLS (Recommended)</option>
+                                                <option value="false">None</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                                        <div>
+                                            <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">Username / Email</label>
+                                            <input type="text" id="smtp-username" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" placeholder="e.g. sender@zain.com">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">Password</label>
+                                            <input type="password" id="smtp-password" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" placeholder="SMTP Password">
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; justify-content:flex-end;">
+                                        <button class="btn btn-primary" id="btn-save-smtp">Save SMTP Settings</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Results Dashboard -->
+                    <div class="admin-tab-content" id="tab-results">
+                        <div class="admin-results-container" style="display: flex; flex-direction: column; gap: 30px;">
+                            
+                            <!-- Section 1: Multitask Chat Simulator Results -->
+                            <div class="results-section-card" style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                <div class="results-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+                                    <div class="results-title-block">
+                                        <h3 style="font-size: 1.15rem; color: var(--primary); font-weight: 800; display: flex; align-items: center; gap: 8px; font-family: var(--font-ar);">
+                                            <i class="fa-solid fa-comments" style="color: var(--primary);"></i> Multitask Chat Simulator Results
+                                        </h3>
+                                        <p style="font-size: 0.85rem; color: #64748b; margin-top: 3px; font-family: var(--font-ar);">Log of employee concurrent 3-column chat simulation results.</p>
+                                    </div>
+                                    <div class="results-actions">
+                                        <button class="btn btn-secondary btn-sm" id="btn-refresh-results-sim" style="font-size: 0.8rem; padding: 6px 12px; border-radius: 8px;">
+                                            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="results-table-wrapper">
+                                    <table class="admin-results-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee Code</th>
+                                                <th>Full Name</th>
+                                                <th>Score</th>
+                                                <th>Errors</th>
+                                                <th>Final Grade</th>
+                                                <th>Submitted At</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="results-table-tbody">
+                                            <!-- Loaded dynamically from /api/results -->
+                                        </tbody>
+                                    </table>
+                                    <div id="no-results-placeholder" class="no-selection-message">
+                                        <i class="fa-solid fa-folder-open"></i>
+                                        <p>No simulator results recorded yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: AI Sandbox Trainer Results -->
+                            <div class="results-section-card" style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                <div class="results-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+                                    <div class="results-title-block">
+                                        <h3 style="font-size: 1.15rem; color: var(--primary); font-weight: 800; display: flex; align-items: center; gap: 8px; font-family: var(--font-ar);">
+                                            <i class="fa-solid fa-robot" style="color: var(--primary);"></i> AI Sandbox Coach Results
+                                        </h3>
+                                        <p style="font-size: 0.85rem; color: #64748b; margin-top: 3px; font-family: var(--font-ar);">Log of employee training sessions with the Strict AI Coach.</p>
+                                    </div>
+                                    <div class="results-actions">
+                                        <button class="btn btn-secondary btn-sm" id="btn-refresh-results-ai" style="font-size: 0.8rem; padding: 6px 12px; border-radius: 8px;">
+                                            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="results-table-wrapper">
+                                    <table class="admin-results-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee Code</th>
+                                                <th>Full Name</th>
+                                                <th>Score</th>
+                                                <th>Final Grade</th>
+                                                <th>Submitted At</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ai-results-table-tbody">
+                                            <!-- Loaded dynamically from /api/ai-results -->
+                                        </tbody>
+                                    </table>
+                                    <div id="no-ai-results-placeholder" class="no-selection-message">
+                                        <i class="fa-solid fa-folder-open"></i>
+                                        <p>No AI training results recorded yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: Slides Editor -->
+                    <div class="admin-tab-content" id="tab-edit-slides">
+                        <div class="admin-modal-body">
+                            <!-- Sidebar: Slides List -->
+                            <aside class="admin-sidebar">
+                                <div class="sidebar-header">
+                                    <h3>Scientific Material Slides</h3>
+                                </div>
+                                <ul class="admin-scenarios-list" id="admin-slides-list-ul">
+                                    <!-- Loaded dynamically -->
+                                </ul>
+                            </aside>
+                            
+                            <!-- Main Area: Edit Form -->
+                            <main class="admin-form-area">
+                                <div id="no-slide-selected" class="no-selection-message">
+                                    <i class="fa-solid fa-edit"></i>
+                                    <p>Select a slide from the sidebar to edit its content.</p>
+                                </div>
+                                <form id="slide-edit-form" class="hidden">
+                                    <input type="hidden" id="edit-slide-id">
+                                    <input type="hidden" id="edit-slide-type">
+                                    
+                                    <div class="form-row-double">
+                                        <div class="form-group">
+                                            <label for="edit-slide-title">Slide Title:</label>
+                                            <input type="text" id="edit-slide-title" required>
+                                        </div>
+                                        <div class="form-group" id="group-slide-badge">
+                                            <label for="edit-slide-badge">Slide Badge:</label>
+                                            <input type="text" id="edit-slide-badge">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="edit-slide-subtitle">Description or Introduction:</label>
+                                        <textarea id="edit-slide-subtitle" rows="3" required></textarea>
+                                    </div>
+
+                                    <!-- Fields for welcome type -->
+                                    <div id="fields-type-welcome" class="hidden">
+                                        <div class="form-group">
+                                            <label for="edit-welcome-warning-title">Alert Box Title:</label>
+                                            <input type="text" id="edit-welcome-warning-title">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edit-welcome-content">Alert Box Content:</label>
+                                            <textarea id="edit-welcome-content" rows="3"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fields for comparison type (Rule 1) -->
+                                    <div id="fields-type-comparison" class="hidden">
+                                        <div class="form-row-double">
+                                            <div class="form-group">
+                                                <label for="edit-comp-right-title">Accepted Section Title:</label>
+                                                <input type="text" id="edit-comp-right-title">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-comp-wrong-title">Unaccepted Section Title:</label>
+                                                <input type="text" id="edit-comp-wrong-title">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row-double">
+                                            <div class="form-group">
+                                                <label for="edit-comp-right-1-text">First Accepted Example:</label>
+                                                <textarea id="edit-comp-right-1-text" rows="2"></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-comp-wrong-1-text">First Unaccepted Example:</label>
+                                                <textarea id="edit-comp-wrong-1-text" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-row-double">
+                                            <div class="form-group">
+                                                <label for="edit-comp-right-2-text">Second Accepted Example:</label>
+                                                <textarea id="edit-comp-right-2-text" rows="2"></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-comp-wrong-2-text">Second Unaccepted Example:</label>
+                                                <textarea id="edit-comp-wrong-2-text" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="edit-comp-tip">Pro Tip:</label>
+                                            <textarea id="edit-comp-tip" rows="2"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fields for comparison_context type (Rule 2 & 3) -->
+                                    <div id="fields-type-comparison-context" class="hidden">
+                                        <div class="form-group">
+                                            <label for="edit-ctx-context">Problem Context/Question:</label>
+                                            <input type="text" id="edit-ctx-context">
+                                        </div>
+                                        
+                                        <div class="form-row-double">
+                                            <div class="form-group">
+                                                <label for="edit-ctx-right-title">Accepted Section Title:</label>
+                                                <input type="text" id="edit-ctx-right-title">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-ctx-wrong-title">Unaccepted Section Title:</label>
+                                                <input type="text" id="edit-ctx-wrong-title">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row-double">
+                                            <div class="form-group">
+                                                <label for="edit-ctx-right-text">Accepted Reply Text:</label>
+                                                <textarea id="edit-ctx-right-text" rows="3"></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-ctx-wrong-text">Unaccepted Reply Text:</label>
+                                                <textarea id="edit-ctx-wrong-text" rows="3"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row-double">
+                                            <div class="form-group">
+                                                <label for="edit-ctx-right-critique">Accepted Critique:</label>
+                                                <textarea id="edit-ctx-right-critique" rows="2"></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-ctx-wrong-critique">Unaccepted Critique:</label>
+                                                <textarea id="edit-ctx-wrong-critique" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fields for steps type (Rule 4) -->
+                                    <div id="fields-type-steps" class="hidden">
+                                        <div class="form-row-triple" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                                            <div class="form-group">
+                                                <label>Step 1 (Title & Desc):</label>
+                                                <input type="text" id="edit-steps-1-title" style="margin-bottom: 5px;">
+                                                <textarea id="edit-steps-1-desc" rows="2"></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Step 2 (Title & Desc):</label>
+                                                <input type="text" id="edit-steps-2-title" style="margin-bottom: 5px;">
+                                                <textarea id="edit-steps-2-desc" rows="2"></textarea>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Step 3 (Title & Desc):</label>
+                                                <input type="text" id="edit-steps-3-title" style="margin-bottom: 5px;">
+                                                <textarea id="edit-steps-3-desc" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group" style="margin-top: 10px;">
+                                            <label for="edit-steps-right-title">Successful Example Title:</label>
+                                            <input type="text" id="edit-steps-right-title">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edit-steps-context">Customer Query for Example:</label>
+                                            <input type="text" id="edit-steps-context">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edit-steps-right-text">Successful Accepted Reply:</label>
+                                            <textarea id="edit-steps-right-text" rows="2"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-actions" style="margin-top: 20px;">
+                                        <button type="submit" class="btn btn-save-scenario">
+                                            <i class="fa-solid fa-floppy-disk"></i> Save Slide Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </main>
+                        </div>
+                    </div>
+
+                    <!-- TAB 5: AI Agent Settings -->
+                    <div class="admin-tab-content" id="tab-ai-settings">
+                        <div class="ai-admin-settings-container">
+
+                            <!-- قسم مفتاح API -->
+                            <div class="ai-settings-section">
+                                <div class="ai-settings-section-header">
+                                    <i class="fa-solid fa-key"></i>
+                                    <h3>Gemini API Key</h3>
+                                </div>
+                                <p class="ai-settings-hint">Get your free API key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio ↗</a>. You can enter multiple keys separated by commas (e.g., <code>key1, key2, key3</code>) to enable automatic key rotation and multiply your rate limits!</p>
+                                <div class="ai-key-input-row">
+                                    <input
+                                        type="password"
+                                        id="ai-settings-api-key"
+                                        class="ai-settings-input"
+                                        placeholder="API_KEY_1, API_KEY_2..."
+                                        autocomplete="off"
+                                        spellcheck="false"
+                                    >
+                                    <button class="ai-icon-btn" id="btn-toggle-api-key" title="Show/Hide">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                    <button class="ai-test-btn" id="btn-test-api-key">
+                                        <i class="fa-solid fa-plug-circle-check"></i> Test Connection
+                                    </button>
+                                </div>
+                                <div class="api-test-result" id="api-test-result"></div>
+                            </div>
+
+                            <!-- قسم System Prompt -->
+                            <div class="ai-settings-section">
+                                <div class="ai-settings-section-header">
+                                    <i class="fa-solid fa-sliders"></i>
+                                    <h3>System Prompt (Agent Instructions)</h3>
+                                </div>
+                                <p class="ai-settings-hint">These instructions define the AI's personality and rules. You can modify them as needed.</p>
+                                <textarea
+                                    id="ai-settings-system-prompt"
+                                    class="ai-settings-prompt-textarea"
+                                    rows="12"
+                                    spellcheck="false"
+                                ></textarea>
+                                <div class="ai-settings-actions">
+                                    <button class="btn btn-secondary" id="btn-reset-ai-prompt">
+                                        <i class="fa-solid fa-rotate-left"></i> Restore Defaults
+                                    </button>
+                                    <button class="btn btn-primary" id="btn-save-ai-settings">
+                                        <i class="fa-solid fa-floppy-disk"></i> Save Settings
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- قسم سجل الجلسات -->
+                            <div class="ai-settings-section">
+                                <div class="ai-settings-section-header">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                    <h3>AI Agent Sessions Log</h3>
+                                    <button class="btn btn-secondary btn-sm" id="btn-clear-ai-sessions" style="margin-right:auto">
+                                        <i class="fa-solid fa-trash"></i> Clear Logs
+                                    </button>
+                                </div>
+                                <div class="results-table-wrapper" style="margin-top:10px">
+                                    <table class="admin-results-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee Code</th>
+                                                <th>Name</th>
+                                                <th>Score</th>
+                                                <th>Grade</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ai-sessions-tbody">
+                                            <tr><td colspan="5" class="no-data-cell">No sessions recorded yet</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Screen Overlay -->
+    <div class="login-screen-overlay" id="login-screen">
+        <div class="login-box">
+            <div class="zain-color-bar"></div>
+            <div class="login-header">
+                <img src="logo.png" alt="Zain Cash Logo" class="login-logo">
+                <h2>Amyo Customer Care Academy</h2>
+                <p>Please log in using your employee ZC Code</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">Employee ZC Code:</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-user-lock"></i>
+                        <input type="text" id="login-username" required placeholder="e.g. ZC700" autocomplete="username">
+                    </div>
+                </div>
+                <div class="error-msg hidden" id="login-error-msg">Employee code not registered! Please check and try again.</div>
+                <button type="submit" class="btn btn-primary btn-login">
+                    <span>Login</span>
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Resources -->
+    <script src="slides.js"></script>
+    <script src="scenarios.js"></script>
+    <script src="app.js"></script>
+    <script src="ai-agent.js"></script>
+</body>
+</html>
