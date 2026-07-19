@@ -35,6 +35,9 @@
                 <button class="amy-nav-btn" data-amy-tab="tab-simulator" id="nav-btn-simulator">
                     <i class="fa-solid fa-comments"></i> Chat Simulator
                 </button>
+                <button class="amy-nav-btn" data-amy-tab="tab-ai-agent" id="nav-btn-ai-agent">
+                    <i class="fa-solid fa-robot"></i> AI Agent Trainer
+                </button>
                 
                 <button class="amy-nav-btn hidden" id="open-admin-btn" data-amy-tab="tab-admin">
                     <i class="fa-solid fa-gears"></i> Admin Panel
@@ -105,345 +108,8 @@
                     </button>
                 </div>
 
-                <div class="multitask-chat-grid">
-                    <!-- Column 1: Rahif Zaman -->
-                    <div class="chat-column">
-                        <div class="column-meta-info">
-                            <span class="meta-channel">phone1</span>
-                            <span class="meta-detail">WhatsApp Chat</span>
-                        </div>
-                        <div class="floating-chat-window static-window">
-                            <div class="chat-header">
-                                <div class="chat-header-left">
-                                    <i class="fa-brands fa-whatsapp whatsapp-icon" style="color: #25d366;"></i>
-                                    <span class="chat-customer-name">Rahif Zaman</span>
-                                    <span class="status-dot online"></span>
-                                </div>
-                                <div class="chat-header-right">
-                                    <i class="fa-solid fa-arrow-right-left" id="chat-back-1" style="cursor:pointer;" title="Back to Chat"></i>
-                                    <i class="fa-solid fa-user" id="chat-profile-1" style="cursor:pointer;" title="Customer Profile"></i>
-                                    <i class="fa-solid fa-xmark" id="chat-close-1" style="cursor:pointer;" title="Close & Dispose"></i>
-                                </div>
-                            </div>
-                            <div class="chat-body" id="chat-body-1">
-                                <!-- Messages for Rahif loaded here -->
-                            </div>
-                            <div class="typing-indicator-wrapper hidden" id="typing-indicator-1">
-                                <div class="typing-bubble">
-                                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                                </div>
-                            </div>
-                            <div class="chat-footer-mock live-footer">
-                                <i class="fa-solid fa-paperclip"></i>
-                                <textarea class="live-chat-input" id="chat-input-1" placeholder="Type your reply here... (Enter to Send)"></textarea>
-                                <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-1" style="cursor:pointer;" title="Insert Emoji"></i>
-                                <button class="btn-send-mock live-send-btn" id="chat-send-1">Send</button>
-                            </div>
-
-                            <!-- Emoji Picker Panel -->
-                            <div class="emoji-picker hidden" id="emoji-picker-1">
-                                <span class="emoji-item">😊</span>
-                                <span class="emoji-item">😂</span>
-                                <span class="emoji-item">👍</span>
-                                <span class="emoji-item">🌹</span>
-                                <span class="emoji-item">🙏</span>
-                                <span class="emoji-item">❤️</span>
-                                <span class="emoji-item">👋</span>
-                                <span class="emoji-item">✨</span>
-                                <span class="emoji-item">🔥</span>
-                                <span class="emoji-item">🙌</span>
-                            </div>
-
-                            <!-- Customer Profile Panel -->
-                            <div class="profile-panel hidden" id="profile-panel-1">
-                                <div class="profile-form">
-                                    <div class="profile-field">
-                                        <label>Name</label>
-                                        <div class="profile-value">
-                                            <i class="fa-brands fa-whatsapp" style="color: #25d366; margin-right: 6px; font-size: 1.1rem;"></i>
-                                            <span>Rahif Zaman</span>
-                                        </div>
-                                    </div>
-                                    <div class="profile-field">
-                                        <label>Email</label>
-                                        <div class="profile-value">-</div>
-                                    </div>
-                                    <div class="profile-field">
-                                        <label>Phone</label>
-                                        <div class="profile-value">9647727900402</div>
-                                    </div>
-                                    <div class="profile-actions">
-                                        <button type="button" class="btn-create-new"><i class="fa-solid fa-plus"></i> Create New</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Disposition Panel -->
-                            <div class="disposition-panel hidden" id="disposition-panel-1">
-                                <div class="disposition-form">
-                                    <div class="form-group">
-                                        <label>Disposition</label>
-                                        <select class="disposition-select" id="disp-select-1">
-                                            <option value="">Select a Disposition</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Sub Disposition</label>
-                                        <select class="sub-disposition-select" id="sub-disp-select-1">
-                                            <option value="">Select a Sub Disposition</option>
-                                        </select>
-                                    </div>
-                                    <div class="quick-dispositions-grid">
-                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="MC/Visa Issue" data-sub="Top-up or Transfer Issue">Refund Delay</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="MC/Visa Issue" data-sub="Reset PIN request">Reset PIN request</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="MC/Visa Inquiry" data-sub="MC/Visa Inquiry">Card Inquiry</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="1" data-disp="Other" data-sub="Junk call">Junk call</button>
-                                    </div>
-                                    <div class="ticket-status-row">
-                                        <span class="section-title">Ticket</span>
-                                        <div class="ticket-pills">
-                                            <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
-                                        </div>
-                                        <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
-                                    </div>
-                                    <button type="button" class="btn-save-dispose" id="btn-save-dispose-1" disabled>Save and Dispose</button>
-                                </div>
-                            </div>
-
-                            <!-- Disposed Overlay -->
-                            <div class="disposed-overlay hidden" id="disposed-overlay-1">
-                                <i class="fa-solid fa-circle-check"></i>
-                                <h3>Ticket Disposed & Closed</h3>
-                                <p>This conversation has been classified and resolved.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 2: Ali -->
-                    <div class="chat-column">
-                        <div class="column-meta-info">
-                            <span class="meta-channel">instagram</span>
-                            <span class="meta-detail">Direct Message</span>
-                        </div>
-                        <div class="floating-chat-window static-window">
-                            <div class="chat-header">
-                                <div class="chat-header-left">
-                                    <i class="fa-brands fa-instagram instagram-icon" style="color: #e1306c;"></i>
-                                    <span class="chat-customer-name">علي</span>
-                                    <span class="status-dot online"></span>
-                                </div>
-                                <div class="chat-header-right">
-                                    <i class="fa-solid fa-arrow-right-left" id="chat-back-2" style="cursor:pointer;" title="Back to Chat"></i>
-                                    <i class="fa-solid fa-user" id="chat-profile-2" style="cursor:pointer;" title="Customer Profile"></i>
-                                    <i class="fa-solid fa-xmark" id="chat-close-2" style="cursor:pointer;" title="Close & Dispose"></i>
-                                </div>
-                            </div>
-                            <div class="chat-body" id="chat-body-2">
-                                <!-- Messages for Ali loaded here -->
-                            </div>
-                            <div class="typing-indicator-wrapper hidden" id="typing-indicator-2">
-                                <div class="typing-bubble">
-                                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                                </div>
-                            </div>
-                            <div class="chat-footer-mock live-footer">
-                                <i class="fa-solid fa-paperclip"></i>
-                                <textarea class="live-chat-input" id="chat-input-2" placeholder="Type your reply here... (Enter to Send)"></textarea>
-                                <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-2" style="cursor:pointer;" title="Insert Emoji"></i>
-                                <button class="btn-send-mock live-send-btn" id="chat-send-2">Send</button>
-                            </div>
-
-                            <!-- Emoji Picker Panel -->
-                            <div class="emoji-picker hidden" id="emoji-picker-2">
-                                <span class="emoji-item">😊</span>
-                                <span class="emoji-item">😂</span>
-                                <span class="emoji-item">👍</span>
-                                <span class="emoji-item">🌹</span>
-                                <span class="emoji-item">🙏</span>
-                                <span class="emoji-item">❤️</span>
-                                <span class="emoji-item">👋</span>
-                                <span class="emoji-item">✨</span>
-                                <span class="emoji-item">🔥</span>
-                                <span class="emoji-item">🙌</span>
-                            </div>
-
-                            <!-- Customer Profile Panel -->
-                            <div class="profile-panel hidden" id="profile-panel-2">
-                                <div class="profile-form">
-                                    <div class="profile-field">
-                                        <label>Name</label>
-                                        <div class="profile-value">
-                                            <i class="fa-brands fa-instagram" style="color: #e1306c; margin-right: 6px; font-size: 1.1rem;"></i>
-                                            <span>علي</span>
-                                        </div>
-                                    </div>
-                                    <div class="profile-field">
-                                        <label>Email</label>
-                                        <div class="profile-value">-</div>
-                                    </div>
-                                    <div class="profile-field">
-                                        <label>Phone</label>
-                                        <div class="profile-value">9647802345678</div>
-                                    </div>
-                                    <div class="profile-actions">
-                                        <button type="button" class="btn-create-new"><i class="fa-solid fa-plus"></i> Create New</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Disposition Panel -->
-                            <div class="disposition-panel hidden" id="disposition-panel-2">
-                                <div class="disposition-form">
-                                    <div class="form-group">
-                                        <label>Disposition</label>
-                                        <select class="disposition-select" id="disp-select-2">
-                                            <option value="">Select a Disposition</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Sub Disposition</label>
-                                        <select class="sub-disposition-select" id="sub-disp-select-2">
-                                            <option value="">Select a Sub Disposition</option>
-                                        </select>
-                                    </div>
-                                    <div class="quick-dispositions-grid">
-                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Digital Goods Issue" data-sub="Purchaes issue">Purchase Fail</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Digital Goods Issue" data-sub="Redeem Issue">Redeem Issue</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Wallet/App Issue" data-sub="App Issue">App Issue</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="2" data-disp="Other" data-sub="Junk call">Junk call</button>
-                                    </div>
-                                    <div class="ticket-status-row">
-                                        <span class="section-title">Ticket</span>
-                                        <div class="ticket-pills">
-                                            <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
-                                        </div>
-                                        <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
-                                    </div>
-                                    <button type="button" class="btn-save-dispose" id="btn-save-dispose-2" disabled>Save and Dispose</button>
-                                </div>
-                            </div>
-
-                            <!-- Disposed Overlay -->
-                            <div class="disposed-overlay hidden" id="disposed-overlay-2">
-                                <i class="fa-solid fa-circle-check"></i>
-                                <h3>Ticket Disposed & Closed</h3>
-                                <p>This conversation has been classified and resolved.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 3: Khatab Omar -->
-                    <div class="chat-column">
-                        <div class="column-meta-info">
-                            <span class="meta-channel">instagrampost</span>
-                            <span class="meta-detail">Post Comment</span>
-                        </div>
-                        <div class="floating-chat-window static-window">
-                            <div class="chat-header">
-                                <div class="chat-header-left">
-                                    <i class="fa-solid fa-hashtag instagram-icon" style="color: #4f46e5;"></i>
-                                    <span class="chat-customer-name">Khatab Omar</span>
-                                    <span class="status-dot online"></span>
-                                </div>
-                                <div class="chat-header-right">
-                                    <i class="fa-solid fa-arrow-right-left" id="chat-back-3" style="cursor:pointer;" title="Back to Chat"></i>
-                                    <i class="fa-solid fa-user" id="chat-profile-3" style="cursor:pointer;" title="Customer Profile"></i>
-                                    <i class="fa-solid fa-xmark" id="chat-close-3" style="cursor:pointer;" title="Close & Dispose"></i>
-                                </div>
-                            </div>
-                            <div class="chat-body" id="chat-body-3">
-                                <!-- Messages for Khatab loaded here -->
-                            </div>
-                            <div class="typing-indicator-wrapper hidden" id="typing-indicator-3">
-                                <div class="typing-bubble">
-                                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                                </div>
-                            </div>
-                            <div class="chat-footer-mock live-footer">
-                                <i class="fa-solid fa-paperclip"></i>
-                                <textarea class="live-chat-input" id="chat-input-3" placeholder="Type your reply here... (Enter to Send)"></textarea>
-                                <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-3" style="cursor:pointer;" title="Insert Emoji"></i>
-                                <button class="btn-send-mock live-send-btn" id="chat-send-3">Send</button>
-                            </div>
-
-                            <!-- Emoji Picker Panel -->
-                            <div class="emoji-picker hidden" id="emoji-picker-3">
-                                <span class="emoji-item">😊</span>
-                                <span class="emoji-item">😂</span>
-                                <span class="emoji-item">👍</span>
-                                <span class="emoji-item">🌹</span>
-                                <span class="emoji-item">🙏</span>
-                                <span class="emoji-item">❤️</span>
-                                <span class="emoji-item">👋</span>
-                                <span class="emoji-item">✨</span>
-                                <span class="emoji-item">🔥</span>
-                                <span class="emoji-item">🙌</span>
-                            </div>
-
-                            <!-- Customer Profile Panel -->
-                            <div class="profile-panel hidden" id="profile-panel-3">
-                                <div class="profile-form">
-                                    <div class="profile-field">
-                                        <label>Name</label>
-                                        <div class="profile-value">
-                                            <i class="fa-solid fa-hashtag" style="color: #4f46e5; margin-right: 6px; font-size: 1.1rem;"></i>
-                                            <span>Khatab Omar</span>
-                                        </div>
-                                    </div>
-                                    <div class="profile-field">
-                                        <label>Email</label>
-                                        <div class="profile-value">-</div>
-                                    </div>
-                                    <div class="profile-field">
-                                        <label>Phone</label>
-                                        <div class="profile-value">9647719876543</div>
-                                    </div>
-                                    <div class="profile-actions">
-                                        <button type="button" class="btn-create-new"><i class="fa-solid fa-plus"></i> Create New</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Disposition Panel -->
-                            <div class="disposition-panel hidden" id="disposition-panel-3">
-                                <div class="disposition-form">
-                                    <div class="form-group">
-                                        <label>Disposition</label>
-                                        <select class="disposition-select" id="disp-select-3">
-                                            <option value="">Select a Disposition</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Sub Disposition</label>
-                                        <select class="sub-disposition-select" id="sub-disp-select-3">
-                                            <option value="">Select a Sub Disposition</option>
-                                        </select>
-                                    </div>
-                                    <div class="quick-dispositions-grid">
-                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Wallet/App Issue" data-sub="Trx Issue">Failed Trx</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Wallet/Registration Inquiry" data-sub="Wallet/Registration Inquiry">Registration</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Wallet/App Issue" data-sub="App Issue">App Issue</button>
-                                        <button type="button" class="quick-disp-btn" data-chat="3" data-disp="Other" data-sub="Junk call">Junk call</button>
-                                    </div>
-                                    <div class="ticket-status-row">
-                                        <span class="section-title">Ticket</span>
-                                        <div class="ticket-pills">
-                                            <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
-                                        </div>
-                                        <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
-                                    </div>
-                                    <button type="button" class="btn-save-dispose" id="btn-save-dispose-3" disabled>Save and Dispose</button>
-                                </div>
-                            </div>
-
-                            <!-- Disposed Overlay -->
-                            <div class="disposed-overlay hidden" id="disposed-overlay-3">
-                                <i class="fa-solid fa-circle-check"></i>
-                                <h3>Ticket Disposed & Closed</h3>
-                                <p>This conversation has been classified and resolved.</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="multitask-chat-grid" id="multitask-chat-grid">
+                    <!-- Dynamic chat columns rendered in app.js -->
                 </div>
 
                 <!-- Certificate / Final Results Screen (Hidden initially) -->
@@ -476,6 +142,136 @@
                             <span>Restart Training Path</span>
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: AI Agent Trainer Tab Page -->
+            <div class="amy-tab-pane" id="tab-ai-agent">
+                <div class="ai-agent-wrapper">
+                    
+                    <!-- AI Start Screen -->
+                    <div class="ai-start-screen" id="ai-start-screen">
+                        <div class="ai-start-card">
+                            <div class="ai-start-icon-ring">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <h1 class="ai-start-title">
+                                <span class="ai-badge-gemini">Gemini</span>
+                                المدرب الذكي الافتراضي
+                            </h1>
+                            <p class="ai-start-subtitle">
+                                تفاعل مع مدرب الذكاء الاصطناعي الافتراضي لتقييم مهاراتك في خدمة العملاء ومحاكاة المحادثات بشكل فوري ومستقل.
+                            </p>
+                            <div class="ai-start-features">
+                                <div class="ai-feature-item">
+                                    <i class="fa-solid fa-bolt"></i>
+                                    <span>تصحيح فوري للأخطاء</span>
+                                </div>
+                                <div class="ai-feature-item">
+                                    <i class="fa-solid fa-comments"></i>
+                                    <span>محادثة حية تفاعلية</span>
+                                </div>
+                                <div class="ai-feature-item">
+                                    <i class="fa-solid fa-star"></i>
+                                    <span>تقييم بالدرجات والتقدير</span>
+                                </div>
+                                <div class="ai-feature-item">
+                                    <i class="fa-solid fa-user-shield"></i>
+                                    <span>إرشادات تفصيلية بشرية</span>
+                                </div>
+                            </div>
+                            <button class="ai-start-btn" id="ai-start-btn">
+                                <i class="fa-solid fa-play"></i> ابدأ الجلسة التدريبية
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Chat Area -->
+                    <div class="ai-chat-area hidden" id="ai-chat-area">
+                        <!-- Stats Bar -->
+                        <div class="ai-stats-bar" id="ai-stats-bar">
+                            <div class="ai-stats-left">
+                                <div class="ai-stat-chip">
+                                    <i class="fa-solid fa-circle-question"></i>
+                                    <span>التقدم: <span id="ai-progress-label">0/4 Scenarios</span></span>
+                                </div>
+                            </div>
+                            <div class="ai-progress-track">
+                                <div class="ai-progress-fill" id="ai-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="ai-stats-right">
+                                <button class="ai-restart-btn" id="ai-restart-btn">
+                                    <i class="fa-solid fa-rotate-left"></i> إعادة البدء
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Messages Container -->
+                        <div class="ai-chat-messages" id="ai-chat-messages">
+                            <!-- Dynamically loaded messages -->
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div class="ai-typing-indicator hidden" id="ai-typing-indicator">
+                            <div class="ai-typing-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+
+
+                        <!-- AI Ticket Disposition Selector Row -->
+                        <div class="ai-disposition-row" id="ai-disposition-row" style="display: flex; gap: 10px; padding: 10px 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; direction: rtl; justify-content: flex-start; align-items: center; border-radius: 8px; margin-bottom: 10px;">
+                            <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">تصنيف التذكرة:</span>
+                            <select id="ai-disp-select" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; width: 160px; outline: none; background: #ffffff;">
+                                <option value="">الموضوع الرئيسي</option>
+                            </select>
+                            <select id="ai-sub-disp-select" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; width: 160px; outline: none; background: #ffffff;">
+                                <option value="">الموضوع الفرعي</option>
+                            </select>
+                        </div>
+
+                        <!-- Input Row -->
+                        <div class="ai-input-row">
+                            <textarea class="ai-input-textarea" id="ai-employee-input" placeholder="اكتب ردك هنا..." rows="1"></textarea>
+                            <button class="ai-send-btn" id="ai-send-btn">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Final Results Overlay -->
+                    <div class="ai-final-overlay hidden" id="ai-final-overlay">
+                        <div class="ai-final-card">
+                            <div class="ai-final-icon">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">اكتمل التقييم التدريبي!</h2>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px;">لقد أكملت الإجابة على جميع السيناريوهات المطلوبة، إليك تفاصيل تقييمك:</p>
+                            
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem;">
+                                    <span style="color: var(--text-secondary); font-weight: 600;">النسبة الكلية:</span>
+                                    <span style="font-weight: 800; color: var(--primary);"><span id="ai-res-score">0%</span></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem;">
+                                    <span style="color: var(--text-secondary); font-weight: 600;">المجموع:</span>
+                                    <span style="font-weight: 800; color: var(--primary);"><span id="ai-res-total">0/40</span></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem;">
+                                    <span style="color: var(--text-secondary); font-weight: 600;">التقدير العام:</span>
+                                    <span style="font-weight: 800; color: #16a34a;" id="ai-res-grade">-</span>
+                                </div>
+                                <div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 12px; text-align: right; font-size: 0.85rem; line-height: 1.6; color: #475569; direction: rtl;" id="ai-res-notes">
+                                    <!-- Notes -->
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary" id="ai-restart-final-btn" style="width: 100%; border-radius: 50px; padding: 12px;">
+                                <i class="fa-solid fa-rotate-left"></i> بدء تدريب جديد
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -642,6 +438,20 @@
                                 <div class="assignment-title-block">
                                     <h3>Assign Employee Test</h3>
                                     <p>Select employees required to take the test. When selected employees log in, they will be in test mode and their final score will be recorded automatically.</p>
+                                </div>
+                                
+                                <div class="assignment-type-selector" style="margin-top: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 12px 18px; border-radius: 12px; border: 1px solid #e2e8f0; direction: rtl;">
+                                    <span style="font-weight: 800; color: var(--text-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-graduation-cap" style="color: var(--primary);"></i> نوع الاختبار النشط للإسناد:
+                                    </span>
+                                    <label class="radio-label" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                        <input type="radio" name="assign-test-type" value="simulator" checked id="assign-test-type-simulator" style="margin: 0; width: 16px; height: 16px;">
+                                        <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">محاكي الدردشة (Chat Simulator)</span>
+                                    </label>
+                                    <label class="radio-label" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                        <input type="radio" name="assign-test-type" value="ai-agent" id="assign-test-type-ai" style="margin: 0; width: 16px; height: 16px;">
+                                        <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">أيجنت الذكاء الاصطناعي (AI Agent)</span>
+                                    </label>
                                 </div>
                                 
                                 <div class="assignment-actions-row">

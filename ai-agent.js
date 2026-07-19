@@ -190,8 +190,84 @@ class GeminiTrainerAgent {
         this.isLoading = false;
         this.sessionScores = [];
         this.sessionEnded = false;
+        this.totalScenarios = TOTAL_SCENARIOS;
         this.loadSettings();
     }
+
+    setupDynamicPrompt(scenarios) {
+        let scList = scenarios;
+        if (!scList || scList.length === 0) {
+            scList = [
+                { id: 1, customerName: "محمد", turns: [{ customerText: "تم تجميد بطاقة الماستر تبعتي" }] },
+                { id: 2, customerName: "حسن", turns: [{ customerText: "أريد أحول 50 ألف دينار لأخوي بس رصيدي بس 30 ألف" }] },
+                { id: 3, customerName: "فاطمة", turns: [{ customerText: "أرسلت كاش من 3 أيام لرقم معين وما وصله لحد الآن" }] },
+                { id: 4, customerName: "كريم", turns: [{ customerText: "ما أعرف كيف أشحن المحفظة، وضحلي" }] }
+            ];
+        }
+
+        let scenarioInstructions = '';
+        scList.forEach((sc, idx) => {
+            const firstText = sc.turns?.[0]?.customerText || "مرحبا";
+            scenarioInstructions += `Scenario ${idx + 1}: Customer ${sc.customerName} says: "${firstText}"\n`;
+        });
+
+        const totalScenarios = scList.length;
+        this.totalScenarios = totalScenarios;
+
+        this.systemPrompt = `You are the "Strict Coach" — a professional training expert for Zain Cash customer care agents in Iraq.
+        
+🎯 Your Goal: Conduct an interactive training session with the employee across ${totalScenarios} realistic Zain Cash scenarios, and grade their performance.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 Workflow (Follow strictly):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1 — Start:
+When the user says "ابدأ التدريب", greet them in one short sentence, then present Scenario 1 immediately.
+
+Step 2 — Present Scenario:
+Write the scenario in this exact literal format:
+🎭 السيناريو [Number] من ${totalScenarios}:
+الزبون [Name] يقول: "[Customer message]"
+ماذا تقول؟
+
+Step 3 — Evaluate Response:
+After each reply, output the evaluation in this exact literal format:
+───────────────────
+📊 التقييم:
+⭐ النقاط: [score from 0 to 10]/10
+🏅 التقدير: [ممتاز / جيد / يحتاج تحسين]
+📝 التحليل: [explain what they did well and what needs improvement in 2-3 sentences]
+💡 الرد المثالي: "[example of the ideal response]"
+───────────────────
+
+Step 4 — Transition:
+After grading, transition to the next scenario immediately without waiting.
+After grading Scenario ${totalScenarios}, write: [[نهاية_التدريب]]
+Then write the final report:
+📋 التقرير النهائي:
+المجموع: [X]/${totalScenarios * 10}
+النسبة: [Y]%
+التقدير العام: [ممتاز / جيد / يحتاج تحسين]
+الملاحظات: [general constructive feedback in 2 sentences]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📂 The ${totalScenarios} Scenarios (Use in order):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${scenarioInstructions}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📏 Grading Criteria (10 points per scenario):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Welcoming the customer by name: 2 points
+• Using professional Iraqi Arabic dialect: 2 points
+• Conciseness and clarity: 2 points
+• Providing a clear resolution or helpful question: 3 points
+• Polite and reassuring tone: 1 points
+• Correct ticket classification (Main & Sub Disposition): 3 points (Note: Employees submit their classification formatted as [تصنيف التذكرة: الموضوع الرئيسي: ... / الموضوع الفرعي: ...]. Grade this comparison!)`;
+    }
+
 
     loadSettings() {
         this.apiKey = localStorage.getItem('amyo_gemini_api_key') || '';
@@ -289,7 +365,7 @@ class GeminiTrainerAgent {
         const avg = completed > 0
             ? Math.round(this.sessionScores.reduce((a, b) => a + b, 0) / completed * 10)
             : 0;
-        return { completed, total: TOTAL_SCENARIOS, avgScore: avg };
+        return { completed, total: this.totalScenarios || TOTAL_SCENARIOS, avgScore: avg };
     }
 }
 
@@ -298,58 +374,76 @@ class GeminiTrainerAgent {
 // 🤖 MultiChatAgent — 3-Column Multitask Chat Simulator
 // =========================================================
 class MultiChatAgent {
-    constructor() {
+    constructor(scenariosList = null) {
         this.apiKey = '';
-        this.chats = [
-            {
-                id: 1,
-                customerName: "Rahif Zaman",
-                systemPrompt: SYSTEM_PROMPT_RAHIF,
-                history: [
-                    { role: 'user', parts: [{ text: "System: Customer initiates WhatsApp chat." }] },
-                    { role: 'model', parts: [{ text: "فلوسي مال البطاقة لحد الآن ما رجعت" }] }
-                ]
-            },
-            {
-                id: 2,
-                customerName: "علي",
-                systemPrompt: SYSTEM_PROMPT_ALI,
-                history: [
-                    { role: 'user', parts: [{ text: "System: Customer initiates Instagram DM." }] },
-                    { role: 'model', parts: [{ text: "هسه اشتريت بطاقه بلي اول شي طلع فشل نوب طلع تم" }] }
-                ]
-            },
-            {
-                id: 3,
-                customerName: "Khatab Omar",
-                systemPrompt: SYSTEM_PROMPT_KHATAB,
-                history: [
-                    { role: 'user', parts: [{ text: "System: Customer comments on Instagram post." }] },
-                    { role: 'model', parts: [{ text: "شنو سبب" }] }
-                ]
-            }
-        ];
         this.isLoading = false;
         this.loadSettings();
+        this.scenarios = scenariosList;
+        this.initChats();
     }
 
     loadSettings() {
         this.apiKey = localStorage.getItem('amyo_gemini_api_key') || '';
     }
 
+    initChats() {
+        if (this.scenarios && this.scenarios.length > 0) {
+            this.chats = this.scenarios.map((sc, idx) => {
+                const firstTurn = sc.turns?.[0] || { customerText: "مرحبا" };
+                const systemPrompt = `أنت الزبون "${sc.customerName}"، تتواصل مع دعم زين كاش.
+المشكلة والقصة: ${firstTurn.customerText}.
+شخصيتك وقواعد الرد الصارمة:
+- تعايش دور الزبون العراقي البسيط والقلق والملحّ على مشكلته بالكامل.
+- تحدث حصراً باللهجة العراقية الدارجة المعتادة (مثل: "عيني"، "شلونك عيني"، "بلا زحمة عليك").
+- ردودك يجب أن تكون قصيرة وتلقائية كزبون حقيقي (لا تزيد عن جملة أو جملتين).
+- ⚠️ قاعدة الحزم واليقظة: إذا كتب لك الموظف أي إجابة خارج سياق مشكلتك أو كتب لك كلاماً غير مفهوم/شخابيط (مثل "رمنةينةنربين")، يجب أن تجيبه بحزم شديد ولهجة عتب عراقية واضحة كزبون منزعج.
+`;
+                return {
+                    id: idx + 1,
+                    customerName: sc.customerName,
+                    systemPrompt: systemPrompt,
+                    history: [
+                        { role: 'user', parts: [{ text: `System: Customer initiates chat ${idx + 1}.` }] },
+                        { role: 'model', parts: [{ text: firstTurn.customerText }] }
+                    ]
+                };
+            });
+        } else {
+            // Default Fallback
+            this.chats = [
+                {
+                    id: 1,
+                    customerName: "Rahif Zaman",
+                    systemPrompt: SYSTEM_PROMPT_RAHIF,
+                    history: [
+                        { role: 'user', parts: [{ text: "System: Customer initiates WhatsApp chat." }] },
+                        { role: 'model', parts: [{ text: "فلوسي مال البطاقة لحد الآن ما رجعت" }] }
+                    ]
+                },
+                {
+                    id: 2,
+                    customerName: "علي",
+                    systemPrompt: SYSTEM_PROMPT_ALI,
+                    history: [
+                        { role: 'user', parts: [{ text: "System: Customer initiates Instagram DM." }] },
+                        { role: 'model', parts: [{ text: "هسه اشتريت بطاقه بلي اول شي طلع فشل نوب طلع تم" }] }
+                    ]
+                },
+                {
+                    id: 3,
+                    customerName: "Khatab Omar",
+                    systemPrompt: SYSTEM_PROMPT_KHATAB,
+                    history: [
+                        { role: 'user', parts: [{ text: "System: Customer comments on Instagram post." }] },
+                        { role: 'model', parts: [{ text: "شنو سبب" }] }
+                    ]
+                }
+            ];
+        }
+    }
+
     resetChats() {
-        this.chats[0].history = [
-            { role: 'user', parts: [{ text: "System: Customer initiates WhatsApp chat." }] },
-            { role: 'model', parts: [{ text: "فلوسي مال البطاقة لحد الآن ما رجعت" }] }
-        ];
-        this.chats[1].history = [
-            { role: 'user', parts: [{ text: "System: Customer initiates Instagram DM." }] },
-            { role: 'model', parts: [{ text: "هسه اشتريت بطاقه بلي اول شي طلع فشل نوب طلع تم" }] }
-        ];
-        this.chats[2].history = [
-            { role: 'user', parts: [{ text: "System: Customer comments on Instagram post." }] },
-            { role: 'model', parts: [{ text: "شنو سبب" }] }
-        ];
+        this.initChats();
         this.isLoading = false;
     }
 
@@ -473,11 +567,57 @@ ${transcript3}`;
     // ─────────────────────────────────────────────
     // UI Initialization
     // ─────────────────────────────────────────────
+    const DISPOSITION_DATA = {
+        "WU Inquiry": ["WU Inquiry"],
+        "WU Issue": ["Send Money Issue", "Receive Money Issue", "Hold Transaction Issue", "Missing MTCN Issue", "Other Issues"],
+        "MC/Visa Inquiry": ["MC/Visa Inquiry"],
+        "MC/Visa Issue": ["Activation Issue", "Top-up or Transfer Issue", "PoS Payment Issue", "Cashout at ATM Issue", "eCommerce Issue", "Delivery or Order Issue", "Negative Balance Issue", "Change name Request", "Refund expired card issue", "Cash Back Issue", "Card SOA", "Reset PIN request", "Other", "Passport Issue"],
+        "Wallet/Registration Inquiry": ["Wallet/Registration Inquiry"],
+        "Wallet/App Issue": ["App Issue", "Registration Issue", "Login Issue", "No agents in my area Issue", "Agent's extra charges issues", "Agent's bad treatement/No e-money", "Trx Issue", "Customer mistake in trx", "Locked/Duplicated Wallets Issue", "Change MSISDN", "FinCrime Issue", "Wallet SOA", "Other issues"],
+        "Digital Goods Issue": ["Purchaes issue", "Resend PIN issue", "Redeem Issue", "Other Issues"],
+        "Bank Transfer Issue": ["Linking Issue", "Top-up Issue", "Cash back issue", "Other Issues"],
+        "Cash-in by VISA/MC Issue": ["Cash-in/Card no working", "Deduction issue", "Other Issues"],
+        "Merchant/Business Inquiry": ["Merchant/Business Inquiry"],
+        "Merchant/Business Issue": ["Delay \\ Request status", "Deduction or missing trx", "Other Issues"],
+        "Agent's Inquiry": ["Agent's Inquiry"],
+        "Agent's Issue": ["Registration Issue/Delay", "Buying e-money Issue", "Trx Issue", "Commission Issue", "Locked agent's wallet", "App issue", "Fraud issue", "Other Issues"],
+        "Other": ["Disconnect call", "Junk call", "Suggestion"],
+        "Reset/Change PIN request": ["Reset/Change PIN request"]
+    };
+
     function initAIAgentUI() {
         bindClick('ai-start-btn', handleStartSession);
         bindClick('ai-send-btn', handleSendMessage);
         bindClick('ai-restart-btn', handleRestart);
         bindClick('ai-restart-final-btn', handleRestart);
+
+        const dispSelect = document.getElementById('ai-disp-select');
+        const subDispSelect = document.getElementById('ai-sub-disp-select');
+
+        if (dispSelect && subDispSelect) {
+            dispSelect.innerHTML = '<option value="">الموضوع الرئيسي (Main)</option>';
+            subDispSelect.innerHTML = '<option value="">الموضوع الفرعي (Sub)</option>';
+
+            Object.keys(DISPOSITION_DATA).forEach(disp => {
+                const opt = document.createElement('option');
+                opt.value = disp;
+                opt.textContent = disp;
+                dispSelect.appendChild(opt);
+            });
+
+            dispSelect.addEventListener('change', () => {
+                const val = dispSelect.value;
+                subDispSelect.innerHTML = '<option value="">الموضوع الفرعي (Sub)</option>';
+                if (val && DISPOSITION_DATA[val]) {
+                    DISPOSITION_DATA[val].forEach(sub => {
+                        const opt = document.createElement('option');
+                        opt.value = sub;
+                        opt.textContent = sub;
+                        subDispSelect.appendChild(opt);
+                    });
+                }
+            });
+        }
 
         const inputEl = document.getElementById('ai-employee-input');
         if (inputEl) {
@@ -518,6 +658,27 @@ ${transcript3}`;
             return;
         }
 
+        // Fetch custom scenarios from server!
+        let scenarios = null;
+        if (window.apiCall) {
+            try {
+                scenarios = await window.apiCall('/api/scenarios', 'GET');
+            } catch (e) {
+                console.error("Failed to load scenarios for AI Trainer", e);
+            }
+        }
+
+        agent.setupDynamicPrompt(scenarios);
+
+        // Reset selects
+        const dispSelect = document.getElementById('ai-disp-select');
+        const subDispSelect = document.getElementById('ai-sub-disp-select');
+        if (dispSelect) dispSelect.value = '';
+        if (subDispSelect) {
+            subDispSelect.innerHTML = '<option value="">الموضوع الفرعي (Sub)</option>';
+            subDispSelect.value = '';
+        }
+
         const startScreen = document.getElementById('ai-start-screen');
         const chatArea = document.getElementById('ai-chat-area');
         const statsBar = document.getElementById('ai-stats-bar');
@@ -528,7 +689,7 @@ ${transcript3}`;
         if (statsBar) statsBar.classList.remove('hidden');
         if (messagesContainer) messagesContainer.innerHTML = '';
 
-        updateProgressUI(0, TOTAL_SCENARIOS);
+        updateProgressUI(0, agent.totalScenarios || TOTAL_SCENARIOS);
         setInputEnabled(false);
         showTypingIndicator();
 
@@ -552,6 +713,17 @@ ${transcript3}`;
         const text = inputEl.value.trim();
         if (!text || agent.isLoading || agent.sessionEnded) return;
 
+        // Force Ticket Classification!
+        const dispSelect = document.getElementById('ai-disp-select');
+        const subDispSelect = document.getElementById('ai-sub-disp-select');
+        const mainDisp = dispSelect ? dispSelect.value : '';
+        const subDisp = subDispSelect ? subDispSelect.value : '';
+
+        if (!mainDisp || !subDisp) {
+            showAIToast('⚠️ يرجى اختيار تصنيف التذكرة (الموضوع الرئيسي والفرعي) قبل إرسال إجابتك!', 'error');
+            return;
+        }
+
         inputEl.value = '';
         inputEl.style.height = 'auto';
 
@@ -561,12 +733,20 @@ ${transcript3}`;
         setInputEnabled(false);
         showTypingIndicator();
 
+        const coachMsgText = text + `\n[تصنيف التذكرة: الموضوع الرئيسي: ${mainDisp} / الموضوع الفرعي: ${subDisp}]`;
+
+        if (dispSelect) dispSelect.value = '';
+        if (subDispSelect) {
+            subDispSelect.innerHTML = '<option value="">الموضوع الفرعي (Sub)</option>';
+            subDispSelect.value = '';
+        }
+
         try {
-            const response = await agent.sendMessage(text);
+            const response = await agent.sendMessage(coachMsgText);
             hideTypingIndicator();
             renderAgentMessage(response, agent.sessionEnded);
             scrollBottom();
-            updateProgressUI(agent.getProgress().completed, TOTAL_SCENARIOS);
+            updateProgressUI(agent.getProgress().completed, agent.totalScenarios || TOTAL_SCENARIOS);
 
             if (agent.sessionEnded) {
                 setInputEnabled(false);
@@ -597,7 +777,7 @@ ${transcript3}`;
         if (statsBar) statsBar.classList.add('hidden');
         if (messagesContainer) messagesContainer.innerHTML = '';
 
-        updateProgressUI(0, TOTAL_SCENARIOS);
+        updateProgressUI(0, agent.totalScenarios || TOTAL_SCENARIOS);
     }
 
     // ─────────────────────────────────────────────
@@ -679,7 +859,7 @@ ${transcript3}`;
         const pctMatch = responseText.match(/النسبة:\s*(\d+)%/);
         const gradeMatch = responseText.match(/التقدير العام:\s*([^\n\r]+)/);
         const notesMatch = responseText.match(/الملاحظات:\s*([^\n\r]+)/);
-        const totalMatch = responseText.match(/المجموع:\s*(\d+)\/40/);
+        const totalMatch = responseText.match(/المجموع:\s*(\d+)\/\d+/);
 
         const pct = pctMatch ? pctMatch[1] : '?';
         const grade = gradeMatch ? gradeMatch[1].trim() : '?';
@@ -696,10 +876,12 @@ ${transcript3}`;
         const notesEl = document.getElementById('ai-res-notes');
         const totalEl = document.getElementById('ai-res-total');
 
+        const maxScore = (agent.totalScenarios || TOTAL_SCENARIOS) * 10;
+
         if (scoreEl) { scoreEl.textContent = pct + '%'; scoreEl.style.color = scoreColor; }
         if (gradeEl) gradeEl.textContent = grade;
         if (notesEl) notesEl.textContent = notes;
-        if (totalEl) totalEl.textContent = total + '/40';
+        if (totalEl) totalEl.textContent = total + '/' + maxScore;
 
         overlay.classList.remove('hidden');
 
@@ -722,6 +904,16 @@ ${transcript3}`;
             try {
                 await window.apiCall('/api/ai-results', 'POST', resultData);
                 console.log("AI session result successfully saved to database");
+                
+                if (window.isAiTestAssigned) {
+                    let aiAssignments = await window.apiCall('/api/ai-assignments', 'GET');
+                    aiAssignments = aiAssignments.filter(id => id !== user.id && id !== 'all');
+                    await window.apiCall('/api/ai-assignments', 'POST', aiAssignments);
+                    window.isAiTestAssigned = false;
+                    if (window.checkTestAssignment) {
+                        window.checkTestAssignment();
+                    }
+                }
             } catch (err) {
                 console.error("Failed to post AI results to database", err);
             }

@@ -107,6 +107,7 @@ async function getDb() {
     return {
         users: defaultUsers,
         assignments: [],
+        aiAssignments: [],
         results: [],
         scenarios: null,
         aiResults: []
@@ -212,6 +213,17 @@ exports.handler = async (event, context) => {
         }
         if (event.httpMethod === 'POST') {
             db.assignments = bodyData;
+            await saveDb(db);
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
+    }
+
+    if (cleanPath === '/ai-assignments') {
+        if (event.httpMethod === 'GET') {
+            return { statusCode: 200, headers, body: JSON.stringify(db.aiAssignments || []) };
+        }
+        if (event.httpMethod === 'POST') {
+            db.aiAssignments = bodyData;
             await saveDb(db);
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
         }

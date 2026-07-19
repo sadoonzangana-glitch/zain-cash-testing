@@ -216,6 +216,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabPanes = document.querySelectorAll('.amy-tab-pane');
 
     function switchTab(tabId) {
+        if (currentUser && currentUser.role !== 'Admin') {
+            if (isTestAssigned && !isAiTestAssigned && tabId !== 'tab-simulator') {
+                showToast('⚠️ يرجى إكمال اختبار محاكي الدردشة أولاً!', 'error');
+                return;
+            }
+            if (isAiTestAssigned && !isTestAssigned && tabId !== 'tab-ai-agent') {
+                showToast('⚠️ يرجى إكمال اختبار الأيجنت الذكي أولاً!', 'error');
+                return;
+            }
+            if (isTestAssigned && isAiTestAssigned && tabId !== 'tab-simulator' && tabId !== 'tab-ai-agent') {
+                showToast('⚠️ يرجى إكمال الاختبارات النشطة أولاً!', 'error');
+                return;
+            }
+        }
+
         // Deactivate all tabs
         tabButtons.forEach(btn => btn.classList.remove('active'));
         tabPanes.forEach(pane => pane.classList.remove('active'));
@@ -634,91 +649,174 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
-    function initSimulator() {
+    function generateChatColumnHtml(chat, i) {
+        let iconHtml = '<i class="fa-brands fa-whatsapp whatsapp-icon" style="color: #25d366;"></i>';
+        let channelName = 'WhatsApp Chat';
+        let channelBadge = `phone${i}`;
+
+        if (chat.customerName.includes('علي') || chat.id === 2) {
+            iconHtml = '<i class="fa-brands fa-instagram instagram-icon" style="color: #e1306c;"></i>';
+            channelName = 'Instagram DM';
+            channelBadge = 'instagram';
+        } else if (chat.id === 3) {
+            iconHtml = '<i class="fa-brands fa-instagram instagram-icon" style="color: #e1306c;"></i>';
+            channelName = 'Instagram Post';
+            channelBadge = 'instagrampost';
+        }
+
+        const initialMsg = chat.history && chat.history[1] ? chat.history[1].parts[0].text : 'مرحباً';
+
+        return `
+        <div class="chat-column">
+            <div class="column-meta-info">
+                <span class="meta-channel">${channelBadge}</span>
+                <span class="meta-detail">${channelName}</span>
+            </div>
+            <div class="floating-chat-window static-window">
+                <div class="chat-header">
+                    <div class="chat-header-left">
+                        ${iconHtml}
+                        <span class="chat-customer-name">${escapeHtml(chat.customerName)}</span>
+                        <span class="status-dot online"></span>
+                    </div>
+                    <div class="chat-header-right">
+                        <i class="fa-solid fa-arrow-right-left" id="chat-back-${i}" style="cursor:pointer;" title="Back to Chat"></i>
+                        <i class="fa-solid fa-user" id="chat-profile-${i}" style="cursor:pointer;" title="Customer Profile"></i>
+                        <i class="fa-solid fa-xmark" id="chat-close-${i}" style="cursor:pointer;" title="Close & Dispose"></i>
+                    </div>
+                </div>
+                <div class="chat-body" id="chat-body-${i}">
+                    <div class="system-message">
+                        <span>[Session started via ${channelName}]</span>
+                    </div>
+                    <div class="message message-customer">
+                        <p>${escapeHtml(initialMsg)}</p>
+                        <span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                </div>
+                <div class="typing-indicator-wrapper hidden" id="typing-indicator-${i}">
+                    <div class="typing-bubble">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    </div>
+                </div>
+                <div class="chat-footer-mock live-footer">
+                    <i class="fa-solid fa-paperclip"></i>
+                    <textarea class="live-chat-input" id="chat-input-${i}" placeholder="Type your reply here... (Enter to Send)"></textarea>
+                    <i class="fa-regular fa-smile chat-smiley-btn" id="chat-smiley-${i}" style="cursor:pointer;" title="Insert Emoji"></i>
+                    <button class="btn-send-mock live-send-btn" id="chat-send-${i}">Send</button>
+                </div>
+
+                <!-- Emoji Picker Panel -->
+                <div class="emoji-picker hidden" id="emoji-picker-${i}">
+                    <span class="emoji-item">😊</span>
+                    <span class="emoji-item">😂</span>
+                    <span class="emoji-item">👍</span>
+                    <span class="emoji-item">🌹</span>
+                    <span class="emoji-item">🙏</span>
+                    <span class="emoji-item">❤️</span>
+                    <span class="emoji-item">👋</span>
+                    <span class="emoji-item">✨</span>
+                    <span class="emoji-item">🔥</span>
+                    <span class="emoji-item">🙌</span>
+                </div>
+
+                <!-- Customer Profile Panel -->
+                <div class="profile-panel hidden" id="profile-panel-${i}">
+                    <div class="profile-form">
+                        <div class="profile-field">
+                            <label>Name</label>
+                            <div class="profile-value">
+                                ${iconHtml}
+                                <span>${escapeHtml(chat.customerName)}</span>
+                            </div>
+                        </div>
+                        <div class="profile-field">
+                            <label>Email</label>
+                            <div class="profile-value">-</div>
+                        </div>
+                        <div class="profile-field">
+                            <label>Phone</label>
+                            <div class="profile-value">9647700000${i}</div>
+                        </div>
+                        <div class="profile-actions">
+                            <button type="button" class="btn-create-new"><i class="fa-solid fa-plus"></i> Create New</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disposition Panel -->
+                <div class="disposition-panel hidden" id="disposition-panel-${i}">
+                    <div class="disposition-form">
+                        <div class="form-group">
+                            <label>Disposition</label>
+                            <select class="disposition-select" id="disp-select-${i}">
+                                <option value="">Select a Disposition</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sub Disposition</label>
+                            <select class="sub-disposition-select" id="sub-disp-select-${i}">
+                                <option value="">Select a Sub Disposition</option>
+                            </select>
+                        </div>
+                        <div class="quick-dispositions-grid">
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Issue" data-sub="Top-up or Transfer Issue">Refund Delay</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Issue" data-sub="Reset PIN request">Reset PIN request</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Inquiry" data-sub="MC/Visa Inquiry">Card Inquiry</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Other" data-sub="Junk call">Junk call</button>
+                        </div>
+                        <div class="ticket-status-row">
+                            <span class="section-title">Ticket</span>
+                            <div class="ticket-pills">
+                                <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
+                            </div>
+                            <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
+                        </div>
+                        <button type="button" class="btn-save-dispose" id="btn-save-dispose-${i}" disabled>Save and Dispose</button>
+                    </div>
+                </div>
+
+                <!-- Disposed Overlay -->
+                <div class="disposed-overlay hidden" id="disposed-overlay-${i}">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <h3>Ticket Disposed & Closed</h3>
+                    <p>This conversation has been classified and resolved.</p>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    async function initSimulator() {
         if (simulatorInitialized) return;
 
-        multiChatAgent = new window.MultiChatAgent();
+        let scenarios = null;
+        try {
+            scenarios = await apiCall('/api/scenarios', 'GET');
+        } catch (e) {
+            console.error("Failed to load scenarios, falling back to defaults", e);
+        }
+
+        multiChatAgent = new window.MultiChatAgent(scenarios);
         multiChatAgent.loadSettings();
 
-        disposedChats = { 1: false, 2: false, 3: false };
-
-        // Clear and load initial customer messages
-        const chat1 = document.getElementById('chat-body-1');
-        const chat2 = document.getElementById('chat-body-2');
-        const chat3 = document.getElementById('chat-body-3');
-
-        if (chat1) {
-            chat1.innerHTML = `
-                <div class="system-message">
-                    <span>[Session started via WhatsApp]</span>
-                </div>
-                <div class="message message-customer">
-                    <p>فلوسي مال البطاقة لحد الآن ما رجعت</p>
-                    <span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                </div>
-            `;
-            chat1.scrollTop = chat1.scrollHeight;
+        disposedChats = {};
+        
+        const grid = document.getElementById('multitask-chat-grid');
+        if (grid) {
+            grid.innerHTML = '';
+            multiChatAgent.chats.forEach(chat => {
+                const i = chat.id;
+                disposedChats[i] = false;
+                
+                const colHtml = generateChatColumnHtml(chat, i);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = colHtml.trim();
+                const colEl = tempDiv.firstChild;
+                grid.appendChild(colEl);
+            });
         }
 
-        if (chat2) {
-            chat2.innerHTML = `
-                <div class="system-message">
-                    <span>[Session started via Instagram DM]</span>
-                </div>
-                <div class="message message-customer">
-                    <p>هسه اشتريت بطاقه بلي اول شي طلع فشل نوب طلع تم</p>
-                    <span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                </div>
-            `;
-            chat2.scrollTop = chat2.scrollHeight;
-        }
-
-        if (chat3) {
-            chat3.innerHTML = `
-                <div class="system-message">
-                    <span>[Session started via Instagram Comment]</span>
-                </div>
-                <div class="message message-customer">
-                    <p>شنو سبب</p>
-                    <span class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                </div>
-            `;
-            chat3.scrollTop = chat3.scrollHeight;
-        }
-
-        // Reset panels and overlays visibility
-        for (let i = 1; i <= 3; i++) {
-            const dispPanel = document.getElementById(`disposition-panel-${i}`);
-            const dispOverlay = document.getElementById(`disposed-overlay-${i}`);
-            const profPanel = document.getElementById(`profile-panel-${i}`);
-            if (dispPanel) dispPanel.classList.add('hidden');
-            if (dispOverlay) dispOverlay.classList.add('hidden');
-            if (profPanel) profPanel.classList.add('hidden');
-            
-            // Reset dropdowns
-            const selectDisp = document.getElementById(`disp-select-${i}`);
-            const selectSub = document.getElementById(`sub-disp-select-${i}`);
-            if (selectDisp) selectDisp.value = '';
-            if (selectSub) {
-                selectSub.innerHTML = '<option value="">Select a Sub Disposition</option>';
-                selectSub.value = '';
-            }
-
-            const saveBtn = document.getElementById(`btn-save-dispose-${i}`);
-            if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.classList.remove('active');
-            }
-
-            // Remove active-window class
-            const winBody = document.getElementById(`chat-body-${i}`);
-            if (winBody) {
-                const win = winBody.closest('.floating-chat-window');
-                if (win) win.classList.remove('active-window');
-            }
-        }
-
-        // Setup Window Active Focus Highlight
         const chatWindows = document.querySelectorAll('.multitask-chat-grid .floating-chat-window');
         chatWindows.forEach(win => {
             win.addEventListener('click', () => {
@@ -728,13 +826,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (chatWindows[0]) chatWindows[0].classList.add('active-window');
 
-        // Setup inputs event listeners
-        for (let i = 1; i <= 3; i++) {
+        const numChats = multiChatAgent.chats.length;
+
+        for (let i = 1; i <= numChats; i++) {
             const inputEl = document.getElementById(`chat-input-${i}`);
             const sendBtn = document.getElementById(`chat-send-${i}`);
 
             if (inputEl) {
-                // Keydown Enter (Send)
                 inputEl.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -750,7 +848,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Zain Cash Dispositions Data
         const DISPOSITION_DATA = {
             "WU Inquiry": ["WU Inquiry"],
             "WU Issue": ["Send Money Issue", "Receive Money Issue", "Hold Transaction Issue", "Missing MTCN Issue", "Other Issues"],
@@ -769,8 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "Reset/Change PIN request": ["Reset/Change PIN request"]
         };
 
-        // Setup Close & Back & Profile Form actions for all 3 chats
-        for (let i = 1; i <= 3; i++) {
+        for (let i = 1; i <= numChats; i++) {
             const closeBtn = document.getElementById(`chat-close-${i}`);
             const backBtn = document.getElementById(`chat-back-${i}`);
             const profileBtn = document.getElementById(`chat-profile-${i}`);
@@ -780,7 +876,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectSub = document.getElementById(`sub-disp-select-${i}`);
             const saveBtn = document.getElementById(`btn-save-dispose-${i}`);
 
-            // Dynamically populate main disposition dropdown
             if (selectDisp) {
                 selectDisp.innerHTML = '<option value="">Select a Disposition</option>';
                 Object.keys(DISPOSITION_DATA).forEach(disp => {
@@ -806,24 +901,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (closeBtn && dispPanel) {
                 closeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent click propagation
+                    e.stopPropagation();
                     if (disposedChats[i]) return;
                     dispPanel.classList.toggle('hidden');
-                    if (profPanel) profPanel.classList.add('hidden'); // Hide profile panel
+                    if (profPanel) profPanel.classList.add('hidden');
                 });
             }
 
             if (profileBtn && profPanel) {
                 profileBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent click propagation
+                    e.stopPropagation();
                     profPanel.classList.toggle('hidden');
-                    if (dispPanel) dispPanel.classList.add('hidden'); // Hide disposition panel
+                    if (dispPanel) dispPanel.classList.add('hidden');
                 });
             }
 
             if (backBtn) {
                 backBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent click propagation
+                    e.stopPropagation();
                     if (dispPanel) dispPanel.classList.add('hidden');
                     if (profPanel) profPanel.classList.add('hidden');
                 });
@@ -849,7 +944,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectSub.addEventListener('change', checkFormValidity);
             }
 
-            // Quick tag selections
             const quickButtons = document.querySelectorAll(`.quick-disp-btn[data-chat="${i}"]`);
             quickButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -870,7 +964,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Save and Dispose button click
             if (saveBtn) {
                 saveBtn.addEventListener('click', () => {
                     if (selectDisp.value && selectSub.value) {
@@ -886,7 +979,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Emoji Picker Actions
             const smileyBtn = document.getElementById(`chat-smiley-${i}`);
             const picker = document.getElementById(`emoji-picker-${i}`);
             const inputEl = document.getElementById(`chat-input-${i}`);
@@ -894,8 +986,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (smileyBtn && picker && inputEl) {
                 smileyBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Toggle this picker, hide others
-                    for (let j = 1; j <= 3; j++) {
+                    for (let j = 1; j <= numChats; j++) {
                         const otherPicker = document.getElementById(`emoji-picker-${j}`);
                         if (otherPicker) {
                             if (j === i) {
@@ -910,37 +1001,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 picker.querySelectorAll('.emoji-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        // Insert emoji at cursor position
                         const startPos = inputEl.selectionStart;
                         const endPos = inputEl.selectionEnd;
                         const text = inputEl.value;
                         const emoji = item.textContent;
                         inputEl.value = text.substring(0, startPos) + emoji + text.substring(endPos);
                         
-                        // Move cursor after emoji
                         const newPos = startPos + emoji.length;
                         inputEl.setSelectionRange(newPos, newPos);
                         inputEl.focus();
 
-                        // Hide picker
                         picker.classList.add('hidden');
                     });
                 });
             }
         }
 
-        // Close emoji pickers on click outside
         document.addEventListener('click', () => {
-            for (let j = 1; j <= 3; j++) {
+            for (let j = 1; j <= numChats; j++) {
                 const picker = document.getElementById(`emoji-picker-${j}`);
                 if (picker) picker.classList.add('hidden');
             }
         });
 
-        // Setup Submit button
         const submitBtn = document.getElementById('btn-submit-session');
         if (submitBtn) {
-            // Remove any existing event listeners by replacing button node (to prevent duplicate clicks)
             const newBtn = submitBtn.cloneNode(true);
             submitBtn.parentNode.replaceChild(newBtn, submitBtn);
             newBtn.addEventListener('click', handleEvaluateSimulator);
@@ -1075,6 +1160,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 try {
                     await apiCall('/api/results', 'POST', resultData);
+                    
+                    if (isTestAssigned) {
+                        let assignments = await apiCall('/api/assignments', 'GET');
+                        assignments = assignments.filter(id => id !== currentUser.id && id !== 'all');
+                        await apiCall('/api/assignments', 'POST', assignments);
+                        isTestAssigned = false;
+                        window.isTestAssigned = false;
+                        await checkTestAssignment();
+                    }
                 } catch (e) {
                     console.error("Failed to save results to server", e);
                 }
@@ -1618,6 +1712,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let currentUser = null;
     let isTestAssigned = false;
+    let isAiTestAssigned = false;
     
     async function checkUserSession() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1714,29 +1809,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function checkTestAssignment() {
+        const navBtnSim = document.getElementById('nav-btn-simulator');
+        const navBtnAI = document.getElementById('nav-btn-ai-agent');
+        const navBtnHome = document.querySelector('.amy-nav-btn[data-amy-tab="tab-slides"]');
+
         if (!currentUser || currentUser.role === 'Admin') {
             if (activeTestBanner) activeTestBanner.classList.add('hidden');
             isTestAssigned = false;
+            isAiTestAssigned = false;
+            window.isTestAssigned = false;
+            window.isAiTestAssigned = false;
+            
+            if (navBtnSim) navBtnSim.style.display = '';
+            if (navBtnAI) navBtnAI.style.display = '';
+            if (navBtnHome) navBtnHome.style.display = '';
             return;
         }
         
         try {
-            const assignments = await apiCall('/api/assignments', 'GET');
-            const hasAssignment = assignments.includes(currentUser.id) || assignments.includes('all');
-            if (hasAssignment) {
-                isTestAssigned = true;
-                if (activeTestBanner) activeTestBanner.classList.remove('hidden');
+            const [assignments, aiAssignments] = await Promise.all([
+                apiCall('/api/assignments', 'GET'),
+                apiCall('/api/ai-assignments', 'GET')
+            ]);
+            
+            isTestAssigned = assignments.includes(currentUser.id) || assignments.includes('all');
+            isAiTestAssigned = aiAssignments.includes(currentUser.id) || aiAssignments.includes('all');
+            window.isTestAssigned = isTestAssigned;
+            window.isAiTestAssigned = isAiTestAssigned;
+            
+            const banner = document.getElementById('active-test-banner');
+            const bannerText = document.getElementById('active-test-banner-text');
+            
+            if (isTestAssigned || isAiTestAssigned) {
+                if (banner) banner.classList.remove('hidden');
+                
+                if (isTestAssigned && isAiTestAssigned) {
+                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة والأيجنت الذكي! يرجى إكمالهما.";
+                    if (navBtnSim) navBtnSim.style.display = '';
+                    if (navBtnAI) navBtnAI.style.display = '';
+                    if (navBtnHome) navBtnHome.style.display = 'none';
+                    switchTab('tab-simulator');
+                } else if (isTestAssigned) {
+                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة! يرجى إكمال جميع المحادثات وتصنيفها.";
+                    if (navBtnSim) navBtnSim.style.display = '';
+                    if (navBtnAI) navBtnAI.style.display = 'none';
+                    if (navBtnHome) navBtnHome.style.display = 'none';
+                    switchTab('tab-simulator');
+                } else {
+                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في الأيجنت الذكي! يرجى إكمال التدريب والتصنيف.";
+                    if (navBtnSim) navBtnSim.style.display = 'none';
+                    if (navBtnAI) navBtnAI.style.display = '';
+                    if (navBtnHome) navBtnHome.style.display = 'none';
+                    switchTab('tab-ai-agent');
+                }
             } else {
-                isTestAssigned = false;
-                if (activeTestBanner) activeTestBanner.classList.add('hidden');
+                if (banner) banner.classList.add('hidden');
+                if (navBtnSim) navBtnSim.style.display = '';
+                if (navBtnAI) navBtnAI.style.display = '';
+                if (navBtnHome) navBtnHome.style.display = '';
             }
         } catch (e) {
             console.error("Failed to check assignments", e);
             isTestAssigned = false;
-            if (activeTestBanner) activeTestBanner.classList.add('hidden');
+            isAiTestAssigned = false;
+            window.isTestAssigned = false;
+            window.isAiTestAssigned = false;
         }
     }
-
 
     // ==========================================
     // ADMIN PANEL SUB-TABS (Assignments, Results)
@@ -1772,7 +1911,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     let allUsers = [];
+    let currentTestType = 'simulator'; // 'simulator' or 'ai-agent'
     let currentAssignments = [];
+    let currentAiAssignments = [];
+    let simulatorAssignAll = false;
+    let aiAssignAll = false;
     
     async function loadAssignmentsTab() {
         const grid = document.getElementById('users-selection-grid');
@@ -1782,12 +1925,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             allUsers = await apiCall('/api/users', 'GET');
             currentAssignments = await apiCall('/api/assignments', 'GET');
+            currentAiAssignments = await apiCall('/api/ai-assignments', 'GET');
             
             allUsers = allUsers.filter(u => u.role !== 'Admin');
             
-            renderUsersGrid();
+            simulatorAssignAll = currentAssignments.includes('all');
+            aiAssignAll = currentAiAssignments.includes('all');
             
-            const assignAll = currentAssignments.includes('all');
+            const activeType = currentTestType;
+            const assignAll = activeType === 'simulator' ? simulatorAssignAll : aiAssignAll;
+            
             const radioAll = document.getElementById('assign-all-radio');
             const radioSpecific = document.getElementById('assign-specific-radio');
             
@@ -1802,6 +1949,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     listWrapper.classList.remove('hidden');
                 }
             }
+            
+            renderUsersGrid();
         } catch (e) {
             console.error("Failed to load assignments tab data", e);
             grid.innerHTML = '<p style="grid-column: span 3; text-align: center; color: var(--error);">فشل في تحميل قائمة الموظفين.</p>';
@@ -1825,26 +1974,56 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        const activeList = currentTestType === 'simulator' ? currentAssignments : currentAiAssignments;
+        
         filtered.forEach(user => {
-            const isChecked = currentAssignments.includes(user.id);
+            const isChecked = activeList.includes(user.id);
+            
+            // Generate initials
+            const names = user.name.split(' ');
+            const initials = names.length > 1 ? (names[0][0] + names[1][0]).toUpperCase() : names[0][0].toUpperCase();
+            
+            // Consistent avatar colors
+            let hash = 0;
+            for (let i = 0; i < user.name.length; i++) {
+                hash = user.name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash) % 360;
+            const avatarBg = `hsl(${hue}, 65%, 40%)`;
+            
+            const isSimAssigned = currentAssignments.includes(user.id);
+            const isAiAssigned = currentAiAssignments.includes(user.id);
+            
             const card = document.createElement('div');
             card.className = `user-checkbox-card ${isChecked ? 'selected' : ''}`;
             card.dataset.userId = user.id;
             
-            card.style.alignItems = 'flex-start';
             card.innerHTML = `
-                <input type="checkbox" id="chk-user-${user.id}" ${isChecked ? 'checked' : ''} style="margin-top: 4px; align-self: flex-start;">
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0;">
-                    <div class="user-card-info" style="min-width: 0;">
-                        <span class="user-name" style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.name}</span>
-                        <span class="user-zc" style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-en); font-weight: bold;">${user.id}</span>
+                <div class="user-card-left">
+                    <input type="checkbox" id="chk-user-${user.id}" ${isChecked ? 'checked' : ''}>
+                    <div class="user-card-avatar" style="background-color: ${avatarBg}">
+                        ${initials}
                     </div>
-                    <div style="display: flex; gap: 6px; align-items: center; width: 100%;" class="invite-control-row">
-                        <input type="email" class="user-email-input" id="email-user-${user.id}" placeholder="Enter email..." value="${user.email || ''}" style="flex: 1; min-width: 0; padding: 4px 8px; font-size: 0.8rem; border-radius: 6px; border: 1px solid #cbd5e1;">
-                        <button type="button" class="btn btn-secondary btn-sm btn-send-invite" data-user-id="${user.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; height: 26px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                            <i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite
-                        </button>
+                </div>
+                <div class="user-card-main">
+                    <div class="user-name">${user.name}</div>
+                    <div class="user-sub-row">
+                        <span class="user-id-badge">${user.id}</span>
+                        <span class="user-role-badge">${user.role || 'Inbound'}</span>
                     </div>
+                    <div class="user-assignment-badges">
+                        ${isSimAssigned ? '<span class="status-badge badge-simulator"><i class="fa-solid fa-comments"></i> Chat Simulator Active</span>' : ''}
+                        ${isAiAssigned ? '<span class="status-badge badge-ai"><i class="fa-solid fa-robot"></i> AI Agent Active</span>' : ''}
+                    </div>
+                </div>
+                <div class="user-card-right">
+                    <div class="user-email-input-group">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" class="user-email-input user-email-field" id="email-user-${user.id}" placeholder="Enter email..." value="${user.email || ''}">
+                    </div>
+                    <button type="button" class="btn-send-invite btn-send-invite-card" data-user-id="${user.id}">
+                        <i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite
+                    </button>
                 </div>
             `;
             
@@ -1859,17 +2038,34 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             bindCardInviteControls(card, user);
-            const checkbox = card.querySelector('input');
+            
+            const checkbox = card.querySelector('input[type="checkbox"]');
             if (checkbox) {
                 checkbox.addEventListener('change', () => {
+                    const activeArray = currentTestType === 'simulator' ? currentAssignments : currentAiAssignments;
                     if (checkbox.checked) {
                         card.classList.add('selected');
-                        if (!currentAssignments.includes(user.id)) {
-                            currentAssignments.push(user.id);
+                        if (!activeArray.includes(user.id)) {
+                            activeArray.push(user.id);
                         }
                     } else {
                         card.classList.remove('selected');
-                        currentAssignments = currentAssignments.filter(id => id !== user.id);
+                        const updated = activeArray.filter(id => id !== user.id);
+                        if (currentTestType === 'simulator') {
+                            currentAssignments = updated;
+                        } else {
+                            currentAiAssignments = updated;
+                        }
+                    }
+                    
+                    const badgeContainer = card.querySelector('.user-assignment-badges');
+                    if (badgeContainer) {
+                        const isSimAssignedNow = currentAssignments.includes(user.id);
+                        const isAiAssignedNow = currentAiAssignments.includes(user.id);
+                        badgeContainer.innerHTML = `
+                            ${isSimAssignedNow ? '<span class="status-badge badge-simulator"><i class="fa-solid fa-comments"></i> Chat Simulator Active</span>' : ''}
+                            ${isAiAssignedNow ? '<span class="status-badge badge-ai"><i class="fa-solid fa-robot"></i> AI Agent Active</span>' : ''}
+                        `;
                     }
                 });
             }
@@ -1885,12 +2081,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (assignAllRadio) {
         assignAllRadio.addEventListener('change', () => {
             if (specificUsersListWrapper) specificUsersListWrapper.classList.add('hidden');
+            if (currentTestType === 'simulator') {
+                simulatorAssignAll = true;
+            } else {
+                aiAssignAll = true;
+            }
         });
     }
     
     if (assignSpecificRadio) {
         assignSpecificRadio.addEventListener('change', () => {
             if (specificUsersListWrapper) specificUsersListWrapper.classList.remove('hidden');
+            if (currentTestType === 'simulator') {
+                simulatorAssignAll = false;
+            } else {
+                aiAssignAll = false;
+            }
             renderUsersGrid();
         });
     }
@@ -1903,9 +2109,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSelectAllUsers = document.getElementById('btn-select-all-users');
     if (btnSelectAllUsers) {
         btnSelectAllUsers.addEventListener('click', () => {
+            const activeArray = currentTestType === 'simulator' ? currentAssignments : currentAiAssignments;
             allUsers.forEach(u => {
-                if (!currentAssignments.includes(u.id)) {
-                    currentAssignments.push(u.id);
+                if (!activeArray.includes(u.id)) {
+                    activeArray.push(u.id);
                 }
             });
             renderUsersGrid();
@@ -1915,23 +2122,65 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDeselectAllUsers = document.getElementById('btn-deselect-all-users');
     if (btnDeselectAllUsers) {
         btnDeselectAllUsers.addEventListener('click', () => {
-            currentAssignments = [];
+            if (currentTestType === 'simulator') {
+                currentAssignments = [];
+            } else {
+                currentAiAssignments = [];
+            }
             renderUsersGrid();
         });
+    }
+
+    const typeSimulatorRadio = document.getElementById('assign-test-type-simulator');
+    const typeAiRadio = document.getElementById('assign-test-type-ai');
+    
+    function handleTestTypeChange(type) {
+        currentTestType = type;
+        const assignAll = type === 'simulator' ? simulatorAssignAll : aiAssignAll;
+        
+        if (assignAll) {
+            if (assignAllRadio) assignAllRadio.checked = true;
+            if (specificUsersListWrapper) specificUsersListWrapper.classList.add('hidden');
+        } else {
+            if (assignSpecificRadio) assignSpecificRadio.checked = true;
+            if (specificUsersListWrapper) specificUsersListWrapper.classList.remove('hidden');
+        }
+        renderUsersGrid();
+    }
+    
+    if (typeSimulatorRadio) {
+        typeSimulatorRadio.addEventListener('change', () => handleTestTypeChange('simulator'));
+    }
+    if (typeAiRadio) {
+        typeAiRadio.addEventListener('change', () => handleTestTypeChange('ai-agent'));
     }
     
     const btnSaveAssignments = document.getElementById('btn-save-assignments');
     if (btnSaveAssignments) {
         btnSaveAssignments.addEventListener('click', async () => {
+            const activeTest = currentTestType;
+            const assignAll = assignAllRadio && assignAllRadio.checked;
+            
             let targets = [];
-            if (assignAllRadio && assignAllRadio.checked) {
+            if (assignAll) {
                 targets = ['all'];
             } else {
-                targets = [...currentAssignments].filter(id => id !== 'all');
+                const activeArray = activeTest === 'simulator' ? currentAssignments : currentAiAssignments;
+                targets = [...activeArray].filter(id => id !== 'all');
             }
             
+            if (activeTest === 'simulator') {
+                simulatorAssignAll = assignAll;
+                currentAssignments = targets;
+            } else {
+                aiAssignAll = assignAll;
+                currentAiAssignments = targets;
+            }
+            
+            const endpoint = activeTest === 'simulator' ? '/api/assignments' : '/api/ai-assignments';
+            
             try {
-                await apiCall('/api/assignments', 'POST', targets);
+                await apiCall(endpoint, 'POST', targets);
                 
                 // Asynchronously trigger email invites in the background for all selected users
                 let selectedUserIds = [];

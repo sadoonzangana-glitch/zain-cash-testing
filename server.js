@@ -186,6 +186,18 @@ app.post('/api/assignments', async (req, res) => {
     res.json({ success: true });
 });
 
+app.get('/api/ai-assignments', async (req, res) => {
+    const db = await readDb();
+    res.json(db.aiAssignments || []);
+});
+
+app.post('/api/ai-assignments', async (req, res) => {
+    const db = await readDb();
+    db.aiAssignments = req.body;
+    await writeDb(db);
+    res.json({ success: true });
+});
+
 app.get('/api/results', async (req, res) => {
     const db = await readDb();
     res.json(db.results || []);
