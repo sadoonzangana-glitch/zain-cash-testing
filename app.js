@@ -2025,6 +2025,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const bannerText = document.getElementById('active-test-banner-text') || (banner ? banner.querySelector('span') : null);
             
             if (isTestAssigned || isAiTestAssigned) {
+                const activeTestType = isTestAssigned ? 'simulator' : 'ai-agent';
+                try {
+                    const sessionRes = await apiCall('/api/test-session/start', 'POST', {
+                        userId: currentUser.id,
+                        testType: activeTestType
+                    });
+
+                    if (sessionRes && (sessionRes.status === 'completed' || sessionRes.status === 'expired')) {
+                        if (typeof showTestLockedScreen === 'function') {
+                            showTestLockedScreen("لقد قمت بإكمال هذا الاختبار مسبقاً، أو انتهت مدة الساعة المحددة للاختبار. تم تسليم نتائجك بنجاح للإدارة ولا يمكنك إعادة الدخول.");
+                        }
+                        return;
+                    }
+
+                    if (sessionRes && sessionRes.status === 'active') {
+                        if (typeof startTestTimer === 'function') {
+                            startTestTimer(sessionRes.remainingSeconds, activeTestType, currentUser.id);
+                        }
+                    }
+                } catch (errSession) {
+                    console.error("Session check error:", errSession);
+                }
+
                 if (banner) banner.classList.remove('hidden');
                 backBtns.forEach(btn => btn.style.display = 'none'); // Hide back buttons during tests
                 
@@ -2040,7 +2063,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (isTestAssigned) {
                     if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة! يرجى إكمال جميع المحادثات وتصنيفها.";
                     if (navBtnSimHidden) { navBtnSimHidden.style.display = ''; navBtnSimHidden.textContent = 'اختبار المحاكي النشط'; }
-                    if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                    if (navBtnAIHidden) { navBtnAIHidden.style.display = 'none'; }
                     switchTab('tab-simulator');
                 } else {
                     if (bannerText) bannerText.textContent = "لديك اختبار نشط في الأيجنت الذكي! يرجى إكمال التقييم وتصنيف التذكرة.";
@@ -2063,6 +2086,142 @@ document.addEventListener('DOMContentLoaded', () => {
             window.isTestAssigned = false;
             window.isAiTestAssigned = false;
         }
+    }
+
+    let testTimerInterval = null;
+    window.startTestTimer = startTestTimer;
+    window.showTestLockedScreen = showTestLockedScreen;
+
+    function showTestLockedScreen(reasonText = null) {
+        const overlay = document.getElementById('test-locked-overlay');
+        const descEl = document.getElementById('test-locked-desc');
+        const timerBanner = document.getElementById('test-timer-banner');
+
+        if (timerBanner) timerBanner.classList.add('hidden');
+        if (testTimerInterval) clearInterval(testTimerInterval);
+
+        if (descEl && reasonText) {
+            descEl.textContent = reasonText;
+        }
+        if (overlay) {
+            overlay.classList.remove('hidden');
+        }
+    }
+
+    const btnLockedOk = document.getElementById('btn-locked-ok');
+    if (btnLockedOk) {
+        btnLockedOk.addEventListener('click', () => {
+            window.location.href = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        });
+    }
+
+    function startTestTimer(remainingSeconds, testType, userId) {
+        const timerBanner = document.getElementById('test-timer-banner');
+        const timerDisplay = document.getElementById('test-timer-display');
+        const timerTitle = document.getElementById('test-timer-title');
+
+        if (!timerBanner || !timerDisplay) return;
+
+        if (timerTitle) {
+            timerTitle.textContent = testType === 'ai-agent' ? "اختبار الأيجنت الذكي المباشر" : "اختبار محاكي خدمة الزبائن";
+        }
+
+        timerBanner.classList.remove('hidden');
+        if (testTimerInterval) clearInterval(testTimerInterval);
+
+        let currentSeconds = remainingSeconds;
+
+        function updateTimerUI() {
+            if (currentSeconds <= 0) {
+                clearInterval(testTimerInterval);
+                timerBanner.classList.add('hidden');
+                autoSubmitTestDueToTime(userId, testType);
+                return;
+            }
+
+            const mins = Math.floor(currentSeconds / 60);
+            const secs = currentSeconds % 60;
+            timerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+            if (currentSeconds <= 300) {
+                timerDisplay.style.color = '#ef4444';
+                timerDisplay.style.borderColor = '#fca5a5';
+            } else if (currentSeconds <= 900) {
+                timerDisplay.style.color = '#f59e0b';
+                timerDisplay.style.borderColor = '#fde68a';
+            } else {
+                timerDisplay.style.color = '#38bdf8';
+                timerDisplay.style.borderColor = '#334155';
+            }
+
+            currentSeconds--;
+        }
+
+        updateTimerUI();
+        testTimerInterval = setInterval(updateTimerUI, 1000);
+    }
+
+    async function autoSubmitTestDueToTime(userId, testType) {
+        showToast("⏳ انتهت مدة الساعة المحددة للاختبار! جاري تسليم إجاباتك تلقائياً...", "warning");
+        try {
+            await apiCall('/api/test-session/complete', 'POST', { userId, testType });
+        } catch(e) {}
+
+        showTestLockedScreen("انتهت مدة الساعة المحددة للاختبار. تم إغلاق الرابط وتسليم نتائجك للإدارة.");
+    }
+
+    // Excel Export Handlers
+    const exportSimBtn = document.getElementById('btn-export-excel-sim');
+    if (exportSimBtn) {
+        exportSimBtn.addEventListener('click', async () => {
+            try {
+                const results = await apiCall('/api/results', 'GET') || [];
+                exportToCsv(results, 'ZainCash_Simulator_Results.csv', 'simulator');
+            } catch(e) {
+                showToast("فشل تحميل نتائج المحاكي: " + e.message, "error");
+            }
+        });
+    }
+
+    const exportAiBtn = document.getElementById('btn-export-excel-ai');
+    if (exportAiBtn) {
+        exportAiBtn.addEventListener('click', async () => {
+            try {
+                const aiResults = await apiCall('/api/ai-results', 'GET') || [];
+                exportToCsv(aiResults, 'ZainCash_AI_Coach_Results.csv', 'ai');
+            } catch(e) {
+                showToast("فشل تحميل نتائج الأيجنت الذكي: " + e.message, "error");
+            }
+        });
+    }
+
+    function exportToCsv(data, filename, type) {
+        if (!data || data.length === 0) {
+            showToast("لا توجد نتائج مسجلة للتحميل حالياً", "warning");
+            return;
+        }
+
+        let csvContent = "\uFEFF"; // UTF-8 BOM for Microsoft Excel Arabic rendering
+        if (type === 'simulator') {
+            csvContent += "رمز الموظف (Code),اسم الموظف (Name),النتيجة (Score %),الأخطاء (Errors),التقييم (Grade),تاريخ وساعة التسليم (Submitted At)\n";
+            data.forEach(r => {
+                csvContent += `"${r.userId || ''}","${r.userName || ''}","${r.score || 0}%","${r.errorsCount || 0}","${r.grade || ''}","${r.date || ''}"\n`;
+            });
+        } else {
+            csvContent += "رمز الموظف (Code),اسم الموظف (Name),النتيجة (Score %),التقييم (Grade),تاريخ وساعة التسليم (Submitted At)\n";
+            data.forEach(r => {
+                csvContent += `"${r.userId || ''}","${r.userName || ''}","${r.score || 0}%","${r.grade || ''}","${r.date || ''}"\n`;
+            });
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("تم تحميل ملف النتائج Excel بنجاح! 📥", "success");
     }
 
     // ==========================================

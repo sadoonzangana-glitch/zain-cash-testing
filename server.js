@@ -390,6 +390,15 @@ app.post('/api/results', async (req, res) => {
     }
     db.results = db.results || [];
     db.results.push(newResult);
+
+    if (newResult.userId) {
+        db.testSessions = db.testSessions || {};
+        const key = `${newResult.userId}_simulator`;
+        db.testSessions[key] = db.testSessions[key] || { userId: newResult.userId, testType: 'simulator', startTime: Date.now() };
+        db.testSessions[key].completed = true;
+        db.testSessions[key].completedAt = newResult.date;
+    }
+
     await writeDb(db);
     res.json({ success: true });
 });
@@ -407,8 +416,105 @@ app.post('/api/ai-results', async (req, res) => {
     }
     db.aiResults = db.aiResults || [];
     db.aiResults.push(newResult);
+
+    if (newResult.userId) {
+        db.testSessions = db.testSessions || {};
+        const key = `${newResult.userId}_ai-agent`;
+        db.testSessions[key] = db.testSessions[key] || { userId: newResult.userId, testType: 'ai-agent', startTime: Date.now() };
+        db.testSessions[key].completed = true;
+        db.testSessions[key].completedAt = newResult.date;
+    }
+
     await writeDb(db);
     res.json({ success: true });
+});
+
+// Test Session Timers and Expiration Locking Endpoints
+app.get('/api/test-session', async (req, res) => {
+    const userId = req.query.userId;
+    const testType = req.query.testType || 'simulator';
+    const db = await readDb();
+    db.testSessions = db.testSessions || {};
+    const key = `${userId}_${testType}`;
+    const session = db.testSessions[key];
+
+    if (!session) {
+        return res.json({ status: 'not_started' });
+    }
+    if (session.completed) {
+        return res.json({ status: 'completed', completedAt: session.completedAt });
+    }
+    const duration = session.duration || 3600000;
+    const elapsed = Date.now() - session.startTime;
+    if (elapsed >= duration) {
+        session.completed = true;
+        session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        await writeDb(db);
+        return res.json({ status: 'expired', duration });
+    }
+    const remainingSeconds = Math.max(0, Math.floor((duration - elapsed) / 1000));
+    res.json({
+        status: 'active',
+        startTime: session.startTime,
+        duration: duration,
+        remainingSeconds: remainingSeconds
+    });
+});
+
+app.post('/api/test-session/start', async (req, res) => {
+    const { userId, testType } = req.body;
+    const db = await readDb();
+    db.testSessions = db.testSessions || {};
+    const tType = testType || 'simulator';
+    const key = `${userId}_${tType}`;
+    const duration = 3600000; // 60 minutes (1 hour)
+
+    let session = db.testSessions[key];
+    if (!session) {
+        session = {
+            userId,
+            testType: tType,
+            startTime: Date.now(),
+            duration: duration,
+            completed: false,
+            completedAt: null
+        };
+        db.testSessions[key] = session;
+        await writeDb(db);
+    } else if (session.completed) {
+        return res.json({ status: 'completed', completedAt: session.completedAt });
+    } else {
+        const elapsed = Date.now() - session.startTime;
+        if (elapsed >= duration) {
+            session.completed = true;
+            session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            await writeDb(db);
+            return res.json({ status: 'expired' });
+        }
+    }
+
+    const elapsed = Date.now() - session.startTime;
+    const remainingSeconds = Math.max(0, Math.floor((duration - elapsed) / 1000));
+    res.json({
+        status: 'active',
+        startTime: session.startTime,
+        duration: duration,
+        remainingSeconds: remainingSeconds
+    });
+});
+
+app.post('/api/test-session/complete', async (req, res) => {
+    const { userId, testType } = req.body;
+    const db = await readDb();
+    db.testSessions = db.testSessions || {};
+    const key = `${userId}_${testType || 'simulator'}`;
+
+    let session = db.testSessions[key] || { userId, testType: testType || 'simulator', startTime: Date.now() };
+    session.completed = true;
+    session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    db.testSessions[key] = session;
+    await writeDb(db);
+    res.json({ success: true, status: 'completed' });
 });
 
 app.post('/api/send-invite', async (req, res) => {
@@ -424,7 +530,7 @@ app.post('/api/send-invite', async (req, res) => {
     
     const hostHeader = req.get('host') || 'localhost:8888';
     const protocol = req.protocol || 'http';
-    const loginLink = `${protocol}://${hostHeader}/?login=${userId}`;
+    const loginLink = `${protocol}://${hostHeader}/?login=${userId}&test=${testType || 'simulator'}`;
     
     let sent = false;
     let simulated = false;

@@ -416,6 +416,13 @@ exports.handler = async (event, context) => {
             }
             db.results = db.results || [];
             db.results.push(newRes);
+            if (newRes.userId) {
+                db.testSessions = db.testSessions || {};
+                const key = `${newRes.userId}_simulator`;
+                db.testSessions[key] = db.testSessions[key] || { userId: newRes.userId, testType: 'simulator', startTime: Date.now() };
+                db.testSessions[key].completed = true;
+                db.testSessions[key].completedAt = newRes.date;
+            }
             await saveDb(db);
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
         }
@@ -432,9 +439,90 @@ exports.handler = async (event, context) => {
             }
             db.aiResults = db.aiResults || [];
             db.aiResults.push(newRes);
+            if (newRes.userId) {
+                db.testSessions = db.testSessions || {};
+                const key = `${newRes.userId}_ai-agent`;
+                db.testSessions[key] = db.testSessions[key] || { userId: newRes.userId, testType: 'ai-agent', startTime: Date.now() };
+                db.testSessions[key].completed = true;
+                db.testSessions[key].completedAt = newRes.date;
+            }
             await saveDb(db);
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
         }
+    }
+
+    if (cleanPath === '/test-session') {
+        const queryParams = event.queryStringParameters || {};
+        const userId = queryParams.userId;
+        const testType = queryParams.testType || 'simulator';
+        db.testSessions = db.testSessions || {};
+        const key = `${userId}_${testType}`;
+        const session = db.testSessions[key];
+
+        if (!session) {
+            return { statusCode: 200, headers, body: JSON.stringify({ status: 'not_started' }) };
+        }
+        if (session.completed) {
+            return { statusCode: 200, headers, body: JSON.stringify({ status: 'completed', completedAt: session.completedAt }) };
+        }
+        const duration = session.duration || 3600000;
+        const elapsed = Date.now() - session.startTime;
+        if (elapsed >= duration) {
+            session.completed = true;
+            session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            await saveDb(db);
+            return { statusCode: 200, headers, body: JSON.stringify({ status: 'expired', duration }) };
+        }
+        const remainingSeconds = Math.max(0, Math.floor((duration - elapsed) / 1000));
+        return { statusCode: 200, headers, body: JSON.stringify({ status: 'active', startTime: session.startTime, duration, remainingSeconds }) };
+    }
+
+    if (cleanPath === '/test-session/start' && event.httpMethod === 'POST') {
+        const { userId, testType } = bodyData;
+        db.testSessions = db.testSessions || {};
+        const tType = testType || 'simulator';
+        const key = `${userId}_${tType}`;
+        const duration = 3600000; // 60 mins
+
+        let session = db.testSessions[key];
+        if (!session) {
+            session = {
+                userId,
+                testType: tType,
+                startTime: Date.now(),
+                duration,
+                completed: false,
+                completedAt: null
+            };
+            db.testSessions[key] = session;
+            await saveDb(db);
+        } else if (session.completed) {
+            return { statusCode: 200, headers, body: JSON.stringify({ status: 'completed', completedAt: session.completedAt }) };
+        } else {
+            const elapsed = Date.now() - session.startTime;
+            if (elapsed >= duration) {
+                session.completed = true;
+                session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+                await saveDb(db);
+                return { statusCode: 200, headers, body: JSON.stringify({ status: 'expired' }) };
+            }
+        }
+
+        const elapsed = Date.now() - session.startTime;
+        const remainingSeconds = Math.max(0, Math.floor((duration - elapsed) / 1000));
+        return { statusCode: 200, headers, body: JSON.stringify({ status: 'active', startTime: session.startTime, duration, remainingSeconds }) };
+    }
+
+    if (cleanPath === '/test-session/complete' && event.httpMethod === 'POST') {
+        const { userId, testType } = bodyData;
+        db.testSessions = db.testSessions || {};
+        const key = `${userId}_${testType || 'simulator'}`;
+        let session = db.testSessions[key] || { userId, testType: testType || 'simulator', startTime: Date.now() };
+        session.completed = true;
+        session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        db.testSessions[key] = session;
+        await saveDb(db);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, status: 'completed' }) };
     }
 
     if (cleanPath === '/send-invite' && event.httpMethod === 'POST') {
@@ -448,7 +536,7 @@ exports.handler = async (event, context) => {
 
         const hostHeader = event.headers.host || 'localhost:8888';
         const proto = (event.headers['x-forwarded-proto'] || 'https');
-        const loginLink = `${proto}://${hostHeader}/?login=${userId}`;
+        const loginLink = `${proto}://${hostHeader}/?login=${userId}&test=${testType || 'simulator'}`;
 
         let sent = false;
         let simulated = false;

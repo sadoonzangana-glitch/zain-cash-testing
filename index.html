@@ -15,6 +15,39 @@
 </head>
 <body>
 
+    <!-- Sticky Top 1-Hour Timer Banner -->
+    <div id="test-timer-banner" class="hidden" style="position: sticky; top: 0; z-index: 9999; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 10px 20px; border-bottom: 3px solid #ff9900; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); direction: rtl; text-align: right;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="background: rgba(255, 153, 0, 0.2); color: #ff9900; border: 1px solid rgba(255, 153, 0, 0.4); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 800;">
+                <i class="fa-solid fa-clock-rotate-left"></i> جلسة اختبار تقييمي مباشرة (ساعة واحدة)
+            </span>
+            <span id="test-timer-title" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">اختبار تقييم خدمة الزبائن</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">الوقت المتبقي للاختبار:</span>
+            <span id="test-timer-display" style="font-family: monospace; font-size: 1.25rem; font-weight: 900; color: #38bdf8; background: rgba(15, 23, 42, 0.85); padding: 4px 14px; border-radius: 8px; border: 1px solid #334155;">
+                60:00
+            </span>
+        </div>
+    </div>
+
+    <!-- Locked Screen Modal Overlay (Single-Use Link Enforcement) -->
+    <div id="test-locked-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 10000; direction: rtl; text-align: center; color: #ffffff;">
+        <div style="background: #ffffff; color: #0f172a; padding: 35px 30px; border-radius: 24px; max-width: 500px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.25); border: 1px solid #e2e8f0;">
+            <div style="width: 70px; height: 70px; border-radius: 50%; background: #fef2f2; border: 2px solid #fecdd3; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: #e11d48; font-size: 2rem;">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 12px;">تم إكمال هذا الاختبار سابقاً / انتهت الصلاحية</h2>
+            <p id="test-locked-desc" style="font-size: 0.92rem; color: #475569; line-height: 1.6; margin-bottom: 25px;">
+                شكراً لك! لقد قمت بإكمال هذا الاختبار مسبقاً، أو انتهت مدة الساعة المحددة للاختبار. تم حفظ نتائجك بنجاح وتسليمها للإدارة.
+            </p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 25px; text-align: right; font-size: 0.85rem; color: #64748b;">
+                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <strong>الحالة:</strong> تم تسليم إجاباتك واعتمادها برمجياً. لا يمكنك إعادة الدخول مجدداً للاختبار.
+            </div>
+            <button id="btn-locked-ok" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700; border-radius: 12px; cursor: pointer;">حسناً، فهمت</button>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Brand Header Bar (Amyo Style) -->
         <header class="brand-header">
@@ -819,7 +852,10 @@
                                         </h3>
                                         <p style="font-size: 0.85rem; color: #64748b; margin-top: 3px; font-family: var(--font-ar);">Log of employee concurrent 3-column chat simulation results.</p>
                                     </div>
-                                    <div class="results-actions">
+                                    <div class="results-actions" style="display: flex; gap: 8px;">
+                                        <button class="btn btn-success btn-sm" id="btn-export-excel-sim" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 8px; background: #10b981; color: #ffffff; border: none; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <i class="fa-solid fa-file-excel"></i> Excel تحميل (.csv)
+                                        </button>
                                         <button class="btn btn-secondary btn-sm" id="btn-refresh-results-sim" style="font-size: 0.8rem; padding: 6px 12px; border-radius: 8px;">
                                             <i class="fa-solid fa-arrows-rotate"></i> Refresh
                                         </button>
@@ -857,7 +893,10 @@
                                         </h3>
                                         <p style="font-size: 0.85rem; color: #64748b; margin-top: 3px; font-family: var(--font-ar);">Log of employee training sessions with the Strict AI Coach.</p>
                                     </div>
-                                    <div class="results-actions">
+                                    <div class="results-actions" style="display: flex; gap: 8px;">
+                                        <button class="btn btn-success btn-sm" id="btn-export-excel-ai" style="font-size: 0.8rem; padding: 6px 14px; border-radius: 8px; background: #10b981; color: #ffffff; border: none; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <i class="fa-solid fa-file-excel"></i> Excel تحميل (.csv)
+                                        </button>
                                         <button class="btn btn-secondary btn-sm" id="btn-refresh-results-ai" style="font-size: 0.8rem; padding: 6px 12px; border-radius: 8px;">
                                             <i class="fa-solid fa-arrows-rotate"></i> Refresh
                                         </button>
