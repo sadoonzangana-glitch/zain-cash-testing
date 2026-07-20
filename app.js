@@ -2572,9 +2572,14 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.alignItems = 'center';
         modal.style.zIndex = '9999';
         
+        let formattedError = errorReason;
+        if (errorReason && (errorReason.toLowerCase().includes('timeout') || errorReason.toLowerCase().includes('connection'))) {
+            formattedError = "سيرفر الاستضافة (Render) يمنع الاتصال المباشر بمنافذ الإيميل الخارجية (SMTP Port Blocked). يمكنك إرسال الرابط المباشر للموظف فواً.";
+        }
+
         const errorBanner = errorReason ? `
             <div style="background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; padding: 10px 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 12px; line-height: 1.4;">
-                <i class="fa-solid fa-triangle-exclamation"></i> تنبيه الخادم: ${escapeHtml(errorReason)}
+                <i class="fa-solid fa-triangle-exclamation"></i> <strong>تنبيه الخادم:</strong> ${escapeHtml(formattedError)}
             </div>
         ` : '';
 
@@ -2627,7 +2632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnSaveSMTP) {
         btnSaveSMTP.addEventListener('click', async () => {
             const host = document.getElementById('smtp-host').value.trim();
-            const port = parseInt(document.getElementById('smtp-port').value.trim()) || 587;
+            const port = parseInt(document.getElementById('smtp-port').value.trim()) || 465;
             const ssl = document.getElementById('smtp-ssl').value === 'true';
             const username = document.getElementById('smtp-username').value.trim();
             const password = document.getElementById('smtp-password').value.trim();
@@ -2681,7 +2686,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const passEl = document.getElementById('smtp-password');
                 
                 if (hostEl) hostEl.value = settings.server || 'smtp.gmail.com';
-                if (portEl) portEl.value = settings.port || 587;
+                if (portEl) portEl.value = settings.port || 465;
                 if (sslEl)  sslEl.value  = settings.enableSsl !== false ? 'true' : 'false';
                 if (userEl) userEl.value = settings.username || 'zaincash.testexam@gmail.com';
                 if (passEl) passEl.value = settings.password || 'kqnh huof iekb sqcm';
