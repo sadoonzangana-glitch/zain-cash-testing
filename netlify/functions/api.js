@@ -438,7 +438,7 @@ exports.handler = async (event, context) => {
     }
 
     if (cleanPath === '/send-invite' && event.httpMethod === 'POST') {
-        const { userId, email, testType } = bodyData;
+        const { userId, email, testType, brevoKey: reqBrevoKey, resendKey: reqResendKey } = bodyData;
         const user = db.users.find(u => u.id === userId);
         const employeeName = user ? user.name : "Employee";
         if (user) {
@@ -496,8 +496,8 @@ exports.handler = async (event, context) => {
 </html>
         `;
 
-        const providedBrevo = ((smtpSettings.brevoKey || '').trim()) || process.env.BREVO_API_KEY || '';
-        const providedResend = ((smtpSettings.resendKey || '').trim()) || process.env.RESEND_API_KEY || '';
+        const providedBrevo = ((reqBrevoKey || smtpSettings.brevoKey || '').trim()) || process.env.BREVO_API_KEY || '';
+        const providedResend = ((reqResendKey || smtpSettings.resendKey || '').trim()) || process.env.RESEND_API_KEY || '';
 
         let finalBrevoKey = providedBrevo;
         let finalResendKey = providedResend;
