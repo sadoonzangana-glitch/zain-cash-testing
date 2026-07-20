@@ -2536,11 +2536,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         showToast(`تم إرسال دعوة الاختبار بنجاح إلى ${emailVal} 📧`, "success");
                     } else if (res && (res.simulated || res.link)) {
                         if (res.error) {
-                            showToast(`تعذر إرسال الإيميل المباشر (${res.error}). تم توليد رابط الدخول السريع:`, "warning");
+                            showToast(`تعذر إرسال الإيميل المباشر. تم توليد رابط الدخول السريع:`, "warning");
                         } else {
                             showToast(`تم إنشاء رابط الدخول السريع للموظف`, "info");
                         }
-                        showQuickLinkModal(user.name, res.link);
+                        showQuickLinkModal(user.name, res.link, res.error);
                     } else {
                         showToast(`تعذر إرسال الدعوة: ${res?.error || 'خطأ غير معروف'}`, "error");
                     }
@@ -2548,7 +2548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error("Invite error:", err);
                     const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                     showToast(`تعذر الاتصال بخادم البريد. تم إظهار رابط الدخول السريع:`, "warning");
-                    showQuickLinkModal(user.name, `${cleanUrl}?login=${user.id}`);
+                    showQuickLinkModal(user.name, `${cleanUrl}?login=${user.id}`, err.message);
                 } finally {
                     inviteBtn.disabled = false;
                     inviteBtn.innerHTML = '<i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite';
@@ -2557,7 +2557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showQuickLinkModal(employeeName, link) {
+    function showQuickLinkModal(employeeName, link, errorReason = null) {
         const modal = document.createElement('div');
         modal.className = 'quick-link-modal-overlay';
         modal.style.position = 'fixed';
@@ -2572,15 +2572,23 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.alignItems = 'center';
         modal.style.zIndex = '9999';
         
+        const errorBanner = errorReason ? `
+            <div style="background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; padding: 10px 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 12px; line-height: 1.4;">
+                <i class="fa-solid fa-triangle-exclamation"></i> تنبيه الخادم: ${escapeHtml(errorReason)}
+            </div>
+        ` : '';
+
         modal.innerHTML = `
-            <div style="background: #ffffff; padding: 25px; border-radius: 16px; width: 90%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #cbd5e1; direction: rtl; text-align: right;">
-                <h3 style="margin-top: 0; color: var(--primary); font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
-                    <i class="fa-solid fa-link" style="color: var(--primary);"></i> رابط الدخول السريع (سيرفر محلي)
+            <div style="background: #ffffff; padding: 25px; border-radius: 16px; width: 90%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #cbd5e1; direction: rtl; text-align: right;">
+                <h3 style="margin-top: 0; color: var(--primary); font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+                    <i class="fa-solid fa-paper-plane" style="color: var(--primary);"></i> رابط دعوة الاختبار السريع
                 </h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-top: 10px;">
-                    تم إنشاء رابط دعوة للموظف <strong>${employeeName}</strong>. 
-                    <br><br>
-                    بما أن إعدادات SMTP فارغة، يمكنك نسخ الرابط التالي وإرساله للموظف يدوياً:
+                <p style="font-size: 0.88rem; color: #334155; margin-top: 10px; margin-bottom: 10px;">
+                    تم إنشاء رابط الدخول الخاص بالمشترك <strong>${employeeName}</strong>:
+                </p>
+                ${errorBanner}
+                <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 10px;">
+                    يمكنك نسخ الرابط التالي وإرساله للموظف مباشرة للبدء بالاختبار:
                 </p>
                 <div style="display: flex; gap: 8px; margin: 15px 0;">
                     <input type="text" value="${link}" readonly style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; font-family: monospace;" id="modal-link-input">
@@ -2608,7 +2616,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (input) {
                     input.select();
                     document.execCommand('copy');
-                    showToast("تم نسخ الرابط الحافظة!", "success");
+                    showToast("تم نسخ الرابط إلى الحافظة!", "success");
                 }
             });
         }

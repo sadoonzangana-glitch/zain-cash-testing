@@ -459,8 +459,23 @@ exports.handler = async (event, context) => {
 
         if (smtpSettings && smtpSettings.server && smtpSettings.username) {
             try {
-                const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
-                const transporter = nodemailer.createTransport({
+            let transporterConfig;
+            if (smtpSettings.server.toLowerCase().includes('gmail.com')) {
+                transporterConfig = {
+                    service: 'gmail',
+                    auth: {
+                        user: smtpSettings.username.trim(),
+                        pass: cleanPass
+                    },
+                    tls: {
+                        rejectUnauthorized: false
+                    },
+                    connectionTimeout: 10000,
+                    greetingTimeout: 10000,
+                    socketTimeout: 15000
+                };
+            } else {
+                transporterConfig = {
                     host: smtpSettings.server.trim(),
                     port: parseInt(smtpSettings.port) || 587,
                     secure: smtpSettings.enableSsl === true && parseInt(smtpSettings.port) === 465,
@@ -471,10 +486,12 @@ exports.handler = async (event, context) => {
                     tls: {
                         rejectUnauthorized: false
                     },
-                    connectionTimeout: 8000,
-                    greetingTimeout: 8000,
-                    socketTimeout: 10000
-                });
+                    connectionTimeout: 10000,
+                    greetingTimeout: 10000,
+                    socketTimeout: 15000
+                };
+            }
+            const transporter = nodemailer.createTransport(transporterConfig);
 
                 const mailOptions = {
                     from: `"Zain Cash Academy" <${smtpSettings.username.trim()}>`,
