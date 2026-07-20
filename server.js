@@ -472,14 +472,26 @@ app.post('/api/send-invite', async (req, res) => {
 </html>
     `;
 
+    const providedBrevo = ((smtpSettings.brevoKey || '').trim()) || process.env.BREVO_API_KEY || '';
+    const providedResend = ((smtpSettings.resendKey || '').trim()) || process.env.RESEND_API_KEY || '';
+
+    let finalBrevoKey = providedBrevo;
+    let finalResendKey = providedResend;
+
+    if (!finalBrevoKey && (providedResend.startsWith('xsmtpsib-') || providedResend.startsWith('xkeysib-'))) {
+        finalBrevoKey = providedResend;
+    }
+    if (!finalResendKey && providedBrevo.startsWith('re_')) {
+        finalResendKey = providedBrevo;
+    }
+
     // 1. Try Brevo HTTP API (Port 443 - 300 emails/day)
-    const activeBrevoKey = (smtpSettings && smtpSettings.brevoKey && smtpSettings.brevoKey.trim()) || process.env.BREVO_API_KEY || "";
-    if (!sent && activeBrevoKey) {
+    if (!sent && finalBrevoKey) {
         try {
             const r = await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: {
-                    'api-key': activeBrevoKey.trim(),
+                    'api-key': finalBrevoKey.trim(),
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
@@ -502,12 +514,12 @@ app.post('/api/send-invite', async (req, res) => {
     }
 
     // 2. Try Resend HTTP API (Port 443)
-    if (!sent && smtpSettings && smtpSettings.resendKey && smtpSettings.resendKey.trim()) {
+    if (!sent && finalResendKey && !finalResendKey.startsWith('xsmtpsib-')) {
         try {
             const r = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${smtpSettings.resendKey.trim()}`,
+                    'Authorization': `Bearer ${finalResendKey.trim()}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
