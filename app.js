@@ -2244,22 +2244,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (targetTab === 'tab-assignments') {
+                stopResultsPolling();
                 loadAssignmentsTab();
             } else if (targetTab === 'tab-results') {
-                loadResultsTab();
+                startResultsPolling();
             } else if (targetTab === 'tab-scenarios') {
+                stopResultsPolling();
                 renderAdminScenariosList();
                 selectScenario(null);
             } else if (targetTab === 'tab-ai-scenarios') {
+                stopResultsPolling();
                 loadAiScenariosFromStorage().then(() => {
                     renderAdminAiScenariosList();
                     selectAiScenario(null);
                 });
             } else if (targetTab === 'tab-edit-slides') {
+                stopResultsPolling();
                 renderAdminSlidesList();
                 selectSlide(null);
             }
         });
+    });
+
+    function startResultsPolling() {
+        loadResultsTab();
+        if (!resultsLivePollInterval) {
+            resultsLivePollInterval = setInterval(loadResultsTab, 3000);
+        }
+    }
+
+    function stopResultsPolling() {
+        if (resultsLivePollInterval) {
+            clearInterval(resultsLivePollInterval);
+            resultsLivePollInterval = null;
+        }
     });
 
     let allUsers = [];
@@ -2583,11 +2601,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const placeholder = document.getElementById('no-results-placeholder');
         if (!tbody) return;
 
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading results...</td></tr>';
-        if (placeholder) placeholder.classList.add('hidden');
-        
         try {
-            const results = await apiCall('/api/results', 'GET');
+            let serverResults = [];
+            try {
+                serverResults = await apiCall('/api/results', 'GET') || [];
+            } catch(e) {
+                console.warn("Server sim results fetch failed, using local backup:", e);
+            }
+
+            let localResults = [];
+            try {
+                localResults = JSON.parse(localStorage.getItem('zain_sim_results') || '[]');
+            } catch(e) {}
+
+            const combinedMap = new Map();
+            [...serverResults, ...localResults].forEach(r => {
+                const key = `${r.userId}_${r.date || r.score}`;
+                if (!combinedMap.has(key)) {
+                    combinedMap.set(key, r);
+                }
+            });
+
+            const results = Array.from(combinedMap.values());
             tbody.innerHTML = '';
             
             if (results.length === 0) {
@@ -2595,23 +2630,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            if (placeholder) placeholder.classList.add('hidden');
             results.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             results.forEach(res => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-family: var(--font-en); font-weight:700;">${res.userId}</td>
-                    <td style="font-weight:700;">${res.userName}</td>
+                    <td style="font-family: var(--font-en); font-weight:700;">${res.userId || '-'}</td>
+                    <td style="font-weight:700;">${res.userName || '-'}</td>
                     <td><strong>${res.score}%</strong></td>
-                    <td>${res.errorsCount}</td>
-                    <td><span class="${res.score >= 80 ? 'text-green' : (res.score >= 60 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade}</span></td>
-                    <td>${res.date}</td>
+                    <td>${res.errorsCount || 0}</td>
+                    <td><span class="${res.score >= 80 ? 'text-green' : (res.score >= 60 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade || '-'}</span></td>
+                    <td>${res.date || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
         } catch (e) {
             console.error("Failed to load sim results", e);
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--error); padding: 20px;">Failed to load simulator results.</td></tr>';
         }
     }
 
@@ -2620,11 +2655,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const placeholder = document.getElementById('no-ai-results-placeholder');
         if (!tbody) return;
 
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">جاري تحميل النتائج...</td></tr>';
-        if (placeholder) placeholder.classList.add('hidden');
-        
         try {
-            const results = await apiCall('/api/ai-results', 'GET');
+            let serverResults = [];
+            try {
+                serverResults = await apiCall('/api/ai-results', 'GET') || [];
+            } catch(e) {
+                console.warn("Server AI results fetch failed, using local backup:", e);
+            }
+
+            let localResults = [];
+            try {
+                localResults = JSON.parse(localStorage.getItem('zain_ai_results') || '[]');
+            } catch(e) {}
+
+            const combinedMap = new Map();
+            [...serverResults, ...localResults].forEach(r => {
+                const key = `${r.userId}_${r.date || r.score}`;
+                if (!combinedMap.has(key)) {
+                    combinedMap.set(key, r);
+                }
+            });
+
+            const results = Array.from(combinedMap.values());
             tbody.innerHTML = '';
             
             if (results.length === 0) {
@@ -2632,24 +2684,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            if (placeholder) placeholder.classList.add('hidden');
             results.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             results.forEach(res => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-family: var(--font-en); font-weight:700;">${res.userId}</td>
-                    <td style="font-weight:700;">${res.userName}</td>
+                    <td style="font-family: var(--font-en); font-weight:700;">${res.userId || '-'}</td>
+                    <td style="font-weight:700;">${res.userName || '-'}</td>
                     <td><strong>${res.score}%</strong></td>
-                    <td><span class="${res.score >= 80 ? 'text-green' : (res.score >= 60 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade}</span></td>
-                    <td>${res.date}</td>
+                    <td><span class="${res.score >= 80 ? 'text-green' : (res.score >= 60 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade || '-'}</span></td>
+                    <td>${res.date || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
         } catch (e) {
             console.error("Failed to load AI results", e);
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--error); padding: 20px;">Failed to load AI coach results.</td></tr>';
         }
     }
+
+    let resultsLivePollInterval = null;
 
     async function loadResultsTab() {
         await Promise.all([

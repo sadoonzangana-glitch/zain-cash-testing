@@ -531,8 +531,20 @@ exports.handler = async (event, context) => {
         const employeeName = user ? user.name : "Employee";
         if (user) {
             user.email = email;
-            await saveDb(db);
         }
+
+        if (testType === 'ai-agent') {
+            db.aiAssignments = db.aiAssignments || [];
+            if (!db.aiAssignments.includes(userId)) {
+                db.aiAssignments.push(userId);
+            }
+        } else {
+            db.assignments = db.assignments || [];
+            if (!db.assignments.includes(userId)) {
+                db.assignments.push(userId);
+            }
+        }
+        await saveDb(db);
 
         const hostHeader = event.headers.host || 'localhost:8888';
         const proto = (event.headers['x-forwarded-proto'] || 'https');

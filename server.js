@@ -525,8 +525,20 @@ app.post('/api/send-invite', async (req, res) => {
     const employeeName = user ? user.name : "Employee";
     if (user) {
         user.email = email;
-        await writeDb(db);
     }
+
+    if (testType === 'ai-agent') {
+        db.aiAssignments = db.aiAssignments || [];
+        if (!db.aiAssignments.includes(userId)) {
+            db.aiAssignments.push(userId);
+        }
+    } else {
+        db.assignments = db.assignments || [];
+        if (!db.assignments.includes(userId)) {
+            db.assignments.push(userId);
+        }
+    }
+    await writeDb(db);
     
     const hostHeader = req.get('host') || 'localhost:8888';
     const protocol = req.protocol || 'http';

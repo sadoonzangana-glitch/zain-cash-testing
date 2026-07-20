@@ -989,15 +989,28 @@ ${transcript3}`;
     }
 
     async function saveAISessionResult(score, grade) {
-        const user = aiCurrentUser;
+        let user = aiCurrentUser;
+        if (!user) {
+            try {
+                const stored = sessionStorage.getItem('zain_cash_user');
+                if (stored) user = JSON.parse(stored);
+            } catch(e) {}
+        }
         if (!user) return;
 
         const resultData = {
             userId: user.id || '-',
             userName: user.name || '-',
             score: score,
-            grade: grade
+            grade: grade,
+            date: new Date().toISOString().replace('T', ' ').substring(0, 19)
         };
+
+        try {
+            const localAi = JSON.parse(localStorage.getItem('zain_ai_results') || '[]');
+            localAi.push(resultData);
+            localStorage.setItem('zain_ai_results', JSON.stringify(localAi));
+        } catch(e) {}
 
         if (window.apiCall) {
             try {
