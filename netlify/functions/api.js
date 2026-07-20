@@ -459,7 +459,8 @@ exports.handler = async (event, context) => {
 
         if (smtpSettings && smtpSettings.server && smtpSettings.username) {
             try {
-            let transporterConfig;
+                const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
+                let transporterConfig;
             if (smtpSettings.server.toLowerCase().includes('gmail.com')) {
                 transporterConfig = {
                     service: 'gmail',

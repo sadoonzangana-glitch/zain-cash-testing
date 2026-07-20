@@ -435,6 +435,7 @@ app.post('/api/send-invite', async (req, res) => {
     
     if (smtpSettings && smtpSettings.server && smtpSettings.username) {
         try {
+            const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
             let transporterConfig;
             if (smtpSettings.server.toLowerCase().includes('gmail.com')) {
                 transporterConfig = {
