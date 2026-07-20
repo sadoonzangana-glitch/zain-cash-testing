@@ -2632,18 +2632,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSaveSMTP = document.getElementById('btn-save-smtp');
     if (btnSaveSMTP) {
         btnSaveSMTP.addEventListener('click', async () => {
+            const brevoKey  = document.getElementById('smtp-brevo-key')?.value.trim() || '';
             const resendKey = document.getElementById('smtp-resend-key')?.value.trim() || '';
-            const host = document.getElementById('smtp-host').value.trim();
-            const port = parseInt(document.getElementById('smtp-port').value.trim()) || 465;
-            const ssl = document.getElementById('smtp-ssl').value === 'true';
-            const username = document.getElementById('smtp-username').value.trim();
-            const password = document.getElementById('smtp-password').value.trim();
+            const host      = document.getElementById('smtp-host').value.trim();
+            const port      = parseInt(document.getElementById('smtp-port').value.trim()) || 465;
+            const ssl       = document.getElementById('smtp-ssl').value === 'true';
+            const username  = document.getElementById('smtp-username').value.trim();
+            const password  = document.getElementById('smtp-password').value.trim();
             
             btnSaveSMTP.disabled = true;
             btnSaveSMTP.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
             
             try {
                 await apiCall('/api/smtp', 'POST', {
+                    brevoKey: brevoKey,
                     resendKey: resendKey,
                     server: host,
                     port: port,
@@ -2682,6 +2684,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const settings = await apiCall('/api/smtp', 'GET');
             if (settings) {
+                const brevoEl  = document.getElementById('smtp-brevo-key');
                 const resendEl = document.getElementById('smtp-resend-key');
                 const hostEl   = document.getElementById('smtp-host');
                 const portEl   = document.getElementById('smtp-port');
@@ -2689,6 +2692,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userEl   = document.getElementById('smtp-username');
                 const passEl   = document.getElementById('smtp-password');
                 
+                if (brevoEl)  brevoEl.value  = settings.brevoKey || '';
                 if (resendEl) resendEl.value = settings.resendKey || '';
                 if (hostEl)   hostEl.value   = settings.server || 'smtp.gmail.com';
                 if (portEl)   portEl.value   = settings.port || 465;

@@ -434,9 +434,7 @@ app.post('/api/send-invite', async (req, res) => {
     
     const smtpSettings = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
     
-    if (smtpSettings && smtpSettings.resendKey && smtpSettings.resendKey.trim()) {
-        try {
-            const htmlContent = `
+    const htmlEmailTemplate = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -471,7 +469,39 @@ app.post('/api/send-invite', async (req, res) => {
     </div>
 </body>
 </html>
-            `;
+    `;
+
+    // 1. Try Brevo HTTP API (Port 443 - 300 emails/day)
+    if (!sent && smtpSettings && smtpSettings.brevoKey && smtpSettings.brevoKey.trim()) {
+        try {
+            const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'api-key': smtpSettings.brevoKey.trim(),
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: { name: 'Zain Cash Academy', email: smtpSettings.username || 'zaincash.testexam@gmail.com' },
+                    to: [{ email: email, name: employeeName }],
+                    subject: `Invitation to ${activeTestName}`,
+                    htmlContent: htmlEmailTemplate
+                })
+            });
+            const rData = await r.json();
+            if (r.ok || rData.messageId) {
+                sent = true;
+            } else {
+                errorMsg = rData.message || JSON.stringify(rData);
+            }
+        } catch(e) {
+            errorMsg = e.message;
+        }
+    }
+
+    // 2. Try Resend HTTP API (Port 443)
+    if (!sent && smtpSettings && smtpSettings.resendKey && smtpSettings.resendKey.trim()) {
+        try {
             const r = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
@@ -482,7 +512,7 @@ app.post('/api/send-invite', async (req, res) => {
                     from: 'Zain Cash Academy <onboarding@resend.dev>',
                     to: [email],
                     subject: `Invitation to ${activeTestName}`,
-                    html: htmlContent
+                    html: htmlEmailTemplate
                 })
             });
             const rData = await r.json();
@@ -490,7 +520,6 @@ app.post('/api/send-invite', async (req, res) => {
                 sent = true;
             } else {
                 errorMsg = rData.message || rData.name || JSON.stringify(rData);
-                console.warn("Resend API failed, falling back to SMTP/simulated:", errorMsg);
             }
         } catch(e) {
             errorMsg = e.message;
