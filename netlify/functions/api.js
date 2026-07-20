@@ -232,6 +232,14 @@ const defaultAiScenarios = [
 ];
 
 
+const defaultSmtp = {
+    server: "smtp.gmail.com",
+    port: 587,
+    enableSsl: true,
+    username: "zaincash.testexam@gmail.com",
+    password: "kqnh huof iekb sqcm"
+};
+
 async function getDb() {
     try {
         const res = await httpReq(BLOB_URL, 'GET');
@@ -239,6 +247,7 @@ async function getDb() {
             const db = JSON.parse(res.body);
             db.aiScenarios = db.aiScenarios && db.aiScenarios.length > 0 ? db.aiScenarios : defaultAiScenarios;
             db.knowledgeBase = db.knowledgeBase || defaultKb;
+            db.smtp = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
             return db;
         }
     } catch (e) {
@@ -252,6 +261,7 @@ async function getDb() {
         scenarios: null,
         aiScenarios: defaultAiScenarios,
         knowledgeBase: defaultKb,
+        smtp: defaultSmtp,
         aiResults: []
     };
 }
@@ -318,7 +328,7 @@ exports.handler = async (event, context) => {
 
     if (cleanPath === '/smtp') {
         if (event.httpMethod === 'GET') {
-            return { statusCode: 200, headers, body: JSON.stringify(db.smtp || { server: "", port: 587, enableSsl: true, username: "", password: "" }) };
+            return { statusCode: 200, headers, body: JSON.stringify(db.smtp || defaultSmtp) };
         }
         if (event.httpMethod === 'POST') {
             db.smtp = bodyData;
@@ -435,7 +445,8 @@ exports.handler = async (event, context) => {
         }
 
         const hostHeader = event.headers.host || 'localhost:8888';
-        const loginLink = `http://${hostHeader}/?login=${userId}`;
+        const proto = (event.headers['x-forwarded-proto'] || 'https');
+        const loginLink = `${proto}://${hostHeader}/?login=${userId}`;
 
         let sent = false;
         let simulated = false;
@@ -444,23 +455,29 @@ exports.handler = async (event, context) => {
         const activeTestName = testType === 'ai-agent' ? "Zain Cash AI Agent Coach Test" : "Zain Cash Customer Care Chat Simulator Test";
         const activeTestDesc = testType === 'ai-agent' ? "Zain Cash AI Agent Coach" : "Zain Cash Customer Care Chat Simulator";
 
-        if (db.smtp && db.smtp.server && db.smtp.username) {
+        const smtpSettings = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
+
+        if (smtpSettings && smtpSettings.server && smtpSettings.username) {
             try {
+                const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
                 const transporter = nodemailer.createTransport({
-                    host: db.smtp.server,
-                    port: parseInt(db.smtp.port) || 587,
-                    secure: db.smtp.enableSsl === true && db.smtp.port === 465,
+                    host: smtpSettings.server.trim(),
+                    port: parseInt(smtpSettings.port) || 587,
+                    secure: smtpSettings.enableSsl === true && parseInt(smtpSettings.port) === 465,
                     auth: {
-                        user: db.smtp.username,
-                        pass: db.smtp.password
+                        user: smtpSettings.username.trim(),
+                        pass: cleanPass
                     },
                     tls: {
                         rejectUnauthorized: false
-                    }
+                    },
+                    connectionTimeout: 8000,
+                    greetingTimeout: 8000,
+                    socketTimeout: 10000
                 });
 
                 const mailOptions = {
-                    from: `"Zain Cash Academy" <${db.smtp.username}>`,
+                    from: `"Zain Cash Academy" <${smtpSettings.username.trim()}>`,
                     to: email,
                     subject: `Invitation to ${activeTestName}`,
                     html: `
@@ -485,7 +502,7 @@ exports.handler = async (event, context) => {
         </div>
         <div class="body">
             <h3 style="margin-top: 0; color: #0f172a;">Hello ${employeeName},</h3>
-            <p>You have been invited to perform a practice evaluation on the **${activeTestDesc}**.</p>
+            <p>You have been invited to perform a practice evaluation on the <strong>${activeTestDesc}</strong>.</p>
             <p>Please click the button below to start your training and testing session directly. Your performance and results will be automatically saved and reported to the management.</p>
             <div class="btn-container">
                 <a href="${loginLink}" class="btn">Start Test Now</a>
@@ -505,6 +522,8 @@ exports.handler = async (event, context) => {
                 sent = true;
             } catch (e) {
                 errorMsg = e.message;
+                console.error("Nodemailer SMTP Error:", e);
+                simulated = true;
             }
         } else {
             simulated = true;
@@ -514,7 +533,7 @@ exports.handler = async (event, context) => {
             statusCode: 200,
             headers,
             body: JSON.stringify({
-                success: !errorMsg,
+                success: true,
                 sent,
                 simulated,
                 link: loginLink,

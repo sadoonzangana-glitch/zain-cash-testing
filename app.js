@@ -159,11 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (method === 'GET') {
                 const storedSmtp = localStorage.getItem('offline_smtp_settings');
                 return Promise.resolve(storedSmtp ? JSON.parse(storedSmtp) : {
-                    server: "",
+                    server: "smtp.gmail.com",
                     port: 587,
                     enableSsl: true,
-                    username: "",
-                    password: ""
+                    username: "zaincash.testexam@gmail.com",
+                    password: "kqnh huof iekb sqcm"
                 });
             }
             if (method === 'POST') {
@@ -2109,6 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let aiAssignAll = false;
     
     async function loadAssignmentsTab() {
+        loadSMTPSettings();
         const grid = document.getElementById('users-selection-grid');
         if (!grid) return;
         grid.innerHTML = '<p style="grid-column: span 3; text-align: center; color: var(--text-muted);">جاري تحميل قائمة الموظفين...</p>';
@@ -2522,26 +2523,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const emailVal = emailInput ? emailInput.value.trim() : '';
                 if (!emailVal) {
-                    showToast("Please enter a valid email address first!", "warning");
+                    showToast("يرجى إدخال بريد إلكتروني صحيح للموظف أولاً!", "warning");
                     return;
                 }
                 
                 inviteBtn.disabled = true;
-                inviteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                inviteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
                 
                 try {
                     const res = await apiCall('/api/send-invite', 'POST', { userId: user.id, email: emailVal, testType: currentTestType });
-                    if (res.success) {
-                        if (res.sent) {
-                            showToast(`Invitation sent successfully to ${emailVal}!`, "success");
-                        } else if (res.simulated) {
-                            showQuickLinkModal(user.name, res.link);
+                    if (res && res.sent) {
+                        showToast(`تم إرسال دعوة الاختبار بنجاح إلى ${emailVal} 📧`, "success");
+                    } else if (res && (res.simulated || res.link)) {
+                        if (res.error) {
+                            showToast(`تعذر إرسال الإيميل المباشر (${res.error}). تم توليد رابط الدخول السريع:`, "warning");
+                        } else {
+                            showToast(`تم إنشاء رابط الدخول السريع للموظف`, "info");
                         }
+                        showQuickLinkModal(user.name, res.link);
                     } else {
-                        showToast(`Failed to send: ${res.error}`, "error");
+                        showToast(`تعذر إرسال الدعوة: ${res?.error || 'خطأ غير معروف'}`, "error");
                     }
                 } catch (err) {
-                    showToast(`Error: ${err.message}`, "error");
+                    console.error("Invite error:", err);
+                    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    showToast(`تعذر الاتصال بخادم البريد. تم إظهار رابط الدخول السريع:`, "warning");
+                    showQuickLinkModal(user.name, `${cleanUrl}?login=${user.id}`);
                 } finally {
                     inviteBtn.disabled = false;
                     inviteBtn.innerHTML = '<i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite';
@@ -2659,11 +2666,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const settings = await apiCall('/api/smtp', 'GET');
             if (settings) {
-                document.getElementById('smtp-host').value = settings.server || '';
-                document.getElementById('smtp-port').value = settings.port || 587;
-                document.getElementById('smtp-ssl').value = settings.enableSsl !== false ? 'true' : 'false';
-                document.getElementById('smtp-username').value = settings.username || '';
-                document.getElementById('smtp-password').value = settings.password || '';
+                const hostEl = document.getElementById('smtp-host');
+                const portEl = document.getElementById('smtp-port');
+                const sslEl  = document.getElementById('smtp-ssl');
+                const userEl = document.getElementById('smtp-username');
+                const passEl = document.getElementById('smtp-password');
+                
+                if (hostEl) hostEl.value = settings.server || 'smtp.gmail.com';
+                if (portEl) portEl.value = settings.port || 587;
+                if (sslEl)  sslEl.value  = settings.enableSsl !== false ? 'true' : 'false';
+                if (userEl) userEl.value = settings.username || 'zaincash.testexam@gmail.com';
+                if (passEl) passEl.value = settings.password || 'kqnh huof iekb sqcm';
             }
         } catch (err) {
             console.error("Failed to load SMTP settings:", err);

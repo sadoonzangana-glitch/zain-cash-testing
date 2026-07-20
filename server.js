@@ -219,6 +219,14 @@ const defaultAiScenarios = [
 ];
 
 
+const defaultSmtp = {
+    server: "smtp.gmail.com",
+    port: 587,
+    enableSsl: true,
+    username: "zaincash.testexam@gmail.com",
+    password: "kqnh huof iekb sqcm"
+};
+
 async function readDb() {
     try {
         const raw = await fs.readFile(dbPath, 'utf8');
@@ -226,6 +234,7 @@ async function readDb() {
         const db = JSON.parse(clean.trim());
         db.aiScenarios = db.aiScenarios && db.aiScenarios.length > 0 ? db.aiScenarios : defaultAiScenarios;
         db.knowledgeBase = db.knowledgeBase || defaultKb;
+        db.smtp = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
         return db;
     } catch (e) {
         const initial = {
@@ -236,6 +245,7 @@ async function readDb() {
             scenarios: null,
             aiScenarios: defaultAiScenarios,
             knowledgeBase: defaultKb,
+            smtp: defaultSmtp,
             aiResults: []
         };
         await fs.writeFile(dbPath, JSON.stringify(initial, null, 4), 'utf8');
@@ -283,7 +293,7 @@ app.post('/api/users/update-email', async (req, res) => {
 
 app.get('/api/smtp', async (req, res) => {
     const db = await readDb();
-    res.json(db.smtp || { server: "", port: 587, enableSsl: true, username: "", password: "" });
+    res.json(db.smtp || defaultSmtp);
 });
 
 app.post('/api/smtp', async (req, res) => {
@@ -411,7 +421,8 @@ app.post('/api/send-invite', async (req, res) => {
     }
     
     const hostHeader = req.get('host') || 'localhost:8888';
-    const loginLink = `http://${hostHeader}/?login=${userId}`;
+    const protocol = req.protocol || 'http';
+    const loginLink = `${protocol}://${hostHeader}/?login=${userId}`;
     
     let sent = false;
     let simulated = false;
@@ -420,23 +431,29 @@ app.post('/api/send-invite', async (req, res) => {
     const activeTestName = testType === 'ai-agent' ? "Zain Cash AI Agent Coach Test" : "Zain Cash Customer Care Chat Simulator Test";
     const activeTestDesc = testType === 'ai-agent' ? "Zain Cash AI Agent Coach" : "Zain Cash Customer Care Chat Simulator";
     
-    if (db.smtp && db.smtp.server && db.smtp.username) {
+    const smtpSettings = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
+    
+    if (smtpSettings && smtpSettings.server && smtpSettings.username) {
         try {
+            const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
             const transporter = nodemailer.createTransport({
-                host: db.smtp.server,
-                port: parseInt(db.smtp.port) || 587,
-                secure: db.smtp.enableSsl === true && db.smtp.port === 465,
+                host: smtpSettings.server.trim(),
+                port: parseInt(smtpSettings.port) || 587,
+                secure: smtpSettings.enableSsl === true && parseInt(smtpSettings.port) === 465,
                 auth: {
-                    user: db.smtp.username,
-                    pass: db.smtp.password
+                    user: smtpSettings.username.trim(),
+                    pass: cleanPass
                 },
                 tls: {
                     rejectUnauthorized: false
-                }
+                },
+                connectionTimeout: 8000,
+                greetingTimeout: 8000,
+                socketTimeout: 10000
             });
             
             const mailOptions = {
-                from: `"Zain Cash Academy" <${db.smtp.username}>`,
+                from: `"Zain Cash Academy" <${smtpSettings.username.trim()}>`,
                 to: email,
                 subject: `Invitation to ${activeTestName}`,
                 html: `
@@ -461,7 +478,7 @@ app.post('/api/send-invite', async (req, res) => {
         </div>
         <div class="body">
             <h3 style="margin-top: 0; color: #0f172a;">Hello ${employeeName},</h3>
-            <p>You have been invited to perform a practice evaluation on the **${activeTestDesc}**.</p>
+            <p>You have been invited to perform a practice evaluation on the <strong>${activeTestDesc}</strong>.</p>
             <p>Please click the button below to start your training and testing session directly. Your performance and results will be automatically saved and reported to the management.</p>
             <div class="btn-container">
                 <a href="${loginLink}" class="btn">Start Test Now</a>
@@ -482,13 +499,14 @@ app.post('/api/send-invite', async (req, res) => {
         } catch (e) {
             errorMsg = e.message;
             console.error("Nodemailer SMTP Error:", e);
+            simulated = true;
         }
     } else {
         simulated = true;
     }
     
     res.json({
-        success: !errorMsg,
+        success: true,
         sent,
         simulated,
         link: loginLink,
