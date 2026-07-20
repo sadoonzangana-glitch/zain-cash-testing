@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (method === 'GET') {
                 const storedSmtp = localStorage.getItem('offline_smtp_settings');
                 return Promise.resolve(storedSmtp ? JSON.parse(storedSmtp) : {
-                    resendKey: "re_K9NVtQ9z_DmKGecTQr9R6m4z3eWdY1qbW",
+                    resendKey: "",
                     server: "smtp.gmail.com",
                     port: 465,
                     enableSsl: true,

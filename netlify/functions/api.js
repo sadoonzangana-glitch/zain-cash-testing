@@ -233,7 +233,7 @@ const defaultAiScenarios = [
 
 
 const defaultSmtp = {
-    resendKey: "re_K9NVtQ9z_DmKGecTQr9R6m4z3eWdY1qbW",
+    resendKey: "",
     server: "smtp.gmail.com",
     port: 465,
     enableSsl: true,
