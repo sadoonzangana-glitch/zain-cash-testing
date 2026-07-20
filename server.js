@@ -220,7 +220,8 @@ const defaultAiScenarios = [
 
 
 const defaultSmtp = {
-    resendKey: "",
+    brevoKey: process.env.BREVO_API_KEY || "",
+    resendKey: process.env.RESEND_API_KEY || "",
     server: "smtp.gmail.com",
     port: 465,
     enableSsl: true,
@@ -472,12 +473,13 @@ app.post('/api/send-invite', async (req, res) => {
     `;
 
     // 1. Try Brevo HTTP API (Port 443 - 300 emails/day)
-    if (!sent && smtpSettings && smtpSettings.brevoKey && smtpSettings.brevoKey.trim()) {
+    const activeBrevoKey = (smtpSettings && smtpSettings.brevoKey && smtpSettings.brevoKey.trim()) || process.env.BREVO_API_KEY || "";
+    if (!sent && activeBrevoKey) {
         try {
             const r = await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: {
-                    'api-key': smtpSettings.brevoKey.trim(),
+                    'api-key': activeBrevoKey.trim(),
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
