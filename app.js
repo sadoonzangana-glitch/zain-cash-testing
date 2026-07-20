@@ -2392,7 +2392,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const usr = allUsers.find(u => u.id === uId);
                     if (usr && usr.email) {
                         try {
-                            await apiCall('/api/send-invite', 'POST', { userId: usr.id, email: usr.email, testType: activeTest });
+                            const keys = (typeof getSavedApiKeys === 'function') ? getSavedApiKeys() : {};
+                            await apiCall('/api/send-invite', 'POST', {
+                                userId: usr.id,
+                                email: usr.email,
+                                testType: activeTest,
+                                brevoKey: keys.brevoKey || '',
+                                resendKey: keys.resendKey || ''
+                            });
                         } catch (err) {
                             console.error(`Bulk invite failed for user ${usr.id}:`, err);
                         }
@@ -2533,7 +2540,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 inviteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
                 
                 try {
-                    const res = await apiCall('/api/send-invite', 'POST', { userId: user.id, email: emailVal, testType: currentTestType });
+                    const keys = (typeof getSavedApiKeys === 'function') ? getSavedApiKeys() : {};
+                    const res = await apiCall('/api/send-invite', 'POST', {
+                        userId: user.id,
+                        email: emailVal,
+                        testType: currentTestType,
+                        brevoKey: keys.brevoKey || '',
+                        resendKey: keys.resendKey || ''
+                    });
                     if (res && res.sent) {
                         showToast(`تم إرسال دعوة الاختبار بنجاح إلى ${emailVal} 📧`, "success");
                     } else if (res && (res.simulated || res.link)) {
@@ -2629,6 +2643,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getSavedApiKeys() {
+        const brevoEl  = document.getElementById('smtp-brevo-key');
+        const resendEl = document.getElementById('smtp-resend-key');
+        const brevoKey  = (brevoEl && brevoEl.value.trim()) || localStorage.getItem('smtp_brevo_key') || '';
+        const resendKey = (resendEl && resendEl.value.trim()) || localStorage.getItem('smtp_resend_key') || '';
+        return { brevoKey, resendKey };
+    }
+
     // SMTP Save event handler
     const btnSaveSMTP = document.getElementById('btn-save-smtp');
     if (btnSaveSMTP) {
@@ -2641,6 +2663,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const username  = document.getElementById('smtp-username').value.trim();
             const password  = document.getElementById('smtp-password').value.trim();
             
+            if (brevoKey)  localStorage.setItem('smtp_brevo_key', brevoKey);
+            if (resendKey) localStorage.setItem('smtp_resend_key', resendKey);
+
             btnSaveSMTP.disabled = true;
             btnSaveSMTP.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
             
@@ -2684,23 +2709,24 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadSMTPSettings() {
         try {
             const settings = await apiCall('/api/smtp', 'GET');
-            if (settings) {
-                const brevoEl  = document.getElementById('smtp-brevo-key');
-                const resendEl = document.getElementById('smtp-resend-key');
-                const hostEl   = document.getElementById('smtp-host');
-                const portEl   = document.getElementById('smtp-port');
-                const sslEl    = document.getElementById('smtp-ssl');
-                const userEl   = document.getElementById('smtp-username');
-                const passEl   = document.getElementById('smtp-password');
-                
-                if (brevoEl)  brevoEl.value  = settings.brevoKey || '';
-                if (resendEl) resendEl.value = settings.resendKey || '';
-                if (hostEl)   hostEl.value   = settings.server || 'smtp.gmail.com';
-                if (portEl)   portEl.value   = settings.port || 465;
-                if (sslEl)    sslEl.value    = settings.enableSsl !== false ? 'true' : 'false';
-                if (userEl)   userEl.value   = settings.username || 'zaincash.testexam@gmail.com';
-                if (passEl)   passEl.value   = settings.password || 'kqnh huof iekb sqcm';
-            }
+            const localBrevo  = localStorage.getItem('smtp_brevo_key') || '';
+            const localResend = localStorage.getItem('smtp_resend_key') || '';
+
+            const brevoEl  = document.getElementById('smtp-brevo-key');
+            const resendEl = document.getElementById('smtp-resend-key');
+            const hostEl   = document.getElementById('smtp-host');
+            const portEl   = document.getElementById('smtp-port');
+            const sslEl    = document.getElementById('smtp-ssl');
+            const userEl   = document.getElementById('smtp-username');
+            const passEl   = document.getElementById('smtp-password');
+            
+            if (brevoEl)  brevoEl.value  = (settings && settings.brevoKey)  || localBrevo  || '';
+            if (resendEl) resendEl.value = (settings && settings.resendKey) || localResend || '';
+            if (hostEl)   hostEl.value   = (settings && settings.server)    || 'smtp.gmail.com';
+            if (portEl)   portEl.value   = (settings && settings.port)      || 465;
+            if (sslEl)    sslEl.value    = (settings && settings.enableSsl !== false) ? 'true' : 'false';
+            if (userEl)   userEl.value   = (settings && settings.username)  || 'zaincash.testexam@gmail.com';
+            if (passEl)   passEl.value   = (settings && settings.password)  || 'kqnh huof iekb sqcm';
         } catch (err) {
             console.error("Failed to load SMTP settings:", err);
         }
