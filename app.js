@@ -1718,8 +1718,169 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ==========================================
+    // ADMIN PANEL — AI SCENARIOS MANAGER
+    // ==========================================
+    let aiScenariosList = [];
+    let selectedAiScenarioIndex = null;
+
+    async function loadAiScenariosFromStorage() {
+        try {
+            const fetched = await apiCall('/api/ai-scenarios', 'GET');
+            if (fetched && fetched.length > 0) {
+                aiScenariosList = fetched;
+            } else {
+                aiScenariosList = (typeof defaultAiScenarios !== 'undefined') ? [...defaultAiScenarios] : [];
+            }
+        } catch(e) {
+            console.error('Failed to load AI scenarios from server', e);
+            aiScenariosList = (typeof defaultAiScenarios !== 'undefined') ? [...defaultAiScenarios] : [];
+        }
+    }
+
+    function renderAdminAiScenariosList() {
+        const ul = document.getElementById('admin-ai-scenarios-list-ul');
+        if (!ul) return;
+        ul.innerHTML = '';
+        if (aiScenariosList.length === 0) {
+            ul.innerHTML = '<li style="padding:12px; color:#94a3b8; font-size:0.82rem;">لا توجد سيناريوهات. اضغط Add New.</li>';
+            return;
+        }
+        aiScenariosList.forEach((sc, idx) => {
+            const li = document.createElement('li');
+            if (idx === selectedAiScenarioIndex) li.className = 'active';
+            li.innerHTML = `
+                <span class="li-title" style="font-weight:700;">${sc.customerName || 'بلا اسم'}</span>
+                <span class="li-desc" style="font-size:0.75rem; color:#64748b;">${(sc.initialMessage || '').substring(0, 55)}...</span>
+            `;
+            li.addEventListener('click', () => selectAiScenario(idx));
+            ul.appendChild(li);
+        });
+    }
+
+    function selectAiScenario(idx) {
+        selectedAiScenarioIndex = idx;
+        const ul = document.getElementById('admin-ai-scenarios-list-ul');
+        if (ul) {
+            ul.querySelectorAll('li').forEach((li, i) => {
+                li.classList.toggle('active', i === idx);
+            });
+        }
+        const noSel = document.getElementById('no-ai-scenario-selected');
+        const form  = document.getElementById('ai-scenario-edit-form');
+
+        if (idx === null || idx === undefined || !aiScenariosList[idx]) {
+            if (noSel) noSel.classList.remove('hidden');
+            if (form)  form.classList.add('hidden');
+            return;
+        }
+
+        const sc = aiScenariosList[idx];
+        if (noSel) noSel.classList.add('hidden');
+        if (form)  form.classList.remove('hidden');
+
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        setVal('edit-ai-scenario-id', sc.id);
+        setVal('edit-ai-customer-name', sc.customerName);
+        setVal('edit-ai-customer-tone', sc.customerTone);
+        setVal('edit-ai-initial-message', sc.initialMessage);
+        populateDispositionDropdowns('edit-ai-correct-disp', 'edit-ai-correct-sub');
+        setTimeout(() => {
+            setVal('edit-ai-correct-disp', sc.correctDisp);
+            setVal('edit-ai-correct-sub', sc.correctSubDisp);
+        }, 80);
+        updateAILivePreview();
+    }
+
+    function updateAILivePreview() {
+        const name = document.getElementById('edit-ai-customer-name')?.value || '-';
+        const tone = document.getElementById('edit-ai-customer-tone')?.value || '-';
+        const msg  = document.getElementById('edit-ai-initial-message')?.value || 'رسالة البدء...';
+        const disp = document.getElementById('edit-ai-correct-disp')?.value || 'Main Disp';
+        const sub  = document.getElementById('edit-ai-correct-sub')?.value || 'Sub Disp';
+
+        const panel = document.getElementById('ai-live-preview-panel');
+        if (panel) panel.classList.remove('hidden');
+
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setTxt('ai-preview-cust-name', `الزبون: ${name}`);
+        setTxt('ai-preview-tone', tone);
+        setTxt('ai-preview-initial-msg', msg);
+        setTxt('ai-preview-disp', disp);
+        setTxt('ai-preview-sub-disp', sub);
+    }
+
+    // Add New AI Scenario
+    const addNewAiScenarioBtn = document.getElementById('add-new-ai-scenario-btn');
+    if (addNewAiScenarioBtn) {
+        addNewAiScenarioBtn.addEventListener('click', () => {
+            const newSc = {
+                id: Date.now(),
+                customerName: 'زبون جديد',
+                customerTone: 'Polite & Inquiring (مهذب ومستفسر)',
+                initialMessage: 'اكتب رسالة الزبون هنا...',
+                correctDisp: '',
+                correctSubDisp: ''
+            };
+            aiScenariosList.push(newSc);
+            renderAdminAiScenariosList();
+            selectAiScenario(aiScenariosList.length - 1);
+        });
+    }
+
+    // Save AI Scenario
+    const aiScenarioEditFormEl = document.getElementById('ai-scenario-edit-form');
+    if (aiScenarioEditFormEl) {
+        aiScenarioEditFormEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (selectedAiScenarioIndex === null || !aiScenariosList[selectedAiScenarioIndex]) return;
+            const sc = aiScenariosList[selectedAiScenarioIndex];
+            sc.customerName   = document.getElementById('edit-ai-customer-name')?.value || sc.customerName;
+            sc.customerTone   = document.getElementById('edit-ai-customer-tone')?.value || sc.customerTone;
+            sc.initialMessage = document.getElementById('edit-ai-initial-message')?.value || sc.initialMessage;
+            sc.correctDisp    = document.getElementById('edit-ai-correct-disp')?.value   || '';
+            sc.correctSubDisp = document.getElementById('edit-ai-correct-sub')?.value    || '';
+            try {
+                await apiCall('/api/ai-scenarios', 'POST', aiScenariosList);
+                renderAdminAiScenariosList();
+                selectAiScenario(selectedAiScenarioIndex);
+                showToast('تم حفظ سيناريو الذكاء الاصطناعي بنجاح ✅', 'success');
+            } catch(err) {
+                console.error('Failed to save AI scenario', err);
+                showToast('فشل حفظ السيناريو. تحقق من الاتصال.', 'error');
+            }
+        });
+    }
+
+    // Delete AI Scenario
+    const deleteAiScenarioBtnEl = document.getElementById('delete-ai-scenario-btn');
+    if (deleteAiScenarioBtnEl) {
+        deleteAiScenarioBtnEl.addEventListener('click', async () => {
+            if (selectedAiScenarioIndex === null) return;
+            if (!confirm('هل أنت متأكد من حذف هذا السيناريو؟')) return;
+            aiScenariosList.splice(selectedAiScenarioIndex, 1);
+            try {
+                await apiCall('/api/ai-scenarios', 'POST', aiScenariosList);
+            } catch(err) {
+                console.error('Failed to delete AI scenario', err);
+            }
+            selectedAiScenarioIndex = null;
+            renderAdminAiScenariosList();
+            selectAiScenario(null);
+            showToast('تم حذف السيناريو بنجاح.', 'success');
+        });
+    }
+
+    // Attach live preview listeners
+    ['edit-ai-customer-name','edit-ai-customer-tone','edit-ai-initial-message','edit-ai-correct-disp','edit-ai-correct-sub'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.addEventListener('input', updateAILivePreview); el.addEventListener('change', updateAILivePreview); }
+    });
+
+
+    // ==========================================
     // USER SESSION MANAGEMENT & LOGIN FLOW
     // ==========================================
+
     const loginScreen = document.getElementById('login-screen');
     const loginForm = document.getElementById('login-form');
     const loginUsernameInput = document.getElementById('login-username');
@@ -2988,24 +3149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const aiForm = document.getElementById('ai-scenario-edit-form');
-        if (aiForm) {
-            const inputs = [
-                'edit-ai-cust-name', 'edit-ai-cust-tone', 
-                'edit-ai-initial-msg', 'edit-ai-correct-disp', 'edit-ai-correct-sub'
-            ];
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('input', updateAILivePreview);
-                    el.addEventListener('change', updateAILivePreview);
-                }
-            });
-            const aiSelectList = document.getElementById('admin-ai-scenarios-list-ul');
-            if (aiSelectList) {
-                aiSelectList.addEventListener('click', () => setTimeout(updateAILivePreview, 100));
-            }
-        }
+
 
         const slideForm = document.getElementById('slide-edit-form');
         if (slideForm) {
@@ -3067,22 +3211,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function updateAILivePreview() {
-        const name = document.getElementById('edit-ai-cust-name').value || '-';
-        const tone = document.getElementById('edit-ai-cust-tone').value || '-';
-        const msg = document.getElementById('edit-ai-initial-msg').value || 'رسالة البدء...';
-        const disp = document.getElementById('edit-ai-correct-disp').value || 'Main Disp';
-        const sub = document.getElementById('edit-ai-correct-sub').value || 'Sub Disp';
 
-        const panel = document.getElementById('ai-live-preview-panel');
-        if (panel) panel.classList.remove('hidden');
 
-        document.getElementById('ai-preview-cust-name').textContent = `الزبون: ${name}`;
-        document.getElementById('ai-preview-cust-tone').textContent = `نبرة الصوت: ${tone}`;
-        document.getElementById('ai-preview-cust-msg').textContent = msg;
-        document.getElementById('ai-preview-correct-disp').textContent = disp;
-        document.getElementById('ai-preview-correct-sub').textContent = sub;
-    }
 
     function updateKBLivePreview() {
         const title = document.getElementById('edit-kb-title').value || 'العنوان...';

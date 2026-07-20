@@ -208,28 +208,29 @@ const defaultAiScenarios = [
     {
         id: 1,
         customerName: "أبو حيدر",
-        customerTone: "Polite & Inquiring (مستفسر ومهذب)",
+        customerTone: "Polite & Inquiring (مهذب ومستفسر)",
         initialMessage: "سمعت بجديد تداول الأسهم بالتطبيق، شلون أفتح حساب وأشتري سهم أبل؟ وهل عليها عمولات؟",
         correctDisp: "Wallet/App Issue",
         correctSubDisp: "Other issues"
     },
     {
         id: 2,
-        customerName: "حسن",
-        customerTone: "Angry & Demanding (غاضب ومستعجل)",
-        initialMessage: "أريد أحول 50 ألف دينار لأخوي بس رصيدي بس 30 ألف والتطبيق ما يقبل السحب أو التحويل ويطلعلي خطأ!",
+        customerName: "سارة",
+        customerTone: "Simple & Worried (بسيطة وقلقة)",
+        initialMessage: "أريد أستثمر بالأسهم بس ما عندي خبرة وخايفة أخسر فلوسي. هل الخدمة آمنة وشكد أقدر أبدأ بأقل مبلغ؟",
         correctDisp: "Wallet/App Issue",
-        correctSubDisp: "Trx Issue"
+        correctSubDisp: "Other issues"
     },
     {
         id: 3,
-        customerName: "فاطمة",
-        customerTone: "Polite & Inquiring (مهذب ومستفسر)",
-        initialMessage: "أريد أرسل كاش من 3 أيام لزوجي بالويسترن يونيون وما وصله لحد الآن، شنو المشكلة؟ هاي الـ MTCN: 12345678",
-        correctDisp: "WU Issue",
-        correctSubDisp: "Hold Transaction Issue"
+        customerName: "أبو علي",
+        customerTone: "Angry & Demanding (غاضب ومستعجل)",
+        initialMessage: "اشتريت أسهم من أسبوع وما وصلتني أي رسالة تأكيد وما أشوف الأسهم بالتطبيق! وين فلوسي؟",
+        correctDisp: "Wallet/App Issue",
+        correctSubDisp: "Trx Issue"
     }
 ];
+
 
 async function getDb() {
     try {
