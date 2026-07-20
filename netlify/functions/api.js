@@ -509,8 +509,37 @@ exports.handler = async (event, context) => {
             finalResendKey = providedBrevo;
         }
 
-        // 1. Try Brevo HTTP API (Port 443 - 300 emails/day)
-        if (!sent && finalBrevoKey) {
+        const anyKey = finalBrevoKey || finalResendKey;
+
+        // 1. Try SendGrid HTTP API (Port 443) if key starts with SG.
+        if (!sent && anyKey && anyKey.startsWith('SG.')) {
+            try {
+                const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${anyKey.trim()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        personalizations: [{ to: [{ email: email, name: employeeName }] }],
+                        from: { email: smtpSettings.username || 'zaincash.testexam@gmail.com', name: 'Zain Cash Academy' },
+                        subject: `Invitation to ${activeTestName}`,
+                        content: [{ type: 'text/html', value: htmlEmailTemplate }]
+                    })
+                });
+                if (r.status >= 200 && r.status < 300) {
+                    sent = true;
+                } else {
+                    const rData = await r.json().catch(() => ({}));
+                    errorMsg = rData.errors ? rData.errors.map(e => e.message).join(', ') : `SendGrid status ${r.status}`;
+                }
+            } catch(e) {
+                errorMsg = e.message;
+            }
+        }
+
+        // 2. Try Brevo HTTP API (Port 443 - 300 emails/day)
+        if (!sent && finalBrevoKey && !finalBrevoKey.startsWith('SG.')) {
             try {
                 const r = await fetch('https://api.brevo.com/v3/smtp/email', {
                     method: 'POST',
@@ -537,8 +566,8 @@ exports.handler = async (event, context) => {
             }
         }
 
-        // 2. Try Resend HTTP API (Port 443)
-        if (!sent && finalResendKey && !finalResendKey.startsWith('xsmtpsib-')) {
+        // 3. Try Resend HTTP API (Port 443)
+        if (!sent && finalResendKey && !finalResendKey.startsWith('xsmtpsib-') && !finalResendKey.startsWith('xkeysib-') && !finalResendKey.startsWith('SG.')) {
             try {
                 const r = await fetch('https://api.resend.com/emails', {
                     method: 'POST',
