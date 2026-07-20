@@ -2631,6 +2631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSaveSMTP = document.getElementById('btn-save-smtp');
     if (btnSaveSMTP) {
         btnSaveSMTP.addEventListener('click', async () => {
+            const resendKey = document.getElementById('smtp-resend-key')?.value.trim() || '';
             const host = document.getElementById('smtp-host').value.trim();
             const port = parseInt(document.getElementById('smtp-port').value.trim()) || 465;
             const ssl = document.getElementById('smtp-ssl').value === 'true';
@@ -2642,18 +2643,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 await apiCall('/api/smtp', 'POST', {
+                    resendKey: resendKey,
                     server: host,
                     port: port,
                     enableSsl: ssl,
                     username: username,
                     password: password
                 });
-                showToast("SMTP settings saved successfully!", "success");
+                showToast("Email settings saved successfully!", "success");
             } catch (err) {
                 showToast(`Failed to save: ${err.message}`, "error");
             } finally {
                 btnSaveSMTP.disabled = false;
-                btnSaveSMTP.innerHTML = 'Save SMTP Settings';
+                btnSaveSMTP.innerHTML = 'Save Email Settings';
             }
         });
     }
@@ -2679,17 +2681,19 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const settings = await apiCall('/api/smtp', 'GET');
             if (settings) {
-                const hostEl = document.getElementById('smtp-host');
-                const portEl = document.getElementById('smtp-port');
-                const sslEl  = document.getElementById('smtp-ssl');
-                const userEl = document.getElementById('smtp-username');
-                const passEl = document.getElementById('smtp-password');
+                const resendEl = document.getElementById('smtp-resend-key');
+                const hostEl   = document.getElementById('smtp-host');
+                const portEl   = document.getElementById('smtp-port');
+                const sslEl    = document.getElementById('smtp-ssl');
+                const userEl   = document.getElementById('smtp-username');
+                const passEl   = document.getElementById('smtp-password');
                 
-                if (hostEl) hostEl.value = settings.server || 'smtp.gmail.com';
-                if (portEl) portEl.value = settings.port || 465;
-                if (sslEl)  sslEl.value  = settings.enableSsl !== false ? 'true' : 'false';
-                if (userEl) userEl.value = settings.username || 'zaincash.testexam@gmail.com';
-                if (passEl) passEl.value = settings.password || 'kqnh huof iekb sqcm';
+                if (resendEl) resendEl.value = settings.resendKey || '';
+                if (hostEl)   hostEl.value   = settings.server || 'smtp.gmail.com';
+                if (portEl)   portEl.value   = settings.port || 465;
+                if (sslEl)    sslEl.value    = settings.enableSsl !== false ? 'true' : 'false';
+                if (userEl)   userEl.value   = settings.username || 'zaincash.testexam@gmail.com';
+                if (passEl)   passEl.value   = settings.password || 'kqnh huof iekb sqcm';
             }
         } catch (err) {
             console.error("Failed to load SMTP settings:", err);

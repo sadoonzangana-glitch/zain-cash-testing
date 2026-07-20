@@ -750,7 +750,17 @@
                                     <i class="fa-solid fa-chevron-down" id="smtp-chevron" style="transition: transform 0.3s;"></i>
                                 </div>
                                 <div id="smtp-settings-body" class="hidden" style="transition: all 0.3s ease;">
-                                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">Configure SMTP credentials to send actual email invitations to your team. If left empty, sending an invitation will print the quick login URL for you to copy.</p>
+                                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">Configure SMTP credentials or HTTP API Key to send actual email invitations to your team. If left empty, sending an invitation will generate the quick login URL for you to copy.</p>
+                                    
+                                    <!-- Resend HTTP API Option for Render -->
+                                    <div style="margin-bottom:15px; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed #cbd5e1;">
+                                        <label style="font-size:0.8rem; font-weight:700; color:var(--primary); display:block; margin-bottom:5px;">
+                                            <i class="fa-solid fa-bolt"></i> Resend HTTP Email API Key (تجاوز حظر المنافذ على Render 100%):
+                                        </label>
+                                        <input type="text" id="smtp-resend-key" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" placeholder="re_123456789... (مجاني من resend.com - يتجاوز أي حظر للسيرفرات)">
+                                        <span style="font-size:0.75rem; color:#64748b; margin-top:4px; display:block;">تنويه: خدمات HTTP API تضمن وصول الإيميل لأنها تعمل عبر المنفذ Web 443 الذي لا يُحظر أبداً.</span>
+                                    </div>
+
                                     <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:15px; margin-bottom:15px;">
                                         <div>
                                             <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">SMTP Server / Host</label>
@@ -758,7 +768,7 @@
                                         </div>
                                         <div>
                                             <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">Port</label>
-                                            <input type="number" id="smtp-port" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" placeholder="587">
+                                            <input type="number" id="smtp-port" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;" placeholder="465">
                                         </div>
                                         <div>
                                             <label style="font-size:0.8rem; font-weight:700; color:var(--text-color); display:block; margin-bottom:5px;">Security (SSL/TLS)</label>
@@ -779,7 +789,7 @@
                                         </div>
                                     </div>
                                     <div style="display:flex; justify-content:flex-end;">
-                                        <button class="btn btn-primary" id="btn-save-smtp">Save SMTP Settings</button>
+                                        <button class="btn btn-primary" id="btn-save-smtp">Save Email Settings</button>
                                     </div>
                                 </div>
                             </div>

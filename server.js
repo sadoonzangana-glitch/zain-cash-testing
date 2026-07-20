@@ -433,13 +433,77 @@ app.post('/api/send-invite', async (req, res) => {
     
     const smtpSettings = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
     
-    if (smtpSettings && smtpSettings.server && smtpSettings.username) {
+    if (smtpSettings && smtpSettings.resendKey && smtpSettings.resendKey.trim()) {
+        try {
+            const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; direction: ltr; }
+        .card { background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 30px; text-align: center; border-bottom: 4px solid #ff9900; }
+        .body { padding: 30px; line-height: 1.6; color: #334155; text-align: left; }
+        .btn-container { text-align: center; margin: 30px 0; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #ff9900 0%, #ff6600 100%); color: #ffffff !important; padding: 12px 35px; font-weight: bold; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 10px rgba(255, 153, 0, 0.3); font-size: 16px; }
+        .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h2 style="margin: 0; font-size: 22px;">Zain Cash Customer Care Academy</h2>
+        </div>
+        <div class="body">
+            <h3 style="margin-top: 0; color: #0f172a;">Hello ${employeeName},</h3>
+            <p>You have been invited to perform a practice evaluation on the <strong>${activeTestDesc}</strong>.</p>
+            <p>Please click the button below to start your training and testing session directly. Your performance and results will be automatically saved and reported to the management.</p>
+            <div class="btn-container">
+                <a href="${loginLink}" class="btn">Start Test Now</a>
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">* Note: This link is unique to you for quick login to start the test without requiring credentials.</p>
+        </div>
+        <div class="footer">
+            All rights reserved © Zain Cash Customer Care Academy 2026
+        </div>
+    </div>
+</body>
+</html>
+            `;
+            const r = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${smtpSettings.resendKey.trim()}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: 'Zain Cash Academy <onboarding@resend.dev>',
+                    to: [email],
+                    subject: `Invitation to ${activeTestName}`,
+                    html: htmlContent
+                })
+            });
+            const rData = await r.json();
+            if (r.ok) {
+                sent = true;
+            } else {
+                errorMsg = rData.message || rData.name || JSON.stringify(rData);
+                simulated = true;
+            }
+        } catch(e) {
+            errorMsg = e.message;
+            simulated = true;
+        }
+    } else if (smtpSettings && smtpSettings.server && smtpSettings.username) {
         try {
             const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
             let transporterConfig;
             if (smtpSettings.server.toLowerCase().includes('gmail.com')) {
                 transporterConfig = {
-                    service: 'gmail',
+                    host: 'smtp.gmail.com',
+                    port: 465,
+                    secure: true,
                     auth: {
                         user: smtpSettings.username.trim(),
                         pass: cleanPass
@@ -447,9 +511,9 @@ app.post('/api/send-invite', async (req, res) => {
                     tls: {
                         rejectUnauthorized: false
                     },
-                    connectionTimeout: 10000,
-                    greetingTimeout: 10000,
-                    socketTimeout: 15000
+                    connectionTimeout: 6000,
+                    greetingTimeout: 6000,
+                    socketTimeout: 8000
                 };
             } else {
                 transporterConfig = {
@@ -463,9 +527,9 @@ app.post('/api/send-invite', async (req, res) => {
                     tls: {
                         rejectUnauthorized: false
                     },
-                    connectionTimeout: 10000,
-                    greetingTimeout: 10000,
-                    socketTimeout: 15000
+                    connectionTimeout: 6000,
+                    greetingTimeout: 6000,
+                    socketTimeout: 8000
                 };
             }
             const transporter = nodemailer.createTransport(transporterConfig);
