@@ -433,7 +433,7 @@ app.post('/api/send-invite', async (req, res) => {
     const activeTestName = testType === 'ai-agent' ? "Zain Cash AI Agent Coach Test" : "Zain Cash Customer Care Chat Simulator Test";
     const activeTestDesc = testType === 'ai-agent' ? "Zain Cash AI Agent Coach" : "Zain Cash Customer Care Chat Simulator";
     
-    const smtpSettings = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
+    const smtpSettings = db.smtp || defaultSmtp;
     
     const htmlEmailTemplate = `
 <!DOCTYPE html>
