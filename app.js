@@ -2604,16 +2604,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
                     <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 6px;">رابط الدخول السريع:</label>
-                    <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
                         <input type="text" value="${link}" readonly style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.82rem; font-family: monospace; background: #ffffff; color: #0f172a; direction: ltr; text-align: left;" id="modal-link-input">
                         <button class="btn btn-primary" id="btn-modal-copy" style="padding: 10px 18px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
                             <i class="fa-solid fa-copy"></i> نسخ الرابط
                         </button>
                     </div>
+                    <button class="btn" id="btn-modal-whatsapp" style="width: 100%; padding: 10px; background: #25D366; color: #ffffff; font-weight: 800; border-radius: 8px; border: none; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 3px 6px rgba(37, 211, 102, 0.25);">
+                        <i class="fa-brands fa-whatsapp" style="font-size: 1.1rem;"></i> إرسال رابط الدعوة عبر الواتساب فوراً
+                    </button>
                 </div>
 
                 <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 20px; line-height: 1.4;">
-                    💡 <strong>تعليمات الاستخدام:</strong> يمكنك نسخ الرابط أعلاه وإرساله للموظف مباشرة عبر (واتساب / تليجرام / إيميل). عند الضغط عليه يدخل للاختبار فوراً بدون طلب كلمة سر.
+                    💡 <strong>طريقة الاستخدام:</strong> يمكنك الضغط على زر الواتساب لإرسال الدعوة مباشرة للموظف، أو نسخ الرابط وإرساله له ليدخل للاختبار فوراً بدون طلب كلمة سر.
                 </p>
 
                 <div style="display: flex; justify-content: flex-end;">
@@ -2640,6 +2643,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.execCommand('copy');
                     showToast("تم نسخ الرابط إلى الحافظة!", "success");
                 }
+            });
+        }
+
+        const waBtn = modal.querySelector('#btn-modal-whatsapp');
+        if (waBtn) {
+            waBtn.addEventListener('click', () => {
+                const text = encodeURIComponent(`مرحباً ${employeeName} 👋\nإليك رابط دخولك المباشر للبدء باختبار التقييم:\n\n${link}`);
+                window.open(`https://wa.me/?text=${text}`, '_blank');
             });
         }
     }
