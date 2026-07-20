@@ -2574,7 +2574,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let formattedError = errorReason;
         if (errorReason && (errorReason.toLowerCase().includes('timeout') || errorReason.toLowerCase().includes('connection'))) {
-            formattedError = "سيرفر الاستضافة (Render) يمنع الاتصال المباشر بمنافذ الإيميل الخارجية (SMTP Port Blocked). يمكنك إرسال الرابط المباشر للموظف فواً.";
+            formattedError = "سيرفر الاستضافة (Render) يمنع الاتصال المباشر بمنافذ الإيميل الخارجية (SMTP Port Blocked). يمكنك نسخ وإرسال الرابط المباشر للموظف فوراً:";
         }
 
         const errorBanner = errorReason ? `
