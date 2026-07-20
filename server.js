@@ -220,7 +220,7 @@ const defaultAiScenarios = [
 
 
 const defaultSmtp = {
-    resendKey: "re_41VDWrzU_Dq4Xk423y5GG2tyPAX9WMjnW",
+    resendKey: "",
     server: "smtp.gmail.com",
     port: 465,
     enableSsl: true,
@@ -490,13 +490,15 @@ app.post('/api/send-invite', async (req, res) => {
                 sent = true;
             } else {
                 errorMsg = rData.message || rData.name || JSON.stringify(rData);
-                simulated = true;
+                console.warn("Resend API failed, falling back to SMTP/simulated:", errorMsg);
             }
         } catch(e) {
             errorMsg = e.message;
-            simulated = true;
         }
-    } else if (smtpSettings && smtpSettings.server && smtpSettings.username) {
+    }
+    
+    // If not sent via Resend, attempt Nodemailer SMTP
+    if (!sent && smtpSettings && smtpSettings.server && smtpSettings.username) {
         try {
             const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
             let transporterConfig;

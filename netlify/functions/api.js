@@ -514,13 +514,14 @@ exports.handler = async (event, context) => {
                     sent = true;
                 } else {
                     errorMsg = rData.message || rData.name || JSON.stringify(rData);
-                    simulated = true;
+                    console.warn("Resend API failed, falling back to SMTP/simulated:", errorMsg);
                 }
             } catch(e) {
                 errorMsg = e.message;
-                simulated = true;
             }
-        } else if (smtpSettings && smtpSettings.server && smtpSettings.username) {
+        }
+
+        if (!sent && smtpSettings && smtpSettings.server && smtpSettings.username) {
             try {
                 const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
                 let transporterConfig;
