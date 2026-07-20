@@ -220,8 +220,9 @@ const defaultAiScenarios = [
 
 
 const defaultSmtp = {
+    resendKey: "re_K9NVtQ9z_DmKGecTQr9R6m4z3eWdY1qbW",
     server: "smtp.gmail.com",
-    port: 587,
+    port: 465,
     enableSsl: true,
     username: "zaincash.testexam@gmail.com",
     password: "kqnh huof iekb sqcm"
