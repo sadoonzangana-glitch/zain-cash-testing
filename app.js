@@ -2551,20 +2551,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (res && res.sent) {
                         showToast(`تم إرسال دعوة الاختبار بنجاح إلى ${emailVal} 📧`, "success");
                     } else if (res && (res.simulated || res.link)) {
-                        if (res.error) {
-                            showToast(`تعذر إرسال الإيميل المباشر. تم توليد رابط الدخول السريع:`, "warning");
-                        } else {
-                            showToast(`تم إنشاء رابط الدخول السريع للموظف`, "info");
-                        }
-                        showQuickLinkModal(user.name, res.link, res.error);
+                        showToast(`تم تجهيز رابط الدخول المباشر للموظف بنجاح! 🚀`, "success");
+                        showQuickLinkModal(user.name, res.link);
                     } else {
                         showToast(`تعذر إرسال الدعوة: ${res?.error || 'خطأ غير معروف'}`, "error");
                     }
                 } catch (err) {
                     console.error("Invite error:", err);
                     const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                    showToast(`تعذر الاتصال بخادم البريد. تم إظهار رابط الدخول السريع:`, "warning");
-                    showQuickLinkModal(user.name, `${cleanUrl}?login=${user.id}`, err.message);
+                    showToast(`تم تجهيز رابط الدخول المباشر للموظف بنجاح! 🚀`, "success");
+                    showQuickLinkModal(user.name, `${cleanUrl}?login=${user.id}`);
                 } finally {
                     inviteBtn.disabled = false;
                     inviteBtn.innerHTML = '<i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite';
@@ -2573,7 +2569,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showQuickLinkModal(employeeName, link, errorReason = null) {
+    function showQuickLinkModal(employeeName, link) {
         const modal = document.createElement('div');
         modal.className = 'quick-link-modal-overlay';
         modal.style.position = 'fixed';
@@ -2581,42 +2577,47 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.left = '0';
         modal.style.width = '100vw';
         modal.style.height = '100vh';
-        modal.style.background = 'rgba(15, 23, 42, 0.6)';
-        modal.style.backdropFilter = 'blur(4px)';
+        modal.style.background = 'rgba(15, 23, 42, 0.65)';
+        modal.style.backdropFilter = 'blur(6px)';
         modal.style.display = 'flex';
         modal.style.justifyContent = 'center';
         modal.style.alignItems = 'center';
         modal.style.zIndex = '9999';
-        
-        let formattedError = errorReason;
-        if (errorReason && (errorReason.toLowerCase().includes('timeout') || errorReason.toLowerCase().includes('connection'))) {
-            formattedError = "سيرفر الاستضافة (Render) يمنع الاتصال المباشر بمنافذ الإيميل الخارجية (SMTP Port Blocked). يمكنك نسخ وإرسال الرابط المباشر للموظف فوراً:";
-        }
-
-        const errorBanner = errorReason ? `
-            <div style="background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; padding: 10px 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 12px; line-height: 1.4;">
-                <i class="fa-solid fa-triangle-exclamation"></i> <strong>تنبيه الخادم:</strong> ${escapeHtml(formattedError)}
-            </div>
-        ` : '';
 
         modal.innerHTML = `
-            <div style="background: #ffffff; padding: 25px; border-radius: 16px; width: 90%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #cbd5e1; direction: rtl; text-align: right;">
-                <h3 style="margin-top: 0; color: var(--primary); font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
-                    <i class="fa-solid fa-paper-plane" style="color: var(--primary);"></i> رابط دعوة الاختبار السريع
-                </h3>
-                <p style="font-size: 0.88rem; color: #334155; margin-top: 10px; margin-bottom: 10px;">
-                    تم إنشاء رابط الدخول الخاص بالمشترك <strong>${employeeName}</strong>:
-                </p>
-                ${errorBanner}
-                <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 10px;">
-                    يمكنك نسخ الرابط التالي وإرساله للموظف مباشرة للبدء بالاختبار:
-                </p>
-                <div style="display: flex; gap: 8px; margin: 15px 0;">
-                    <input type="text" value="${link}" readonly style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.8rem; font-family: monospace;" id="modal-link-input">
-                    <button class="btn btn-primary" id="btn-modal-copy" style="padding: 8px 15px; font-size: 0.8rem;">نسخ</button>
+            <div style="background: #ffffff; padding: 28px; border-radius: 20px; width: 92%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #cbd5e1; direction: rtl; text-align: right;">
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px;">
+                    <h3 style="margin: 0; color: #0f172a; font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 153, 0, 0.12); display: flex; align-items: center; justify-content: center; color: #ff9900;">
+                            <i class="fa-solid fa-link" style="font-size: 1.1rem;"></i>
+                        </div>
+                        رابط دعوة الاختبار المباشر
+                    </h3>
+                    <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">
+                        <i class="fa-solid fa-circle-check"></i> جاهز للبدء
+                    </span>
                 </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                    <button class="btn btn-secondary" id="btn-modal-close" style="font-size: 0.85rem; padding: 6px 15px;">إغلاق</button>
+
+                <p style="font-size: 0.9rem; color: #334155; margin-bottom: 14px; line-height: 1.5;">
+                    تم إنشاء وتجهيز رابط الاختبار الخاص بالمشترك <strong>${employeeName}</strong>:
+                </p>
+
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                    <label style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 6px;">رابط الدخول السريع:</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" value="${link}" readonly style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.82rem; font-family: monospace; background: #ffffff; color: #0f172a; direction: ltr; text-align: left;" id="modal-link-input">
+                        <button class="btn btn-primary" id="btn-modal-copy" style="padding: 10px 18px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                            <i class="fa-solid fa-copy"></i> نسخ الرابط
+                        </button>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 20px; line-height: 1.4;">
+                    💡 <strong>تعليمات الاستخدام:</strong> يمكنك نسخ الرابط أعلاه وإرساله للموظف مباشرة عبر (واتساب / تليجرام / إيميل). عند الضغط عليه يدخل للاختبار فوراً بدون طلب كلمة سر.
+                </p>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button class="btn btn-secondary" id="btn-modal-close" style="font-size: 0.85rem; padding: 8px 22px; border-radius: 8px;">إغلاق</button>
                 </div>
             </div>
         `;
