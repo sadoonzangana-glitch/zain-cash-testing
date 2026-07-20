@@ -564,7 +564,7 @@ exports.handler = async (event, context) => {
             }
         }
 
-        if (!sent && smtpSettings && smtpSettings.server && smtpSettings.username) {
+        if (!sent && !finalBrevoKey && !finalResendKey && smtpSettings && smtpSettings.server && smtpSettings.username) {
             try {
                 const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
                 let transporterConfig;

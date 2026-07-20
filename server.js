@@ -540,8 +540,8 @@ app.post('/api/send-invite', async (req, res) => {
         }
     }
     
-    // If not sent via Resend, attempt Nodemailer SMTP
-    if (!sent && smtpSettings && smtpSettings.server && smtpSettings.username) {
+    // Attempt Nodemailer SMTP only if no HTTP API Key was provided
+    if (!sent && !finalBrevoKey && !finalResendKey && smtpSettings && smtpSettings.server && smtpSettings.username) {
         try {
             const cleanPass = (smtpSettings.password || '').replace(/\s+/g, '');
             let transporterConfig;
