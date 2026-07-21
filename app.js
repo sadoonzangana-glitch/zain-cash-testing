@@ -2181,17 +2181,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             } catch (err) {
                 console.error("Auto-login failed:", err);
+                sessionStorage.removeItem('zain_cash_user');
             }
         }
 
-        const storedUser = sessionStorage.getItem('zain_cash_user');
-        if (storedUser) {
-            currentUser = JSON.parse(storedUser);
-            await onUserLoggedIn();
-        } else {
-            if (loginScreen) loginScreen.classList.remove('hidden');
+        const storedUserStr = sessionStorage.getItem('zain_cash_user');
+        if (storedUserStr) {
+            try {
+                const parsed = JSON.parse(storedUserStr);
+                const user = await apiCall('/api/login', 'POST', { username: parsed.id || parsed.name });
+                sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
+                currentUser = user;
+                await onUserLoggedIn();
+                return;
+            } catch(e) {
+                console.warn("Invalid user session cleared:", e);
+                sessionStorage.removeItem('zain_cash_user');
+                currentUser = null;
+            }
+        }
+
+        if (loginScreen) {
+            loginScreen.classList.remove('hidden');
+            loginScreen.style.display = 'flex';
         }
     }
+
     const doLogin = async () => {
         let username = '';
         if (loginUsernameInput) username = loginUsernameInput.value.trim();
@@ -2255,9 +2270,16 @@ document.addEventListener('DOMContentLoaded', () => {
             loginScreen.classList.add('hidden');
             loginScreen.style.display = 'none';
         }
-        if (headerUserName && currentUser) headerUserName.textContent = currentUser.name;
+        if (headerUserName && currentUser) {
+            const displayName = (currentUser.name && currentUser.name !== currentUser.id)
+                ? `${currentUser.name} (${currentUser.id})`
+                : currentUser.id;
+            headerUserName.textContent = displayName;
+        }
         const avatarCircle = document.getElementById('header-user-avatar');
-        if (avatarCircle && currentUser) avatarCircle.textContent = (currentUser.name || 'Z').charAt(0).toUpperCase();
+        if (avatarCircle && currentUser) {
+            avatarCircle.textContent = (currentUser.name || currentUser.id || 'Z').charAt(0).toUpperCase();
+        }
         if (headerUserProfile) headerUserProfile.classList.remove('hidden');
         
         const navTabs = document.querySelector('.amy-nav-tabs');
@@ -3301,42 +3323,77 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    let currentKbSearchQuery = '';
+
+    function highlightText(text, query) {
+        if (!text) return '';
+        if (!query || !query.trim()) return escapeHtml(text);
+        const tokens = query.trim().split(/\s+/).filter(t => t.length > 0);
+        if (tokens.length === 0) return escapeHtml(text);
+
+        const escapedTokens = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const regex = new RegExp(`(${escapedTokens.join('|')})`, 'gi');
+        
+        const safeText = escapeHtml(text);
+        return safeText.replace(regex, '<mark class="search-highlight">$1</mark>');
+    }
+
     function filterAndRenderKbArticles() {
         const searchInput = document.getElementById('kb-search-input');
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const rawQuery = searchInput ? searchInput.value.trim() : '';
+        currentKbSearchQuery = rawQuery;
+        const queryLower = rawQuery.toLowerCase();
+        const tokens = queryLower.split(/\s+/).filter(t => t.length > 0);
         
         let filtered = kbArticles;
         if (selectedKbCategory !== 'all') {
             filtered = filtered.filter(a => a.category === selectedKbCategory);
         }
-        if (query) {
-            filtered = filtered.filter(a => 
-                a.title.toLowerCase().includes(query) || 
-                a.content.toLowerCase().includes(query) || 
-                (a.keywords && a.keywords.toLowerCase().includes(query))
-            );
+        if (tokens.length > 0) {
+            filtered = filtered.filter(a => {
+                const title = (a.title || '').toLowerCase();
+                const content = (a.content || '').toLowerCase();
+                const keywords = (a.keywords || '').toLowerCase();
+                const category = (a.category || '').toLowerCase();
+                const disp = (a.correctDisp || '').toLowerCase();
+                const subDisp = (a.correctSubDisp || '').toLowerCase();
+
+                return tokens.every(token => 
+                    title.includes(token) || 
+                    content.includes(token) || 
+                    keywords.includes(token) ||
+                    category.includes(token) ||
+                    disp.includes(token) ||
+                    subDisp.includes(token)
+                );
+            });
         }
 
         const viewArea = document.querySelector('.kb-content-area');
         if (!viewArea) return;
 
-        if (selectedKbCategory !== 'all' || query) {
+        if (selectedKbCategory !== 'all' || rawQuery) {
             document.getElementById('kb-no-article-selected').classList.add('hidden');
             document.getElementById('kb-article-view').classList.add('hidden');
             
             let listHtml = `
                 <div class="kb-results-container" style="display:flex; flex-direction:column; gap:15px; width:100%;">
-                    <h2 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:5px;">نتائج البحث والتصفح (${filtered.length} مقال)</h2>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:5px;">
+                        <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0;">
+                            <i class="fa-solid fa-magnifying-glass" style="color:var(--primary);"></i> نتائج البحث الذكي (${filtered.length} مقال)
+                        </h2>
+                        ${rawQuery ? `<span style="font-size:0.8rem; color:#64748b;">كلمة البحث: <mark class="search-highlight">${escapeHtml(rawQuery)}</mark></span>` : ''}
+                    </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
             `;
             if (filtered.length === 0) {
-                listHtml += `<p style="grid-column: span 2; text-align:center; color:#94a3b8; padding:30px;"><i class="fa-solid fa-circle-info" style="font-size:2rem; margin-bottom:10px;"></i><br/>عذراً، لم نجد أي نتائج تطابق بحثك.</p>`;
+                listHtml += `<p style="grid-column: span 2; text-align:center; color:#94a3b8; padding:40px;"><i class="fa-solid fa-circle-info" style="font-size:2.5rem; margin-bottom:12px; color:#cbd5e1;"></i><br/>عذراً، لم نجد أي نتائج تطابق كلمة البحث <strong>"${escapeHtml(rawQuery)}"</strong>.</p>`;
             } else {
                 listHtml += filtered.map(a => `
-                    <div class="kb-article-preview-item" data-art-id="${a.id}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:15px; cursor:pointer; transition:all 0.2s; text-align:right; display:flex; flex-direction:column; gap:8px;">
-                        <span style="background: #fff8e8; color: #ff9900; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffeeba; align-self: flex-start;">${a.category}</span>
-                        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin:0;">${a.title}</h3>
-                        <p style="font-size: 0.78rem; color:#64748b; margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.5;">${a.content}</p>
+                    <div class="kb-article-preview-item" data-art-id="${a.id}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.22s; text-align:right; display:flex; flex-direction:column; gap:8px;">
+                        <span style="background: #fff8e8; color: #d97706; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; border: 1px solid #fef3c7; align-self: flex-start;">${escapeHtml(a.category)}</span>
+                        <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin:0; line-height:1.4;">${highlightText(a.title, rawQuery)}</h3>
+                        <p style="font-size: 0.82rem; color:#475569; margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; line-height:1.6;">${highlightText(a.content, rawQuery)}</p>
                     </div>
                 `).join('');
             }
@@ -3370,7 +3427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.innerHTML = kbArticles.slice(0, 4).map(a => `
             <div class="popular-item" data-art-id="${a.id}">
                 <i class="fa-solid fa-circle-play" style="color:var(--primary);"></i>
-                <span>${a.title}</span>
+                <span>${escapeHtml(a.title)}</span>
             </div>
         `).join('');
 
@@ -3396,8 +3453,18 @@ document.addEventListener('DOMContentLoaded', () => {
         view.classList.remove('hidden');
 
         document.getElementById('kb-view-category').textContent = article.category;
-        document.getElementById('kb-view-title').textContent = article.title;
-        document.getElementById('kb-view-content').textContent = article.content;
+        
+        const titleEl = document.getElementById('kb-view-title');
+        const contentEl = document.getElementById('kb-view-content');
+        
+        if (currentKbSearchQuery) {
+            titleEl.innerHTML = highlightText(article.title, currentKbSearchQuery);
+            contentEl.innerHTML = highlightText(article.content, currentKbSearchQuery);
+        } else {
+            titleEl.textContent = article.title;
+            contentEl.textContent = article.content;
+        }
+
         document.getElementById('kb-view-correct-disp').textContent = article.correctDisp || 'N/A';
         document.getElementById('kb-view-correct-sub').textContent = article.correctSubDisp || 'N/A';
     }

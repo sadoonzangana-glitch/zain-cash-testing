@@ -4260,6 +4260,43 @@ body::after {
     background: #f8fafc !important;
 }
 
+/* KB Search term highlight badge */
+mark.search-highlight {
+    background: linear-gradient(135deg, #fef08a, #facc15);
+    color: #854d0e;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(250,204,21,0.5);
+    border: 1px solid #eab308;
+    display: inline-block;
+}
+
+/* English inline term for BiDi text isolation */
+.en-term {
+    display: inline-block;
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    font-family: var(--font-en);
+    font-weight: 700;
+    color: #00B5E2;
+    padding: 0 3px;
+}
+
+/* Slide text alignment & BiDi isolation */
+.slide-content h1,
+.slide-content h2,
+.slide-content h3,
+.slide-content h4,
+.slide-content p,
+.slide-content span,
+.slide-content div {
+    direction: rtl;
+    text-align: right;
+    unicode-bidi: isolate;
+}
+
+
 /* Training center wrapper padding */
 #tab-training-center > .training-center-welcome-screen {
     padding: 24px 24px !important;
