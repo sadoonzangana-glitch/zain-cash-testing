@@ -1,6 +1,17 @@
 // Zain Cash Customer Care Training Application Logic (Amyo Style)
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Automatic Cache-Busting for Stock Trading & 23-Category Dispositions update
+    const STOCKS_DISP_VERSION = 'v5_stocks_dispositions_2026_07';
+    if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
+        localStorage.removeItem('zain_cash_scenarios');
+        localStorage.removeItem('zain_cash_slides');
+        localStorage.removeItem('zain_cash_kb');
+        localStorage.removeItem('zain_cash_ai_scenarios');
+        localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
+        console.log("Purged legacy localStorage cache for new Stock Trading & Dispositions update!");
+    }
+
     // API base URL
     const API_BASE = window.location.origin.startsWith('http') ? window.location.origin : '';
     
