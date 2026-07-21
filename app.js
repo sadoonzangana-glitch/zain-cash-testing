@@ -28,6 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     window.apiCall = apiCall;
+
+    function escapeHtml(str) {
+        if (typeof str !== 'string') return str;
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+    window.escapeHtml = escapeHtml;
     
     function handleOfflineApi(endpoint, method, data) {
         if (endpoint === '/api/login' && method === 'POST') {

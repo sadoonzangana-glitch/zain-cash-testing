@@ -3,13 +3,75 @@ const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 8888;
 const dbPath = path.join(__dirname, 'db.json');
 
+// 1. OWASP Security Headers Middleware
+app.use((req, res, next) => {
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:;");
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+    next();
+});
+
+// 2. Anti-Brute-Force & Rate Limiting Middleware
+const ipRateLimits = new Map();
+
+function applyRateLimit(req, res, next, maxRequests, windowMs, customMsg) {
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const routeKey = `${req.path}_${clientIp}`;
+    
+    let record = ipRateLimits.get(routeKey);
+    if (!record || (now - record.startTime) > windowMs) {
+        record = { startTime: now, count: 1 };
+    } else {
+        record.count++;
+    }
+    ipRateLimits.set(routeKey, record);
+    
+    if (record.count > maxRequests) {
+        return res.status(429).json({ error: customMsg || 'Too many requests. Please try again later.' });
+    }
+    next();
+}
+
+app.use('/api/login', (req, res, next) => applyRateLimit(req, res, next, 15, 15 * 60 * 1000, 'Too many login attempts. Please wait 15 minutes.'));
+app.use('/api/send-invite', (req, res, next) => applyRateLimit(req, res, next, 30, 15 * 60 * 1000, 'Too many invitation requests. Please wait 15 minutes.'));
+app.use('/api/', (req, res, next) => applyRateLimit(req, res, next, 250, 15 * 60 * 1000, 'Rate limit exceeded. Please slow down.'));
+
+// 3. Recursive Input Sanitization & Anti-XSS Payload Filter
+function sanitizeValue(val) {
+    if (typeof val === 'string') {
+        return val
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/javascript:/gi, '')
+            .replace(/on\w+\s*=/gi, '')
+            .replace(/<[^>]*>/g, '');
+    }
+    if (typeof val === 'object' && val !== null) {
+        for (let key in val) {
+            val[key] = sanitizeValue(val[key]);
+        }
+    }
+    return val;
+}
+
 app.use(cors());
 app.use(express.json());
+app.use('/api/', (req, res, next) => {
+    if (req.body && typeof req.body === 'object') {
+        req.body = sanitizeValue(req.body);
+    }
+    next();
+});
 app.use(express.static(__dirname));
 
 const defaultUsers = [
@@ -295,7 +357,11 @@ app.post('/api/users/update-email', async (req, res) => {
 
 app.get('/api/smtp', async (req, res) => {
     const db = await readDb();
-    res.json(db.smtp || defaultSmtp);
+    const smtpObj = { ...(db.smtp || defaultSmtp) };
+    if (smtpObj.password) {
+        smtpObj.password = '••••••••••••';
+    }
+    res.json(smtpObj);
 });
 
 app.post('/api/smtp', async (req, res) => {
