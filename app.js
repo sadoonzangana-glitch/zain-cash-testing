@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Stock Trading & 23-Category Dispositions update
-    const STOCKS_DISP_VERSION = 'v5_stocks_dispositions_2026_07';
+    const STOCKS_DISP_VERSION = 'v6_stocks_interactive_slides_and_chats';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -521,6 +521,33 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span>Enter Chat Simulator</span>
                             </button>
                         </div>
+                    </div>
+                `;
+            } else {
+                const badge = slide.badgeText || slide.badge || `Slide ${slide.id}`;
+                const title = slide.title || '';
+                const desc = slide.desc || slide.subtitle || slide.content || '';
+                const bullets = slide.bulletPoints || [];
+
+                html = `
+                    <div class="slide-content" style="display:flex; flex-direction:column; gap:16px; text-align:right; direction:rtl; padding:20px;">
+                        <div class="slide-header" style="display:flex; flex-direction:column; gap:8px;">
+                            <span class="rule-badge" style="align-self:flex-start; background:rgba(12,79,138,0.1); color:var(--primary); padding:4px 12px; border-radius:20px; font-weight:700; font-size:0.85rem;">${escapeHtml(badge)}</span>
+                            <h2 class="slide-title" style="font-size:1.6rem; font-weight:800; color:var(--primary); margin:0;">${escapeHtml(title)}</h2>
+                        </div>
+                        <p class="slide-subtitle" style="font-size:1.05rem; color:#475569; line-height:1.6; margin:0;">${escapeHtml(desc)}</p>
+                        ${bullets.length > 0 ? `
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-right:4px solid var(--primary); padding:18px; border-radius:14px; margin-top:10px;">
+                                <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px;">
+                                    ${bullets.map(bp => `
+                                        <li style="display:flex; align-items:center; gap:10px; font-size:1rem; color:#1e293b; font-weight:600;">
+                                            <i class="fa-solid fa-circle-check" style="color:#10b981; font-size:1.1rem;"></i>
+                                            <span>${escapeHtml(bp)}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }
@@ -3176,6 +3203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const categories = [
             { id: 'all', name: 'الكل (All)', icon: 'fa-cubes' },
+            { id: 'الأسهم والتداول', name: 'الأسهم والتداول (Shares)', icon: 'fa-chart-line' },
             { id: 'MasterCard & Visa', name: 'MasterCard & Visa', icon: 'fa-credit-card' },
             { id: 'Western Union', name: 'Western Union', icon: 'fa-globe' },
             { id: 'Wallet & App', name: 'Wallet & App', icon: 'fa-wallet' },
@@ -3798,13 +3826,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fa-solid fa-circle-check"></i> اكتملت المحادثة! يرجى إغلاقها وتصنيف التذكرة من الأعلى (X).
                 </div>
             `;
-            const dispPanel = document.getElementById(`disposition-panel-${chatId}`);
-            const profPanel = document.getElementById(`profile-panel-${chatId}`);
-            if (dispPanel) {
-                dispPanel.classList.remove('hidden');
-            }
-            if (profPanel) {
-                profPanel.classList.add('hidden');
+            if (turnIdx > 0) {
+                const dispPanel = document.getElementById(`disposition-panel-${chatId}`);
+                const profPanel = document.getElementById(`profile-panel-${chatId}`);
+                if (dispPanel) {
+                    dispPanel.classList.remove('hidden');
+                }
+                if (profPanel) {
+                    profPanel.classList.add('hidden');
+                }
             }
             return;
         }

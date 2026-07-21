@@ -195,129 +195,140 @@ const stocksSlides = [
 
 const stocksScenarios = [
     {
-        id: "sim-stocks-1",
+        id: 1,
         title: "استفسار عن طريقة شراء أسهم عبر زين كاش",
-        type: "Chat Simulation",
-        customerCode: "CUST-STK-01",
         customerName: "حسين علي مهدي",
-        topic: "Shares Trading Purchase Inquiry",
-        category: "Wallet / Application Inquiry",
-        subDisposition: "How to Use the Wallet",
-        chat: [
-            { sender: "customer", text: "السلام عليكم، سمعت تكدرون تشترون أسهم شركات بشركتكم زين كاش؟ شلون الطريقة؟" },
-            { sender: "agent", text: "وعليكم السلام ورحمة الله وبركاته، أهلاً بك أستاذ حسين! نعم بالضبط، يمكنك تداول أسهم الشركات العراقية المدرجة في سوق العراق للأوراق المالية (ISX) مباشرة من تطبيق زين كاش." },
-            { sender: "customer", text: "شنو المتطلبات حتى ابدي اشتري؟" },
-            { sender: "agent", text: "المتطلبات بسيطة جداً: يجب أن تكون محفظتك دائمية ومحدثة المستمسكات، ثم تفتح التطبيق وتختار 'تداول الأسهم' وتوافق على الشروط وتختار شركة الوساطة. يتم تفعيل حسابك خلال 24 ساعة وتستطيع الشراء فوراً." }
-        ],
-        evaluationCriteria: {
-            correctCategory: "Wallet / Application Inquiry",
-            correctSubDisposition: "How to Use the Wallet",
-            keyCheckpoints: [
-                "تأكيد توفر خدمة تداول الأسهم عبر سوق العراق للأوراق المالية ISX",
-                "توضيح شرط أن تكون المحفظة دائمية",
-                "شرح خطوات التفعيل اختيار شركة الوساطة"
-            ]
-        }
+        customerPhone: "07701234501",
+        correctDisp: "Wallet / Application Inquiry",
+        correctSubDisp: "How to Use the Wallet",
+        turns: [
+            {
+                step: 1,
+                customerText: "السلام عليكم، سمعت تكدرون تشترون أسهم شركات بشركتكم زين كاش؟ شلون الطريقة؟",
+                options: [
+                    {
+                        text: "وعليكم السلام ورحمة الله وبركاته، أهلاً بك أستاذ حسين! نعم بالضبط، يمكنك تداول أسهم الشركات العراقية المدرجة في سوق العراق للأوراق المالية (ISX) مباشرة من تطبيق زين كاش.",
+                        isCorrect: true,
+                        feedback: "ممتاز! رحبت بالزبون بأسلوب احترافي وأكدت توفر خدمة تداول الأسهم في سوق العراق ISX."
+                    },
+                    {
+                        text: "نعم، يمكنك الشراء من التطبيق.",
+                        isCorrect: false,
+                        feedback: "خطأ! الرد مختصر جداً ولا يعطي الزبون انطباعاً جاداً عن الخدمة المالية."
+                    }
+                ]
+            },
+            {
+                step: 2,
+                customerText: "شنو المتطلبات حتى ابدي اشتري؟",
+                options: [
+                    {
+                        text: "المتطلبات بسيطة جداً: يجب أن تكون محفظتك دائمية ومحدثة المستمسكات، ثم تفتح التطبيق وتختار 'تداول الأسهم' وتوافق على الشروط وتختار شركة الوساطة. يتم تفعيل حسابك خلال 24 ساعة وتستطيع الشراء فوراً.",
+                        isCorrect: true,
+                        feedback: "رائع! شرحت شرط المحفظة الدائمية وخطوات التفعيل واختيار شركة الوساطة بوضوح."
+                    },
+                    {
+                        text: "لازم ترسل مستمسكاتك وإيميلك.",
+                        isCorrect: false,
+                        feedback: "خطأ! الرد ناقص ولا يوضح خطوات التفعيل من داخل التطبيق."
+                    }
+                ]
+            }
+        ]
     },
     {
-        id: "sim-stocks-2",
+        id: 2,
         title: "مشكلة خصم مبلغ أمر شراء أسهم معلق لم ينفذ",
-        type: "Chat Simulation",
-        customerCode: "CUST-STK-02",
         customerName: "سارة فاضل عباس",
-        topic: "Failed / Pending Stock Purchase Transaction",
-        category: "Wallet / Application Issue",
-        subDisposition: "Failed Local Transaction - With Deduction",
-        chat: [
-            { sender: "customer", text: "مرحبا، قدمت أمر شراء أسهم بنك بغداد واستقطعوا المبلغ من المحفظة بس الأسهم ما نزلت بحسابي لحد الان!" },
-            { sender: "agent", text: "أهلاً بكِ أستاذة سارة، يرجى الاطمئنان. عند تقديم أمر شراء أسهم يتم تجميد المبلغ مؤقتاً لحين انعقاد جلسة التداول الرسمية في سوق العراق (بين 10:00 صباحاً و 12:00 ظهراً)." },
-            { sender: "customer", text: "يعني شوكت تنزل الأسهم بحسابي؟" },
-            { sender: "agent", text: "عند مطابقة وسعر الشراء في الجلسة، سيتنفذ الأمر فوراً وتظهر الأسهم في محفظتك الاستثمارية، وفي حال عدم التمكن من الشراء بالسعر المحدد سيتم إلغاء التجميد وإعادة المبلغ بالكامل لمحفظتك بنهاية الجلسة." }
-        ],
-        evaluationCriteria: {
-            correctCategory: "Wallet / Application Issue",
-            correctSubDisposition: "Failed Local Transaction - With Deduction",
-            keyCheckpoints: [
-                "طمأنة الزبونة وبيان ميكانيكية تجميد المبلغ المؤقت",
-                "توضيح أوقات جلسة التداول الرسمية في ISX",
-                "تأكيد إعادة المبلغ للمحفظة في حال عدم تنفيذ الأمر"
-            ]
-        }
+        customerPhone: "07809876501",
+        correctDisp: "Wallet / Application Issue",
+        correctSubDisp: "Failed Local Transaction - With Deduction",
+        turns: [
+            {
+                step: 1,
+                customerText: "مرحبا، قدمت أمر شراء أسهم بنك بغداد واستقطعوا المبلغ من المحفظة بس الأسهم ما نزلت بحسابي لحد الان!",
+                options: [
+                    {
+                        text: "أهلاً بكِ أستاذة سارة، يرجى الاطمئنان. عند تقديم أمر شراء أسهم يتم تجميد المبلغ مؤقتاً لحين انعقاد جلسة التداول الرسمية في سوق العراق (بين 10:00 صباحاً و 12:00 ظهراً).",
+                        isCorrect: true,
+                        feedback: "ممتاز! طمأنت الزبونة وشرحت ميكانيكية تجميد المبلغ المؤقت لحين انعقاد الجلسة."
+                    },
+                    {
+                        text: "الفلوس راحت للمصرف خلاص.",
+                        isCorrect: false,
+                        feedback: "خطأ! الرد خاطئ ومثير للذعر."
+                    }
+                ]
+            },
+            {
+                step: 2,
+                customerText: "يعني شوكت تنزل الأسهم بحسابي؟",
+                options: [
+                    {
+                        text: "عند مطابقة وسعر الشراء في الجلسة، سيتنفذ الأمر فوراً وتظهر الأسهم في محفظتك الاستثمارية، وفي حال عدم التمكن من الشراء بالسعر المحدد سيتم إلغاء التجميد وإعادة المبلغ بالكامل لمحفظتك بنهاية الجلسة.",
+                        isCorrect: true,
+                        feedback: "إجابة مثالية! بينت آلية المطابقة وتأكيد إعادة المبلغ بالكامل في حال عدم التنفيذ."
+                    },
+                    {
+                        text: "انتظري يوماً آخر وتفقد التذكرة.",
+                        isCorrect: false,
+                        feedback: "خطأ! لم توضح آلية تنفيذ الجلسة وإلغاء التجميد."
+                    }
+                ]
+            }
+        ]
     },
     {
-        id: "sim-stocks-3",
+        id: 3,
         title: "استفسار عن أوقات جلسة التداول والعمولات",
-        type: "Chat Simulation",
-        customerCode: "CUST-STK-03",
         customerName: "عمر خالد الجبوري",
-        topic: "Stock Trading Hours & Commission Fees",
-        category: "Wallet / Application Inquiry",
-        subDisposition: "Wallet Limit / Fees Inquiry",
-        chat: [
-            { sender: "customer", text: "السلام عليكم، شنو أوقات جلسة التداول للأسهم؟ وكم النسبة والعمولة اللي تاخذوها عالصفقة؟" },
-            { sender: "agent", text: "وعليكم السلام ورحمة الله أستاذ عمر. جلسة التداول الإعدادية تبدأ من 9:30 ص والتداول المباشر من 10:00 ص حتى 12:00 ظهراً من الأحد إلى الخميس." },
-            { sender: "customer", text: "ممتاز، والعمولة شكد؟" },
-            { sender: "agent", text: "إجمالي العمولة هو 0.65% فقط من قيمة صفقة البيع أو الشراء (تتضمن حصة هيئة الأوراق المالية وسوق العراق والوسيط وزين كاش)، وفتح الحساب وتحديث البيانات مجاني تماماً." }
-        ],
-        evaluationCriteria: {
-            correctCategory: "Wallet / Application Inquiry",
-            correctSubDisposition: "Wallet Limit / Fees Inquiry",
-            keyCheckpoints: [
-                "ذكر أوقات الجلسة من 10:00 ص إلى 12:00 ظهراً من الأحد للخميس",
-                "توضيح نسبة العمولة الإجمالية 0.65%",
-                "تأكيد مجانية فتح الحساب"
-            ]
-        }
+        customerPhone: "07501234567",
+        correctDisp: "Wallet / Application Inquiry",
+        correctSubDisp: "Wallet Limit / Fees Inquiry",
+        turns: [
+            {
+                step: 1,
+                customerText: "السلام عليكم، شنو أوقات جلسة التداول للأسهم؟ وكم النسبة والعمولة اللي تاخذوها عالصفقة؟",
+                options: [
+                    {
+                        text: "وعليكم السلام ورحمة الله أستاذ عمر. جلسة التداول الإعدادية تبدأ من 9:30 ص والتداول المباشر من 10:00 ص حتى 12:00 ظهراً من الأحد إلى الخميس، والعمولة الإجمالية هي 0.65% فقط.",
+                        isCorrect: true,
+                        feedback: "ممتاز! إجابة دقيقة تشتمل على الأوقات والنسب المعتمدة."
+                    },
+                    {
+                        text: "جلسة التداول يومياً والعمولة 5%.",
+                        isCorrect: false,
+                        feedback: "خطأ! النسبة والأوقات غير صحيحة."
+                    }
+                ]
+            }
+        ]
     },
     {
-        id: "sim-stocks-4",
+        id: 4,
         title: "استفسار عن طريقة استلام أرباح الأسهم السنوية",
-        type: "Chat Simulation",
-        customerCode: "CUST-STK-04",
         customerName: "زينب عبد الحسن",
-        topic: "Stock Dividends Payout Inquiry",
-        category: "Wallet / Application Inquiry",
-        subDisposition: "How to Use the Wallet",
-        chat: [
-            { sender: "customer", text: "مرحبا، عندي أسهم بشركة الاتصالات وأقروا توزيع أرباح سنوية، شلون راح استلم أرباحي؟" },
-            { sender: "agent", text: "أهلاً بكِ أستاذة زينب. مبارك أرباحكِ! يتم تحويل أرباح الأسهم المقررة من مركز الإيداع العراقي مباشرة إلى محفظة زين كاش الخاصة بكِ." },
-            { sender: "customer", text: "تحتاج أروح لمكان لو تنزل تلقائياً؟" },
-            { sender: "agent", text: "تنزل أوتوماتيكياً في رصيد المحفظة مع إرسال إشعار تفصيلي على هاتفكِ بالرسالة والمبلغ المودع بدون الحاجة لمراجعة أي فرع." }
-        ],
-        evaluationCriteria: {
-            correctCategory: "Wallet / Application Inquiry",
-            correctSubDisposition: "How to Use the Wallet",
-            keyCheckpoints: [
-                "تأكيد إيداع أرباح الأسهم السنوية تلقائياً في المحفظة",
-                "إبلاغ الزبونة بإرسال إشعار وتفاصيل الإيداع",
-                "تأكيد عدم الحاجة للمراجعة الميدانية"
-            ]
-        }
-    },
-    {
-        id: "sim-stocks-5",
-        title: "طلب إلغاء أمر بيع أسهم معلق",
-        type: "Chat Simulation",
-        customerCode: "CUST-STK-05",
-        customerName: "مصطفى قاسم كمال",
-        topic: "Cancel Pending Stock Sell Order Request",
-        category: "Wallet / Application Inquiry",
-        subDisposition: "How to Use the Wallet",
-        chat: [
-            { sender: "customer", text: "السلام عليكم، خليت أمر بيع أسهم قبل شوية وهسة هونت أريد ألغي الطلب شلون؟" },
-            { sender: "agent", text: "وعليكم السلام أستاذ مصطفى. طالما أن جلسة التداول لم تنتهِ والأمر ما زال في حالة (معلق / Pending)، يمكنك إلغاؤه فوراً من داخل التطبيق." },
-            { sender: "customer", text: "منين ألغيه بالضبط؟" },
-            { sender: "agent", text: "ادخل لشاشة الأسهم -> ثم 'الأوامر المعلقة' -> واضغط على أمر البيع ثم اختر 'إلغاء الأمر'. سيتم تحرير الأسهم فوراً وعودتها إلى محفظتك الاستثمارية." }
-        ],
-        evaluationCriteria: {
-            correctCategory: "Wallet / Application Inquiry",
-            correctSubDisposition: "How to Use the Wallet",
-            keyCheckpoints: [
-                "تأكيد إمكانية إلغاء الأمر طالما أنه ما زال معلقاً لم ينفذ",
-                "توضيح الخطوات من قائمة الأوامر المعلقة داخل التطبيق",
-                "تأكيد عودة الأسهم للمحفظة الاستثمارية فور الإلغاء"
-            ]
-        }
+        customerPhone: "07709876543",
+        correctDisp: "Wallet / Application Inquiry",
+        correctSubDisp: "How to Use the Wallet",
+        turns: [
+            {
+                step: 1,
+                customerText: "مرحبا، عندي أسهم بشركة الاتصالات وأقروا توزيع أرباح سنوية، شلون راح استلم أرباحي؟",
+                options: [
+                    {
+                        text: "أهلاً بكِ أستاذة زينب. مبارك أرباحكِ! يتم تحويل أرباح الأسهم المقررة من مركز الإيداع العراقي مباشرة إلى محفظة زين كاش الخاصة بكِ أوتوماتيكياً مع إشعار تفصيلي.",
+                        isCorrect: true,
+                        feedback: "رائع! إجابة مطمئنة ومباشرة تؤكد الإيداع التلقائي في المحفظة."
+                    },
+                    {
+                        text: "لازم تراجعين مقر الهيئة للاستلام.",
+                        isCorrect: false,
+                        feedback: "خطأ! المبالغ تحول إلكترونياً للمحفظة ولا تحتاج مراجعة."
+                    }
+                ]
+            }
+        ]
     }
 ];
 
