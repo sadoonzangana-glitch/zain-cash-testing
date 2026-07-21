@@ -277,26 +277,26 @@ async function writeDb(db) {
     await fs.writeFile(dbPath, JSON.stringify(db, null, 4), 'utf8');
 }
 
-// Routes
 app.post('/api/login', async (req, res) => {
     const { username } = req.body;
-    if (!username) return res.status(400).json({ error: "Username is required" });
+    if (!username || !username.trim()) return res.status(400).json({ error: "Username is required" });
     
-    const zcCode = username.trim().toUpperCase();
+    const inputClean = username.trim();
+    const inputUpper = inputClean.toUpperCase();
     const db = await readDb();
     
-    let user = db.users.find(u => 
-        u.id.toUpperCase() === zcCode || 
-        u.name.toUpperCase() === zcCode ||
-        u.name.toUpperCase().includes(zcCode) ||
-        zcCode.includes(u.id.toUpperCase())
+    // Strict exact match by ID, Email, or Full Name
+    let user = (db.users || []).find(u => 
+        (u.id && u.id.toUpperCase() === inputUpper) || 
+        (u.email && u.email.toUpperCase() === inputUpper) ||
+        (u.name && u.name.toUpperCase() === inputUpper)
     );
 
     if (user) {
         return res.json(user);
     }
 
-    return res.status(401).json({ error: "ZC code not registered. Please contact your supervisor." });
+    return res.status(401).json({ error: "ZC code or username not registered. Access denied." });
 });
 
 app.get('/api/users', async (req, res) => {

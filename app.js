@@ -587,13 +587,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </tbody>
                             </table>
                         </div>
-                        <div class="next-step-prompt" style="text-align: center; margin-top:20px;">
-                            <p>Are you ready to test your skills? We have prepared an interactive multitask simulator to evaluate your compliance with these strict guidelines.</p>
-                            <button class="btn btn-rainbow start-sim-btn" style="margin-top: 10px;">
-                                <i class="fa-solid fa-gamepad"></i>
-                                <span>Enter Chat Simulator</span>
-                            </button>
-                        </div>
                     </div>
                 `;
             } else {
@@ -3323,7 +3316,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    let currentKbSearchQuery = '';
+    function cleanSnippetText(rawContent) {
+        if (!rawContent) return '';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = rawContent;
+        const text = tmp.textContent || tmp.innerText || '';
+        return text.trim().replace(/\s+/g, ' ');
+    }
 
     function highlightText(text, query) {
         if (!text) return '';
@@ -3352,7 +3351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tokens.length > 0) {
             filtered = filtered.filter(a => {
                 const title = (a.title || '').toLowerCase();
-                const content = (a.content || '').toLowerCase();
+                const cleanContent = cleanSnippetText(a.content || '').toLowerCase();
                 const keywords = (a.keywords || '').toLowerCase();
                 const category = (a.category || '').toLowerCase();
                 const disp = (a.correctDisp || '').toLowerCase();
@@ -3360,7 +3359,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return tokens.every(token => 
                     title.includes(token) || 
-                    content.includes(token) || 
+                    cleanContent.includes(token) || 
                     keywords.includes(token) ||
                     category.includes(token) ||
                     disp.includes(token) ||
@@ -3380,7 +3379,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="kb-results-container" style="display:flex; flex-direction:column; gap:15px; width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:5px;">
                         <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0;">
-                            <i class="fa-solid fa-magnifying-glass" style="color:var(--primary);"></i> نتائج البحث الذكي (${filtered.length} مقال)
+                            <i class="fa-solid fa-magnifying-glass" style="color:var(--primary);"></i> نتائج البحث والأسهم (${filtered.length} مقال)
                         </h2>
                         ${rawQuery ? `<span style="font-size:0.8rem; color:#64748b;">كلمة البحث: <mark class="search-highlight">${escapeHtml(rawQuery)}</mark></span>` : ''}
                     </div>
@@ -3389,13 +3388,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (filtered.length === 0) {
                 listHtml += `<p style="grid-column: span 2; text-align:center; color:#94a3b8; padding:40px;"><i class="fa-solid fa-circle-info" style="font-size:2.5rem; margin-bottom:12px; color:#cbd5e1;"></i><br/>عذراً، لم نجد أي نتائج تطابق كلمة البحث <strong>"${escapeHtml(rawQuery)}"</strong>.</p>`;
             } else {
-                listHtml += filtered.map(a => `
-                    <div class="kb-article-preview-item" data-art-id="${a.id}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.22s; text-align:right; display:flex; flex-direction:column; gap:8px;">
-                        <span style="background: #fff8e8; color: #d97706; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; border: 1px solid #fef3c7; align-self: flex-start;">${escapeHtml(a.category)}</span>
-                        <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin:0; line-height:1.4;">${highlightText(a.title, rawQuery)}</h3>
-                        <p style="font-size: 0.82rem; color:#475569; margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; line-height:1.6;">${highlightText(a.content, rawQuery)}</p>
-                    </div>
-                `).join('');
+                listHtml += filtered.map(a => {
+                    const cleanText = cleanSnippetText(a.content);
+                    const snippet = cleanText.length > 150 ? cleanText.substring(0, 150) + '...' : cleanText;
+                    return `
+                        <div class="kb-article-preview-item" data-art-id="${a.id}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.22s; text-align:right; display:flex; flex-direction:column; gap:8px;">
+                            <span style="background: #fff8e8; color: #d97706; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; border: 1px solid #fef3c7; align-self: flex-start;">${escapeHtml(a.category)}</span>
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin:0; line-height:1.4;">${highlightText(a.title, rawQuery)}</h3>
+                            <p style="font-size: 0.82rem; color:#475569; margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; line-height:1.6;">${highlightText(snippet, rawQuery)}</p>
+                        </div>
+                    `;
+                }).join('');
             }
             listHtml += `</div></div>`;
             
@@ -3459,10 +3462,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (currentKbSearchQuery) {
             titleEl.innerHTML = highlightText(article.title, currentKbSearchQuery);
-            contentEl.innerHTML = highlightText(article.content, currentKbSearchQuery);
+            const rawHtml = article.content || '';
+            const tokens = currentKbSearchQuery.trim().split(/\s+/).filter(t => t.length > 0);
+            if (tokens.length > 0) {
+                const escapedTokens = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                const regex = new RegExp(`(?<!<[^>]*>)(${escapedTokens.join('|')})`, 'gi');
+                contentEl.innerHTML = rawHtml.replace(regex, '<mark class="search-highlight">$1</mark>');
+            } else {
+                contentEl.innerHTML = rawHtml;
+            }
         } else {
             titleEl.textContent = article.title;
-            contentEl.textContent = article.content;
+            contentEl.innerHTML = article.content || '';
         }
 
         document.getElementById('kb-view-correct-disp').textContent = article.correctDisp || 'N/A';
