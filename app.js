@@ -2092,30 +2092,50 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loginScreen) loginScreen.classList.remove('hidden');
         }
     }
-    
+    const doLogin = async (inputVal) => {
+        let username = (inputVal || '').trim();
+        if (!username && loginUsernameInput) username = loginUsernameInput.value.trim();
+        if (!username) username = 'ZC262';
+
+        const uUpper = username.toUpperCase();
+        const isAdmin = uUpper === 'ZC000' || uUpper.includes('AMR');
+        const user = {
+            id: uUpper.startsWith('ZC') ? uUpper : `ZC_${uUpper}`,
+            name: username,
+            role: isAdmin ? 'Admin' : 'Inbound'
+        };
+        
+        sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
+        currentUser = user;
+
+        if (loginScreen) {
+            loginScreen.classList.add('hidden');
+            loginScreen.style.display = 'none';
+        }
+
+        try {
+            await onUserLoggedIn();
+        } catch(e) {
+            console.error("Error inside onUserLoggedIn:", e);
+        }
+    };
+
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
+        loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (loginErrorMsg) loginErrorMsg.classList.add('hidden');
-            let username = loginUsernameInput ? loginUsernameInput.value.trim() : 'ZC262';
-            if (!username) username = 'ZC262';
-            
-            try {
-                const user = await apiCall('/api/login', 'POST', { username }).catch(() => ({
-                    id: username.toUpperCase().startsWith('ZC') ? username.toUpperCase() : `ZC_${username.toUpperCase()}`,
-                    name: username,
-                    role: (username.toUpperCase() === 'ZC000' || username.toUpperCase().includes('AMR')) ? 'Admin' : 'Inbound'
-                }));
-                sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
-                currentUser = user;
-                await onUserLoggedIn();
-            } catch (err) {
-                console.error("Login fallback:", err);
-                const fallbackUser = { id: 'ZC262', name: username || 'Muzhir', role: 'Inbound' };
-                sessionStorage.setItem('zain_cash_user', JSON.stringify(fallbackUser));
-                currentUser = fallbackUser;
-                await onUserLoggedIn();
-            }
+            e.stopPropagation();
+            doLogin();
+            return false;
+        });
+    }
+
+    const btnLoginEl = document.querySelector('.btn-login');
+    if (btnLoginEl) {
+        btnLoginEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            doLogin();
+            return false;
         });
     }
     
@@ -2128,30 +2148,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function onUserLoggedIn() {
-        if (loginScreen) loginScreen.classList.add('hidden');
-        if (headerUserName) headerUserName.textContent = `${currentUser.name} (${currentUser.id})`;
+        if (loginScreen) {
+            loginScreen.classList.add('hidden');
+            loginScreen.style.display = 'none';
+        }
+        if (headerUserName && currentUser) headerUserName.textContent = `${currentUser.name} (${currentUser.id})`;
         if (headerUserProfile) headerUserProfile.classList.remove('hidden');
         
         const navTabs = document.querySelector('.amy-nav-tabs');
-        if (navTabs) navTabs.classList.remove('hidden'); // Show navigation tabs for everyone
+        if (navTabs) navTabs.classList.remove('hidden');
 
-        if (currentUser.role === 'Admin') {
+        if (currentUser && currentUser.role === 'Admin') {
             if (openAdminBtn) openAdminBtn.classList.remove('hidden');
         } else {
             if (openAdminBtn) openAdminBtn.classList.add('hidden');
         }
         
-        await loadSlidesData();
-        await checkTestAssignment();
-        await loadScenariosFromStorage();
-        await initKb(); // Initialize Knowledge Base
+        try { await loadSlidesData(); } catch(e){}
+        try { await checkTestAssignment(); } catch(e){}
+        try { await loadScenariosFromStorage(); } catch(e){}
+        try { await initKb(); } catch(e){}
 
-        // Notify AI agent of logged-in user
         if (typeof window.onAIUserLoggedIn === 'function') {
-            window.onAIUserLoggedIn(currentUser);
+            try { window.onAIUserLoggedIn(currentUser); } catch(e){}
         }
 
-        // Switch to Knowledge Base first on login
         switchTab('tab-kb');
     }
     
