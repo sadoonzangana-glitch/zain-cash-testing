@@ -9,9 +9,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return handleOfflineApi(endpoint, method, data);
         }
         try {
+            let roleHeader = 'Guest';
+            let idHeader = 'Anonymous';
+            if (currentUser && currentUser.role) {
+                roleHeader = currentUser.role;
+                idHeader = currentUser.id;
+            } else {
+                try {
+                    const stored = JSON.parse(sessionStorage.getItem('zain_cash_user') || '{}');
+                    if (stored.role) {
+                        roleHeader = stored.role;
+                        idHeader = stored.id;
+                    }
+                } catch(e) {}
+            }
+
             const options = {
                 method,
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Role': roleHeader,
+                    'X-User-Id': idHeader
+                }
             };
             if (data) {
                 options.body = JSON.stringify(data);

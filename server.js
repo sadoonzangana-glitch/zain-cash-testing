@@ -4,6 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const { encryptData, decryptData, logSecurityEvent } = require('./crypto-security');
 
 const app = express();
 const PORT = process.env.PORT || 8888;
@@ -62,6 +63,19 @@ function sanitizeValue(val) {
         }
     }
     return val;
+}
+
+// 4. Server-Side Strict RBAC Authorization Middleware
+function requireAdminRole(req, res, next) {
+    const userRole = req.headers['x-user-role'];
+    const userId = req.headers['x-user-id'];
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+
+    if (userRole !== 'Admin') {
+        logSecurityEvent('UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', userId, clientIp, { path: req.path });
+        return res.status(403).json({ error: 'Access denied: Admin role required.' });
+    }
+    next();
 }
 
 app.use(cors());
@@ -376,7 +390,7 @@ app.get('/api/scenarios', async (req, res) => {
     res.json(db.scenarios);
 });
 
-app.post('/api/scenarios', async (req, res) => {
+app.post('/api/scenarios', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.scenarios = req.body;
     await writeDb(db);
@@ -388,7 +402,7 @@ app.get('/api/ai-scenarios', async (req, res) => {
     res.json(db.aiScenarios || []);
 });
 
-app.post('/api/ai-scenarios', async (req, res) => {
+app.post('/api/ai-scenarios', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.aiScenarios = req.body;
     await writeDb(db);
@@ -400,7 +414,7 @@ app.get('/api/kb', async (req, res) => {
     res.json(db.knowledgeBase || defaultKb);
 });
 
-app.post('/api/kb', async (req, res) => {
+app.post('/api/kb', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.knowledgeBase = req.body;
     await writeDb(db);
@@ -412,7 +426,7 @@ app.get('/api/slides', async (req, res) => {
     res.json(db.slides);
 });
 
-app.post('/api/slides', async (req, res) => {
+app.post('/api/slides', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.slides = req.body;
     await writeDb(db);
@@ -424,7 +438,7 @@ app.get('/api/assignments', async (req, res) => {
     res.json(db.assignments || []);
 });
 
-app.post('/api/assignments', async (req, res) => {
+app.post('/api/assignments', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.assignments = req.body;
     await writeDb(db);
@@ -436,7 +450,7 @@ app.get('/api/ai-assignments', async (req, res) => {
     res.json(db.aiAssignments || []);
 });
 
-app.post('/api/ai-assignments', async (req, res) => {
+app.post('/api/ai-assignments', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.aiAssignments = req.body;
     await writeDb(db);
