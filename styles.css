@@ -1394,7 +1394,7 @@ body::after {
 /* Centered single-column login box */
 .login-box-centered {
     width: 100%;
-    max-width: 440px;
+    max-width: 480px;
     background: transparent;
     border: none;
     border-radius: 0;
@@ -1412,29 +1412,30 @@ body::after {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 0 0 28px 0;
+    gap: 12px;
+    padding: 0 0 32px 0;
 }
 
 .login-tagline {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: rgba(255,255,255,0.5);
-    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     margin: 0;
+    text-shadow: 0 2px 10px rgba(0,181,226,0.3);
 }
 
 /* Form card (white) */
 .login-form-section {
     width: 100%;
     background: #ffffff;
-    border-radius: 20px;
-    padding: 38px 40px 32px;
+    border-radius: 24px;
+    padding: 42px 45px 36px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+    gap: 22px;
+    box-shadow: 0 35px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.12);
     position: relative;
     overflow: hidden;
 }
@@ -4129,6 +4130,134 @@ body::after {
     transform: translateY(-8px);
     border-color: rgba(0,181,226,0.4) !important;
     box-shadow: 0 16px 40px rgba(0,181,226,0.15) !important;
+}
+
+/* Premium Slide Badge & Cards */
+.rule-badge {
+    background: linear-gradient(135deg, #0c4f8a, #00B5E2);
+    color: #ffffff;
+    font-size: 0.76rem;
+    font-weight: 800;
+    padding: 5px 14px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0,181,226,0.25);
+}
+
+.comparison-card {
+    border-radius: 16px !important;
+    padding: 20px !important;
+    transition: all 0.25s ease !important;
+}
+
+.card-wrong {
+    background: #fff5f5 !important;
+    border: 1px solid #fecdd3 !important;
+}
+
+.card-right {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+.card-status {
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+    margin-bottom: 12px !important;
+    display: flex !items-center !gap: 8px;
+}
+
+.status-wrong {
+    color: #e11d48 !important;
+}
+
+.status-right {
+    color: #16a34a !important;
+}
+
+.example-bubble {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    border: 1px solid rgba(0,0,0,0.06) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+    margin-bottom: 10px !important;
+}
+
+.bubble-desc {
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    margin-bottom: 4px !important;
+}
+
+.bubble-text {
+    font-size: 0.88rem !important;
+    line-height: 1.6 !important;
+    color: #1e293b !important;
+}
+
+.pro-tip-box {
+    background: linear-gradient(135deg, #eff6ff, #e0f2fe) !important;
+    border: 1px solid #bae6fd !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    color: #0369a1 !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    display: flex !items-center !gap: 10px;
+}
+
+.pro-tip-box i {
+    color: #0284c7;
+    font-size: 1.1rem;
+}
+
+.interactive-step-card {
+    background: #ffffff !important;
+    border: 1px solid #e0e8f5 !important;
+    border-radius: 14px !important;
+    padding: 18px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+    transition: all 0.2s ease;
+}
+
+.interactive-step-card:hover {
+    border-color: #00B5E2 !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,181,226,0.12) !important;
+}
+
+.step-num {
+    background: linear-gradient(135deg, #0c4f8a, #00B5E2) !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.88rem !important;
+}
+
+.comparison-table-wrapper {
+    border: 1px solid #e0e8f5 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04) !important;
+}
+
+.comparison-table th {
+    background: #071a38 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    padding: 14px 18px !important;
+}
+
+.comparison-table td {
+    padding: 14px 18px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.comparison-table tbody tr:hover {
+    background: #f8fafc !important;
 }
 
 /* Training center wrapper padding */
