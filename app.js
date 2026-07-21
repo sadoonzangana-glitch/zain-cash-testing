@@ -2468,7 +2468,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(resultsLivePollInterval);
             resultsLivePollInterval = null;
         }
-    });
+    }
 
     let allUsers = [];
     let currentTestType = 'simulator'; // 'simulator' or 'ai-agent'
