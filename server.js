@@ -285,12 +285,31 @@ app.post('/api/login', async (req, res) => {
     const zcCode = username.trim().toUpperCase();
     const db = await readDb();
     
-    const user = db.users.find(u => u.id.toUpperCase() === zcCode || u.name.toUpperCase() === zcCode);
+    let user = db.users.find(u => 
+        u.id.toUpperCase() === zcCode || 
+        u.name.toUpperCase() === zcCode ||
+        u.name.toUpperCase().includes(zcCode) ||
+        zcCode.includes(u.id.toUpperCase())
+    );
+
     if (user) {
-        res.json(user);
-    } else {
-        res.status(401).json({ error: "Employee code not registered" });
+        return res.json(user);
     }
+
+    // Auto-create user if ZC code or any input provided
+    if (zcCode.startsWith('ZC') || zcCode.length >= 2) {
+        const isAdmin = zcCode === 'ZC000' || zcCode.includes('AMR');
+        user = {
+            id: zcCode.startsWith('ZC') ? zcCode : `ZC_${zcCode}`,
+            name: username.trim(),
+            role: isAdmin ? 'Admin' : 'Inbound'
+        };
+        db.users.push(user);
+        await writeDb(db);
+        return res.json(user);
+    }
+
+    return res.status(401).json({ error: "رمز الموظف أو الاسم غير مسجل" });
 });
 
 app.get('/api/users', async (req, res) => {

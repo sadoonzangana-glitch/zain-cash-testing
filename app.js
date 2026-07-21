@@ -72,13 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function handleOfflineApi(endpoint, method, data) {
         if (endpoint === '/api/login' && method === 'POST') {
-            const zc = data.username.trim().toUpperCase();
-            if (zc === 'ZC000' || zc === 'AMR NASR') {
-                return Promise.resolve({ id: 'ZC000', name: 'Amr Nasr (Offline)', role: 'Admin' });
-            } else if (zc.startsWith('ZC') && zc.length > 2) {
-                return Promise.resolve({ id: zc, name: `موظف افتراضي (${zc})`, role: 'Inbound' });
+            const raw = (data && data.username ? data.username : '').trim();
+            const zc = raw.toUpperCase();
+            if (zc === 'ZC000' || zc.includes('AMR')) {
+                return Promise.resolve({ id: 'ZC000', name: 'Amr Nasr', role: 'Admin' });
+            } else if (raw.length >= 2) {
+                const id = zc.startsWith('ZC') ? zc : `ZC_${zc}`;
+                return Promise.resolve({ id, name: raw, role: 'Inbound' });
             } else {
-                return Promise.reject(new Error("Employee code not registered (Enter ZC000)"));
+                return Promise.reject(new Error("يرجى إدخال كود الموظف (مثال: ZC000 أو ZC262)"));
             }
         }
         if (endpoint === '/api/scenarios') {
