@@ -3278,6 +3278,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initKb() {
         try {
             kbArticles = await apiCall('/api/kb', 'GET');
+            // If server returned nothing (null/undefined/empty), try embedded data
+            if (!kbArticles || kbArticles.length === 0) {
+                if (window.EMBEDDED_KB_DATA && window.EMBEDDED_KB_DATA.length > 0) {
+                    kbArticles = window.EMBEDDED_KB_DATA;
+                    console.log('KB: loaded from embedded data (offline mode)');
+                }
+            }
             renderKbCategories();
             renderKbPopularArticles();
             bindKbSearchEvents();
@@ -3286,9 +3293,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 initLivePreviews();
             }
         } catch (err) {
-            console.error("Failed to load Knowledge Base:", err);
+            console.warn("KB API failed, trying embedded data:", err);
+            // Fallback to embedded KB data when running from file://
+            if (window.EMBEDDED_KB_DATA && window.EMBEDDED_KB_DATA.length > 0) {
+                kbArticles = window.EMBEDDED_KB_DATA;
+                renderKbCategories();
+                renderKbPopularArticles();
+                bindKbSearchEvents();
+                console.log('KB: loaded', kbArticles.length, 'articles from embedded data');
+            }
         }
     }
+
 
     function renderKbCategories() {
         const ul = document.getElementById('kb-categories-ul');
