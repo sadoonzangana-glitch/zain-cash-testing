@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Stock Trading & 23-Category Dispositions update
-    const STOCKS_DISP_VERSION = 'v6_stocks_interactive_slides_and_chats';
+    const STOCKS_DISP_VERSION = 'v7_only_us_stocks_kb_and_ai_coach';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -3203,12 +3203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const categories = [
             { id: 'all', name: 'الكل (All)', icon: 'fa-cubes' },
-            { id: 'الأسهم والتداول', name: 'الأسهم والتداول (Shares)', icon: 'fa-chart-line' },
-            { id: 'MasterCard & Visa', name: 'MasterCard & Visa', icon: 'fa-credit-card' },
-            { id: 'Western Union', name: 'Western Union', icon: 'fa-globe' },
-            { id: 'Wallet & App', name: 'Wallet & App', icon: 'fa-wallet' },
-            { id: 'Agents & Merchants', name: 'Agents & Merchants', icon: 'fa-store' },
-            { id: 'Digital Goods', name: 'Digital Goods', icon: 'fa-gamepad' }
+            { id: 'الأسهم والتداول', name: 'تداول الأسهم الأمريكية (US Stocks)', icon: 'fa-chart-line' }
         ];
 
         ul.innerHTML = categories.map(cat => `
