@@ -2179,7 +2179,9 @@ document.addEventListener('DOMContentLoaded', () => {
             loginScreen.classList.add('hidden');
             loginScreen.style.display = 'none';
         }
-        if (headerUserName && currentUser) headerUserName.textContent = `${currentUser.name} (${currentUser.id})`;
+        if (headerUserName && currentUser) headerUserName.textContent = currentUser.name;
+        const avatarCircle = document.getElementById('header-user-avatar');
+        if (avatarCircle && currentUser) avatarCircle.textContent = (currentUser.name || 'Z').charAt(0).toUpperCase();
         if (headerUserProfile) headerUserProfile.classList.remove('hidden');
         
         const navTabs = document.querySelector('.amy-nav-tabs');
