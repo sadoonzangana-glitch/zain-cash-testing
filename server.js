@@ -296,20 +296,7 @@ app.post('/api/login', async (req, res) => {
         return res.json(user);
     }
 
-    // Auto-create user if ZC code or any input provided
-    if (zcCode.startsWith('ZC') || zcCode.length >= 2) {
-        const isAdmin = zcCode === 'ZC000' || zcCode.includes('AMR');
-        user = {
-            id: zcCode.startsWith('ZC') ? zcCode : `ZC_${zcCode}`,
-            name: username.trim(),
-            role: isAdmin ? 'Admin' : 'Inbound'
-        };
-        db.users.push(user);
-        await writeDb(db);
-        return res.json(user);
-    }
-
-    return res.status(401).json({ error: "رمز الموظف أو الاسم غير مسجل" });
+    return res.status(401).json({ error: "ZC code not registered. Please contact your supervisor." });
 });
 
 app.get('/api/users', async (req, res) => {

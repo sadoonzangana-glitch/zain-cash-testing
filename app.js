@@ -2119,46 +2119,49 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loginScreen) loginScreen.classList.remove('hidden');
         }
     }
-    const doLogin = async (inputVal) => {
-        let username = (inputVal || '').trim();
-        if (!username && loginUsernameInput) username = loginUsernameInput.value.trim();
-        if (!username) username = 'ZC262';
-
-        const uUpper = username.toUpperCase();
-        const isAdmin = uUpper === 'ZC000' || uUpper.includes('AMR');
-        const user = {
-            id: uUpper.startsWith('ZC') ? uUpper : `ZC_${uUpper}`,
-            name: username,
-            role: isAdmin ? 'Admin' : 'Inbound'
-        };
-        
-        sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
-        currentUser = user;
-
-        if (loginScreen) {
-            loginScreen.classList.add('hidden');
-            loginScreen.style.display = 'none';
+    const doLogin = async () => {
+        let username = '';
+        if (loginUsernameInput) username = loginUsernameInput.value.trim();
+        if (!username) {
+            if (loginErrorMsg) {
+                loginErrorMsg.textContent = 'Please enter your ZC employee code.';
+                loginErrorMsg.classList.remove('hidden');
+            }
+            return;
         }
 
+        const submitBtn = document.getElementById('login-submit-btn');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.querySelector('span').textContent = 'Checking...'; }
+        if (loginErrorMsg) loginErrorMsg.classList.add('hidden');
+
         try {
-            await onUserLoggedIn();
-        } catch(e) {
-            console.error("Error inside onUserLoggedIn:", e);
+            const user = await apiCall('/api/login', 'POST', { username: username });
+            sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
+            currentUser = user;
+
+            if (loginScreen) {
+                loginScreen.classList.add('hidden');
+                loginScreen.style.display = 'none';
+            }
+
+            try {
+                await onUserLoggedIn();
+            } catch(e) {
+                console.error("Error inside onUserLoggedIn:", e);
+            }
+        } catch (err) {
+            if (loginErrorMsg) {
+                loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Invalid ZC code. Please check and try again.';
+                loginErrorMsg.classList.remove('hidden');
+            }
+            if (loginUsernameInput) { loginUsernameInput.value = ''; loginUsernameInput.focus(); }
+        } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.querySelector('span').textContent = 'Login'; }
         }
     };
 
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            doLogin();
-            return false;
-        });
-    }
-
-    const btnLoginEl = document.querySelector('.btn-login');
-    if (btnLoginEl) {
-        btnLoginEl.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             doLogin();
