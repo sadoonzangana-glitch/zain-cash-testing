@@ -853,22 +853,147 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const DISPOSITION_DATA = {
-            "WU Inquiry": ["WU Inquiry"],
-            "WU Issue": ["Send Money Issue", "Receive Money Issue", "Hold Transaction Issue", "Missing MTCN Issue", "Other Issues"],
-            "MC/Visa Inquiry": ["MC/Visa Inquiry"],
-            "MC/Visa Issue": ["Activation Issue", "Top-up or Transfer Issue", "PoS Payment Issue", "Cashout at ATM Issue", "eCommerce Issue", "Delivery or Order Issue", "Negative Balance Issue", "Change name Request", "Refund expired card issue", "Cash Back Issue", "Card SOA", "Reset PIN request", "Other", "Passport Issue"],
-            "Wallet/Registration Inquiry": ["Wallet/Registration Inquiry"],
-            "Wallet/App Issue": ["App Issue", "Registration Issue", "Login Issue", "No agents in my area Issue", "Agent's extra charges issues", "Agent's bad treatement/No e-money", "Trx Issue", "Customer mistake in trx", "Locked/Duplicated Wallets Issue", "Change MSISDN", "FinCrime Issue", "Wallet SOA", "Other issues"],
-            "Digital Goods Issue": ["Purchaes issue", "Resend PIN issue", "Redeem Issue", "Other Issues"],
-            "Bank Transfer Issue": ["Linking Issue", "Top-up Issue", "Cash back issue", "Other Issues"],
-            "Cash-in by VISA/MC Issue": ["Cash-in/Card no working", "Deduction issue", "Other Issues"],
-            "Merchant/Business Inquiry": ["Merchant/Business Inquiry"],
-            "Merchant/Business Issue": ["Delay \\ Request status", "Deduction or missing trx", "Other Issues"],
-            "Agent's Inquiry": ["Agent's Inquiry"],
-            "Agent's Issue": ["Registration Issue/Delay", "Buying e-money Issue", "Trx Issue", "Commission Issue", "Locked agent's wallet", "App issue", "Fraud issue", "Other Issues"],
-            "Other": ["Disconnect call", "Junk call", "Suggestion"],
-            "Reset/Change PIN request": ["Reset/Change PIN request"]
+            "Wallet / Application Issue": [
+                "Wallet Registration Issue",
+                "PIN/OTP Issue",
+                "Login Issue & Notifications Issue",
+                "Failed Local Transaction - With Deduction",
+                "Failed Local Transaction - Without Deduction",
+                "Statement of Account Issue",
+                "Complaint Against Agent/Mercahant",
+                "Wallet Termination/Change MSISDN Issue",
+                "Other Technical Issue",
+                "Wallet / Application Incident"
+            ],
+            "Wallet / Application Inquiry": [
+                "Wallet Limit / Fees Inquiry",
+                "Statement of Account Inquiry",
+                "Update Wallet Type / Docs Request",
+                "Wrong Transfer Inquiry",
+                "Nearest Shop / Agent Inquiry",
+                "Cash Disbursement Inquiry",
+                "Wallet Registration Inquiry",
+                "PIN/OTP Inquiry/Request",
+                "How to Use the Wallet",
+                "Locked/CI Wallet Inquiry",
+                "Wallet Termination/Change MSISDN Inquiry/Request"
+            ],
+            "Report Fraud or Scam Issue": [
+                "Disputed Card Transaction",
+                "Disputed Wallet Transaction",
+                "Other Security Concern"
+            ],
+            "Report Fraud or Scam Inquiry": [
+                "Fraud or Scam Inquiry"
+            ],
+            "Card Issues": [
+                "Card Order/Delivery Issue",
+                "Activation Issue",
+                "Top-up or Transfer Issue",
+                "Failed Card Transaction - With Deduction",
+                "Failed Card Transaction - Without Deduction",
+                "International Transactions Issue",
+                "Expired/Canceled Card Refund Issue",
+                "Hold Card Issue",
+                "Card Statement Issue",
+                "Cards Incident"
+            ],
+            "Card Inquiries": [
+                "Card Order / Delivery Inquiry",
+                "Card Statement Request",
+                "How to Use the Cards",
+                "Reset PIN Request"
+            ],
+            "Western Union Issue": [
+                "WU Send Money Issue",
+                "WU Unauthorized Transaction",
+                "WU Receive Money Issue",
+                "Hold Transfer Issue",
+                "Add / Edit Beneficiary Issue",
+                "Western Union Incident"
+            ],
+            "Western Union Inquiry": [
+                "How to Use WU",
+                "WU Limit/Fee Inquiry",
+                "Refund a WU Transfer"
+            ],
+            "Digital Goods Issue": [
+                "Egoods Failed Transaction - Without Deduction",
+                "Egoods Failed Transaction - With Deduction",
+                "Card PIN Receiving Issue",
+                "Unavailability of Certain Card",
+                "Redeem Issue",
+                "Card Already Redeemed",
+                "Digital Goods Incident"
+            ],
+            "Digital Goods Inquiry": [
+                "How to Use Digital Cards",
+                "Card PIN Resend Request"
+            ],
+            "Cash-In by VISA/MC (HC) Issue": [
+                "HC Failed Transaction - With Deduction",
+                "HC Failed Transaction - Without Deduction",
+                "HC Incident"
+            ],
+            "Cash-In by VISA/MC (HC) Inquiry": [
+                "How to Cashin by VISA/MC Inquiry"
+            ],
+            "GOV Bill Payment Issue": [
+                "Failed Bill Payment - With Deduction",
+                "Failed Bill Payment - Without Deduction",
+                "Bill Payment Incident"
+            ],
+            "GOV Bill Payment Inquiry": [
+                "How to Use (GOV Bill Payment)"
+            ],
+            "NBI Issue": [
+                "NBI Linking Issue",
+                "NBI Top-Up Issue",
+                "NBI Incident"
+            ],
+            "NBI Inquiry": [
+                "How to Use NBI"
+            ],
+            "Merchant Payment Issue": [
+                "Failed Merchant Payment - With Deduction",
+                "Failed Merchant Payment - Without Deduction",
+                "Merchant Payment Incident"
+            ],
+            "Merchant Payment Inquiry": [
+                "How to Use Merchant Payment"
+            ],
+            "Zain IQ Top-Up Issue": [
+                "Zain IQ Failed Topup - With Deduction",
+                "Zain IQ Failed Topup - Without Deduction",
+                "Zain IQ Incident"
+            ],
+            "Zain IQ Topup Inquiry": [
+                "How to Recharge Zain IQ Line"
+            ],
+            "Junk": [
+                "Junk"
+            ],
+            "Agent Issue": [
+                "PIN/OTP Issue",
+                "Login & Notifications Issue",
+                "Wallet Status Issue",
+                "Wallet Funds Issue",
+                "Failed Transaction - With Deduction",
+                "Failed Transaction - Without Deduction",
+                "Application Issue",
+                "Complaint Against Field Team",
+                "Statement of Account Issue/Request",
+                "Report Fraud or Scam Issue",
+                "Agent Incident"
+            ],
+            "Agent Inquiry": [
+                "PIN/OTP Inquiry/Request",
+                "How to Use the Agent Wallet",
+                "Wallet Status Inquiry",
+                "Report Fraud or Scam Inquiry"
+            ]
         };
+        window.DISPOSITION_DATA = DISPOSITION_DATA;
 
         for (let i = 1; i <= numChats; i++) {
             const closeBtn = document.getElementById(`chat-close-${i}`);
