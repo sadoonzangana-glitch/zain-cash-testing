@@ -426,6 +426,17 @@ exports.handler = async (event, context) => {
             await saveDb(db);
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
         }
+        if (event.httpMethod === 'DELETE') {
+            const { userId, date } = bodyData;
+            db.results = (db.results || []).filter(r => !(r.userId === userId && r.date === date));
+            db.testSessions = db.testSessions || {};
+            const key = `${userId}_simulator`;
+            if (db.testSessions[key]) {
+                delete db.testSessions[key];
+            }
+            await saveDb(db);
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
     }
 
     if (cleanPath === '/ai-results') {
@@ -445,6 +456,17 @@ exports.handler = async (event, context) => {
                 db.testSessions[key] = db.testSessions[key] || { userId: newRes.userId, testType: 'ai-agent', startTime: Date.now() };
                 db.testSessions[key].completed = true;
                 db.testSessions[key].completedAt = newRes.date;
+            }
+            await saveDb(db);
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
+        if (event.httpMethod === 'DELETE') {
+            const { userId, date } = bodyData;
+            db.aiResults = (db.aiResults || []).filter(r => !(r.userId === userId && r.date === date));
+            db.testSessions = db.testSessions || {};
+            const key = `${userId}_ai-agent`;
+            if (db.testSessions[key]) {
+                delete db.testSessions[key];
             }
             await saveDb(db);
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };

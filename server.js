@@ -49,17 +49,20 @@ app.use('/api/send-invite', (req, res, next) => applyRateLimit(req, res, next, 3
 app.use('/api/', (req, res, next) => applyRateLimit(req, res, next, 250, 15 * 60 * 1000, 'Rate limit exceeded. Please slow down.'));
 
 // 3. Recursive Input Sanitization & Anti-XSS Payload Filter
-function sanitizeValue(val) {
+function sanitizeValue(val, key = '') {
     if (typeof val === 'string') {
-        return val
+        let clean = val
             .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
             .replace(/javascript:/gi, '')
-            .replace(/on\w+\s*=/gi, '')
-            .replace(/<[^>]*>/g, '');
+            .replace(/on\w+\s*=/gi, '');
+        if (key !== 'detailsHtml') {
+            clean = clean.replace(/<[^>]*>/g, '');
+        }
+        return clean;
     }
     if (typeof val === 'object' && val !== null) {
-        for (let key in val) {
-            val[key] = sanitizeValue(val[key]);
+        for (let k in val) {
+            val[k] = sanitizeValue(val[k], k);
         }
     }
     return val;
@@ -255,6 +258,21 @@ async function readDb() {
         db.aiScenarios = db.aiScenarios && db.aiScenarios.length > 0 ? db.aiScenarios : defaultAiScenarios;
         db.knowledgeBase = db.knowledgeBase || defaultKb;
         db.smtp = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
+        
+        // Self-heal/migration check: if assignments exist but meta is missing, set to current time
+        let migrated = false;
+        if (db.assignments && db.assignments.length > 0 && !db.assignmentsMeta) {
+            db.assignmentsMeta = { assignedAt: Date.now() };
+            migrated = true;
+        }
+        if (db.aiAssignments && db.aiAssignments.length > 0 && !db.aiAssignmentsMeta) {
+            db.aiAssignmentsMeta = { assignedAt: Date.now() };
+            migrated = true;
+        }
+        if (migrated) {
+            await fs.writeFile(dbPath, JSON.stringify(db, null, 4), 'utf8');
+        }
+        
         return db;
     } catch (e) {
         const initial = {
@@ -389,6 +407,29 @@ app.get('/api/assignments', async (req, res) => {
 app.post('/api/assignments', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.assignments = req.body;
+    db.assignmentsMeta = {
+        assignedAt: Date.now()
+    };
+    
+    // Clear old test sessions for newly assigned users to allow fresh start
+    db.testSessions = db.testSessions || {};
+    const targetUserIds = req.body || [];
+    if (targetUserIds.includes('all')) {
+        // Clear all simulator sessions
+        Object.keys(db.testSessions).forEach(key => {
+            if (key.endsWith('_simulator')) {
+                delete db.testSessions[key];
+            }
+        });
+    } else {
+        targetUserIds.forEach(uId => {
+            const key = `${uId}_simulator`;
+            if (db.testSessions[key]) {
+                delete db.testSessions[key];
+            }
+        });
+    }
+    
     await writeDb(db);
     res.json({ success: true });
 });
@@ -401,8 +442,39 @@ app.get('/api/ai-assignments', async (req, res) => {
 app.post('/api/ai-assignments', requireAdminRole, async (req, res) => {
     const db = await readDb();
     db.aiAssignments = req.body;
+    db.aiAssignmentsMeta = {
+        assignedAt: Date.now()
+    };
+    
+    // Clear old test sessions for newly assigned users to allow fresh start
+    db.testSessions = db.testSessions || {};
+    const targetUserIds = req.body || [];
+    if (targetUserIds.includes('all')) {
+        // Clear all ai-agent sessions
+        Object.keys(db.testSessions).forEach(key => {
+            if (key.endsWith('_ai-agent')) {
+                delete db.testSessions[key];
+            }
+        });
+    } else {
+        targetUserIds.forEach(uId => {
+            const key = `${uId}_ai-agent`;
+            if (db.testSessions[key]) {
+                delete db.testSessions[key];
+            }
+        });
+    }
+    
     await writeDb(db);
     res.json({ success: true });
+});
+
+app.get('/api/assignments/meta', async (req, res) => {
+    const db = await readDb();
+    res.json({
+        assignmentsMeta: db.assignmentsMeta || { assignedAt: 0 },
+        aiAssignmentsMeta: db.aiAssignmentsMeta || { assignedAt: 0 }
+    });
 });
 
 app.get('/api/results', async (req, res) => {
@@ -457,7 +529,42 @@ app.post('/api/ai-results', async (req, res) => {
     res.json({ success: true });
 });
 
+app.delete('/api/results', async (req, res) => {
+    const { userId, date } = req.body;
+    const db = await readDb();
+    db.results = (db.results || []).filter(r => !(r.userId === userId && r.date === date));
+    
+    db.testSessions = db.testSessions || {};
+    const key = `${userId}_simulator`;
+    if (db.testSessions[key]) {
+        delete db.testSessions[key];
+    }
+    
+    await writeDb(db);
+    res.json({ success: true });
+});
+
+app.delete('/api/ai-results', async (req, res) => {
+    const { userId, date } = req.body;
+    const db = await readDb();
+    db.aiResults = (db.aiResults || []).filter(r => !(r.userId === userId && r.date === date));
+    
+    db.testSessions = db.testSessions || {};
+    const key = `${userId}_ai-agent`;
+    if (db.testSessions[key]) {
+        delete db.testSessions[key];
+    }
+    
+    await writeDb(db);
+    res.json({ success: true });
+});
+
 // Test Session Timers and Expiration Locking Endpoints
+app.get('/api/test-sessions', async (req, res) => {
+    const db = await readDb();
+    res.json(db.testSessions || {});
+});
+
 app.get('/api/test-session', async (req, res) => {
     const userId = req.query.userId;
     const testType = req.query.testType || 'simulator';
@@ -478,7 +585,7 @@ app.get('/api/test-session', async (req, res) => {
         session.completed = true;
         session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
         await writeDb(db);
-        return res.json({ status: 'expired', duration });
+        return res.json({ status: 'expired', duration, completedAt: session.completedAt });
     }
     const remainingSeconds = Math.max(0, Math.floor((duration - elapsed) / 1000));
     res.json({
@@ -517,7 +624,7 @@ app.post('/api/test-session/start', async (req, res) => {
             session.completed = true;
             session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
             await writeDb(db);
-            return res.json({ status: 'expired' });
+            return res.json({ status: 'expired', completedAt: session.completedAt });
         }
     }
 
@@ -576,8 +683,8 @@ app.post('/api/send-invite', async (req, res) => {
     let simulated = false;
     let errorMsg = "";
     
-    const activeTestName = testType === 'ai-agent' ? "Zain Cash AI Agent Coach Test" : "Zain Cash Customer Care Chat Simulator Test";
-    const activeTestDesc = testType === 'ai-agent' ? "Zain Cash AI Agent Coach" : "Zain Cash Customer Care Chat Simulator";
+    const activeTestDesc = testType === 'ai-agent' ? "تقييم الأيجنت الذكي المباشر (AI Agent Coach)" : "محاكي دردشة خدمة العملاء (Chat Simulator)";
+    const subjectLine = `📋 تنبيه: يوجد اختبار تدريبي جديد مستحق لك في منصة زين كاش!`;
     
     const smtpSettings = db.smtp || defaultSmtp;
     
@@ -587,10 +694,10 @@ app.post('/api/send-invite', async (req, res) => {
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; direction: ltr; }
+        body { font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; direction: rtl; text-align: right; }
         .card { background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; }
         .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 30px; text-align: center; border-bottom: 4px solid #ff9900; }
-        .body { padding: 30px; line-height: 1.6; color: #334155; text-align: left; }
+        .body { padding: 30px; line-height: 1.6; color: #334155; }
         .btn-container { text-align: center; margin: 30px 0; }
         .btn { display: inline-block; background: linear-gradient(135deg, #ff9900 0%, #ff6600 100%); color: #ffffff !important; padding: 12px 35px; font-weight: bold; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 10px rgba(255, 153, 0, 0.3); font-size: 16px; }
         .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
@@ -599,19 +706,20 @@ app.post('/api/send-invite', async (req, res) => {
 <body>
     <div class="card">
         <div class="header">
-            <h2 style="margin: 0; font-size: 22px;">Zain Cash Customer Care Academy</h2>
+            <h2 style="margin: 0; font-size: 22px; color: #ffffff;">أكاديمية تدريب خدمة عملاء زين كاش</h2>
         </div>
         <div class="body">
-            <h3 style="margin-top: 0; color: #0f172a;">Hello ${employeeName},</h3>
-            <p>You have been invited to perform a practice evaluation on the <strong>${activeTestDesc}</strong>.</p>
-            <p>Please click the button below to start your training and testing session directly. Your performance and results will be automatically saved and reported to the management.</p>
+            <h3 style="margin-top: 0; color: #0f172a;">مرحباً ${employeeName}،</h3>
+            <p>تم إسناد اختبار تدريبي نشط ومستحق لك الآن على المنصة بعنوان: <strong>${activeTestDesc}</strong>.</p>
+            <p>يرجى النقر على الزر أدناه للدخول إلى المنصة، حيث سيتم عرض المادة التدريبية (السلايدات التثقيفية) أولاً، يتبعها مباشرة الدخول للاختبار لحل الحالات وتصنيف التذاكر.</p>
+            <p style="color: #ea580c; font-weight: bold;">⚠️ ملاحظة هامة: صلاحية الاختبار تنتهي خلال 24 ساعة من تاريخ الإسناد، ولديك ساعة واحدة فقط لإكماله فور الدخول.</p>
             <div class="btn-container">
-                <a href="${loginLink}" class="btn">Start Test Now</a>
+                <a href="${loginLink}" class="btn">بدء الاختبار والتدريب الآن</a>
             </div>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">* Note: This link is unique to you for quick login to start the test without requiring credentials.</p>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">* ملاحظة: هذا الرابط مخصص لك شخصياً للدخول السريع والمباشر إلى الاختبار دون الحاجة لكلمة مرور.</p>
         </div>
         <div class="footer">
-            All rights reserved © Zain Cash Customer Care Academy 2026
+            جميع الحقوق محفوظة © أكاديمية تدريب خدمة العملاء - زين كاش 2026
         </div>
     </div>
 </body>
@@ -645,7 +753,7 @@ app.post('/api/send-invite', async (req, res) => {
                 body: JSON.stringify({
                     personalizations: [{ to: [{ email: email, name: employeeName }] }],
                     from: { email: smtpSettings.username || 'zaincash.testexam@gmail.com', name: 'Zain Cash Academy' },
-                    subject: `Invitation to ${activeTestName}`,
+                    subject: subjectLine,
                     content: [{ type: 'text/html', value: htmlEmailTemplate }]
                 })
             });
@@ -673,7 +781,7 @@ app.post('/api/send-invite', async (req, res) => {
                 body: JSON.stringify({
                     sender: { name: 'Zain Cash Academy', email: smtpSettings.username || 'zaincash.testexam@gmail.com' },
                     to: [{ email: email, name: employeeName }],
-                    subject: `Invitation to ${activeTestName}`,
+                    subject: subjectLine,
                     htmlContent: htmlEmailTemplate
                 })
             });
@@ -700,7 +808,7 @@ app.post('/api/send-invite', async (req, res) => {
                 body: JSON.stringify({
                     from: 'Zain Cash Academy <onboarding@resend.dev>',
                     to: [email],
-                    subject: `Invitation to ${activeTestName}`,
+                    subject: subjectLine,
                     html: htmlEmailTemplate
                 })
             });
@@ -758,43 +866,8 @@ app.post('/api/send-invite', async (req, res) => {
             const mailOptions = {
                 from: `"Zain Cash Academy" <${smtpSettings.username.trim()}>`,
                 to: email,
-                subject: `Invitation to ${activeTestName}`,
-                html: `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; direction: ltr; }
-        .card { background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 30px; text-align: center; border-bottom: 4px solid #ff9900; }
-        .body { padding: 30px; line-height: 1.6; color: #334155; text-align: left; }
-        .btn-container { text-align: center; margin: 30px 0; }
-        .btn { display: inline-block; background: linear-gradient(135deg, #ff9900 0%, #ff6600 100%); color: #ffffff !important; padding: 12px 35px; font-weight: bold; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 10px rgba(255, 153, 0, 0.3); font-size: 16px; }
-        .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="header">
-            <h2 style="margin: 0; font-size: 22px;">Zain Cash Customer Care Academy</h2>
-        </div>
-        <div class="body">
-            <h3 style="margin-top: 0; color: #0f172a;">Hello ${employeeName},</h3>
-            <p>You have been invited to perform a practice evaluation on the <strong>${activeTestDesc}</strong>.</p>
-            <p>Please click the button below to start your training and testing session directly. Your performance and results will be automatically saved and reported to the management.</p>
-            <div class="btn-container">
-                <a href="${loginLink}" class="btn">Start Test Now</a>
-            </div>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">* Note: This link is unique to you for quick login to start the test without requiring credentials.</p>
-        </div>
-        <div class="footer">
-            All rights reserved © Zain Cash Customer Care Academy 2026
-        </div>
-    </div>
-</body>
-</html>
-                `
+                subject: subjectLine,
+                html: htmlEmailTemplate
             };
             
             await transporter.sendMail(mailOptions);

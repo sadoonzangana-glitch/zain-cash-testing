@@ -323,6 +323,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
+        if (endpoint.startsWith('/api/test-session')) {
+            return Promise.resolve({});
+        }
         return Promise.resolve(null);
     }
 
@@ -334,17 +337,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function switchTab(tabId) {
         if (currentUser && currentUser.role !== 'Admin') {
-            if (isTestAssigned && !isAiTestAssigned && tabId !== 'tab-simulator') {
-                showToast('⚠️ يرجى إكمال اختبار محاكي الدردشة أولاً!', 'error');
-                return;
-            }
-            if (isAiTestAssigned && !isTestAssigned && tabId !== 'tab-ai-agent') {
-                showToast('⚠️ يرجى إكمال اختبار الأيجنت الذكي أولاً!', 'error');
-                return;
-            }
-            if (isTestAssigned && isAiTestAssigned && tabId !== 'tab-simulator' && tabId !== 'tab-ai-agent') {
-                showToast('⚠️ يرجى إكمال الاختبارات النشطة أولاً!', 'error');
-                return;
+            if (isTestAssigned || isAiTestAssigned) {
+                if (!window.isTestSessionActive) {
+                    // Slides mode: must stay on slides
+                    if (tabId !== 'tab-slides') {
+                        showToast('⚠️ يرجى قراءة السلايدات أولاً ثم بدء الاختبار!', 'error');
+                        return;
+                    }
+                } else {
+                    // Active test mode: must stay on test tab
+                    if (isTestAssigned && !isAiTestAssigned && tabId !== 'tab-simulator') {
+                        showToast('⚠️ يرجى إكمال اختبار محاكي الدردشة أولاً!', 'error');
+                        return;
+                    }
+                    if (isAiTestAssigned && !isTestAssigned && tabId !== 'tab-ai-agent') {
+                        showToast('⚠️ يرجى إكمال اختبار الأيجنت الذكي أولاً!', 'error');
+                        return;
+                    }
+                    if (isTestAssigned && isAiTestAssigned && tabId !== 'tab-simulator' && tabId !== 'tab-ai-agent') {
+                        showToast('⚠️ يرجى إكمال الاختبارات النشطة أولاً!', 'error');
+                        return;
+                    }
+                }
             }
         }
 
@@ -672,6 +686,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        const enterTestBtn = document.getElementById('btn-enter-assigned-test');
+        if (enterTestBtn) {
+            if (currentSlide === totalSlides && (window.isTestAssigned || window.isAiTestAssigned)) {
+                enterTestBtn.classList.remove('hidden');
+            } else {
+                enterTestBtn.classList.add('hidden');
+            }
+        }
+
         if (currentSlideNumSpan) currentSlideNumSpan.textContent = currentSlide;
         if (progressBarFill) {
             const percentage = (currentSlide / totalSlides) * 100;
@@ -693,6 +716,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentSlide > 1) {
                 currentSlide--;
                 updateSlide();
+            }
+        });
+    }
+
+    const enterTestBtn = document.getElementById('btn-enter-assigned-test');
+    if (enterTestBtn) {
+        enterTestBtn.addEventListener('click', async () => {
+            if (!currentUser) return;
+            const activeTestType = window.isTestAssigned ? 'simulator' : 'ai-agent';
+            try {
+                // Post to start the session, setting the startTime to now
+                await apiCall('/api/test-session/start', 'POST', {
+                    userId: currentUser.id,
+                    testType: activeTestType
+                });
+                // Reload assignment state
+                await checkTestAssignment();
+            } catch (err) {
+                console.error("Failed to start session:", err);
+                showToast("❌ فشل الاتصال بالسيرفر لبدء الاختبار. حاول مجدداً.", "error");
             }
         });
     }
@@ -827,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
                     </div>
                 </div>
-                <div class="chat-footer-mock live-footer" style="padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; border-top: 1px solid #e2e8f0; height: auto; min-height: 120px; align-items: stretch;">
+                <div class="chat-footer-mock live-footer" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; border-top: 1px solid #cbd5e1; height: auto; min-height: 60px; align-items: stretch;">
                     <div id="chat-options-container-${i}" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
                         <!-- Dynamic options buttons -->
                     </div>
@@ -873,10 +916,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             </select>
                         </div>
                         <div class="quick-dispositions-grid">
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Issue" data-sub="Top-up or Transfer Issue">Refund Delay</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Issue" data-sub="Reset PIN request">Reset PIN request</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="MC/Visa Inquiry" data-sub="MC/Visa Inquiry">Card Inquiry</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Other" data-sub="Junk call">Junk call</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Card Issues" data-sub="Top-up or Transfer Issue">Refund Delay</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Card Inquiries" data-sub="Reset PIN Request">Reset PIN request</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Card Inquiries" data-sub="Card Order / Delivery Inquiry">Card Inquiry</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Junk" data-sub="Junk">Junk call</button>
                         </div>
                         <div class="ticket-status-row">
                             <span class="section-title">Ticket</span>
@@ -1137,8 +1180,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (disposedChats[i]) return;
-                    dispPanel.classList.toggle('hidden');
-                    if (profPanel) profPanel.classList.add('hidden');
+                    
+                    if (currentUser && currentUser.role === 'Admin') {
+                        disposedChats[i] = true;
+                        const disposedOverlay = document.getElementById(`disposed-overlay-${i}`);
+                        if (disposedOverlay) disposedOverlay.classList.remove('hidden');
+                        dispPanel.classList.add('hidden');
+                        showToast("تم إغلاق المحادثة (مسؤول)", "success");
+                    } else {
+                        dispPanel.classList.toggle('hidden');
+                        if (profPanel) profPanel.classList.add('hidden');
+                    }
                 });
             }
 
@@ -1341,67 +1393,288 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleEvaluateSimulator() {
         // Validate all 3 chats are disposed
         if (!disposedChats[1] || !disposedChats[2] || !disposedChats[3]) {
-            showToast('Please resolve and dispose all 3 customer tickets before submitting!', 'error');
+            showToast('الرجاء تصنيف وإنهاء جميع المحادثات الثلاثة قبل تسليم التقييم!', 'error');
             return;
         }
 
         const submitBtn = document.getElementById('btn-submit-session');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Evaluating...';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري استخراج النتيجة...';
         }
 
         try {
-            let totalPoints = 0;
-            let maxPoints = 0;
-            let detailsHtml = '<div style="direction: rtl; text-align: right; font-family: var(--font-ar); line-height: 1.6;">';
-            let errorsCount = 0;
+            // Rubric Totals
+            let totalGreeting = 0; // max 5 * 3 = 15
+            let totalTone = 0;     // max 5 * 3 = 15
+            let totalProbing = 0;  // max 15 * 3 = 45
+            let totalAccuracy = 0; // max 35 * 3 = 105
+            let totalCompliance = 0; // max 35 * 3 = 105
+            let totalDisp = 0;     // max 5 * 3 = 15
+
+            let detailsHtml = `
+                <div style="direction: rtl; text-align: right; font-family: var(--font-ar); line-height: 1.7; display:flex; flex-direction:column; gap:16px;">
+                    <h3 style="font-size:1.15rem; font-weight:800; color:#1e1b4b; margin:0; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
+                        <i class="fa-solid fa-square-poll-vertical" style="color:var(--primary);"></i> تقرير تحليل أداء التذاكر بالتفصيل:
+                    </h3>
+            `;
 
             multiChatAgent.chats.forEach(chat => {
                 const sc = chat.originalScenario;
-                const totalTurns = sc.turns ? sc.turns.length : 3;
-                const correctCount = simulatorCorrectCountMap[chat.id] || 0;
+                const turns = sc.turns || [];
                 
-                // MCQ Score (60 points max)
-                const mcqPct = totalTurns > 0 ? (correctCount / totalTurns) : 1;
-                let chatScore = mcqPct * 60;
+                let chatGreeting = 0;
+                let chatProbing = 0;
+                let chatAccuracy = 0;
+                let chatTone = 0;
+                let chatCompliance = 0;
+                let chatDispScore = 0;
 
-                // Classification Score (40 points max)
+                let possibleGreeting = 0;
+                let possibleTone = 0;
+                let possibleProbing = 0;
+                let possibleAccuracy = 0;
+                let possibleCompliance = 0;
+                let possibleDisp = sc.classificationWeight !== undefined ? sc.classificationWeight : 5;
+
+                turns.forEach((turn, turnIdx) => {
+                    possibleGreeting += turn.greetingWeight !== undefined ? turn.greetingWeight : (turnIdx === 0 ? 5 : 0);
+                    possibleTone += turn.toneWeight !== undefined ? turn.toneWeight : (turnIdx === 2 ? 5 : 0);
+                    possibleProbing += turn.probingWeight !== undefined ? turn.probingWeight : (turnIdx === 0 ? 15 : 0);
+                    possibleAccuracy += turn.accuracyWeight !== undefined ? turn.accuracyWeight : (turnIdx === 1 ? 35 : 0);
+                    possibleCompliance += turn.complianceWeight !== undefined ? turn.complianceWeight : (turnIdx === 2 ? 35 : 0);
+                });
+
+                let chatPossibleTotal = possibleGreeting + possibleTone + possibleProbing + possibleAccuracy + possibleCompliance + possibleDisp;
+                if (chatPossibleTotal <= 0) chatPossibleTotal = 100;
+
+                // 1. Calculate MCQ choices scores per turn
+                turns.forEach((turn, turnIdx) => {
+                    const selectedIdx = (simulatorSelectedAnswers[chat.id] && simulatorSelectedAnswers[chat.id][turnIdx] !== undefined)
+                        ? simulatorSelectedAnswers[chat.id][turnIdx]
+                        : -1;
+                    
+                    const opt = selectedIdx >= 0 ? turn.options[selectedIdx] : null;
+                    if (opt && opt.isCorrect) {
+                        chatGreeting += turn.greetingWeight !== undefined ? turn.greetingWeight : (turnIdx === 0 ? 5 : 0);
+                        chatTone += turn.toneWeight !== undefined ? turn.toneWeight : (turnIdx === 2 ? 5 : 0);
+                        chatProbing += turn.probingWeight !== undefined ? turn.probingWeight : (turnIdx === 0 ? 15 : 0);
+                        chatAccuracy += turn.accuracyWeight !== undefined ? turn.accuracyWeight : (turnIdx === 1 ? 35 : 0);
+                        chatCompliance += turn.complianceWeight !== undefined ? turn.complianceWeight : (turnIdx === 2 ? 35 : 0);
+                    }
+                });
+
+                // 2. Ticket Disposition Score
                 const selectedDisp = document.getElementById(`disp-select-${chat.id}`)?.value || '';
                 const selectedSub = document.getElementById(`sub-disp-select-${chat.id}`)?.value || '';
-
                 const expectedDisp = sc.correctDisp || '';
                 const expectedSub = sc.correctSubDisp || '';
 
-                let classScore = 0;
-                if (selectedDisp === expectedDisp && expectedDisp) classScore += 20;
-                if (selectedSub === expectedSub && expectedSub) classScore += 20;
+                const mainCorrect = (selectedDisp === expectedDisp && expectedDisp);
+                const subCorrect = (selectedSub === expectedSub && expectedSub);
 
-                const finalChatScore = Math.round(chatScore + classScore);
-                totalPoints += finalChatScore;
-                maxPoints += 100;
+                if (mainCorrect) chatDispScore += (possibleDisp / 2);
+                if (subCorrect) chatDispScore += (possibleDisp / 2);
 
-                if (finalChatScore < 70) errorsCount++;
+                // Add to overall rubrics possible and awarded
+                totalGreeting += chatGreeting;
+                totalTone += chatTone;
+                totalProbing += chatProbing;
+                totalAccuracy += chatAccuracy;
+                totalCompliance += chatCompliance;
+                totalDisp += chatDispScore;
+
+                // Track possible totals
+                if (!window.totalGreetingPossible) {
+                    window.totalGreetingPossible = 0;
+                    window.totalTonePossible = 0;
+                    window.totalProbingPossible = 0;
+                    window.totalAccuracyPossible = 0;
+                    window.totalCompliancePossible = 0;
+                    window.totalDispPossible = 0;
+                }
+                window.totalGreetingPossible += possibleGreeting;
+                window.totalTonePossible += possibleTone;
+                window.totalProbingPossible += possibleProbing;
+                window.totalAccuracyPossible += possibleAccuracy;
+                window.totalCompliancePossible += possibleCompliance;
+                window.totalDispPossible += possibleDisp;
+
+                const chatTotal = Math.round((chatGreeting + chatProbing + chatAccuracy + chatTone + chatCompliance + chatDispScore) / chatPossibleTotal * 100);
 
                 detailsHtml += `
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 12px;">
-                        <h4 style="margin: 0 0 8px 0; color: var(--primary); font-size: 0.95rem; font-weight: 800;">الزبون: ${escapeHtml(chat.customerName)}</h4>
-                        <ul style="margin: 0; padding-right: 20px; font-size: 0.8rem; color: #475569; display: flex; flex-direction: column; gap: 4px;">
-                            <li>الإجابات الصحيحة للأسئلة: <strong style="color: ${correctCount === totalTurns ? '#16a34a' : '#ea580c'};">${correctCount} من ${totalTurns}</strong></li>
-                            <li>التصنيف الرئيسي (Main): ${selectedDisp === expectedDisp ? '<span style="color:#16a34a; font-weight:bold;">صحيح ✓</span>' : `<span style="color:#dc2626; font-weight:bold;">خاطئ ✗ (المتوقع: ${expectedDisp || 'غير محدد'})</span>`}</li>
-                            <li>التصنيف الفرعي (Sub): ${selectedSub === expectedSub ? '<span style="color:#16a34a; font-weight:bold;">صحيح ✓</span>' : `<span style="color:#dc2626; font-weight:bold;">خاطئ ✗ (المتوقع: ${expectedSub || 'غير محدد'})</span>`}</li>
-                            <li style="border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 6px; font-weight: 700;">درجة هذه المحادثة: <span style="font-size: 0.9rem; color: ${finalChatScore >= 70 ? '#16a34a' : '#dc2626'}">${finalChatScore}%</span></li>
-                        </ul>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed #e2e8f0; padding-bottom:8px; margin-bottom:10px;">
+                            <h4 style="margin: 0; color: #1e1b4b; font-size: 0.95rem; font-weight: 800;"><i class="fa-solid fa-user-tag" style="color:#4f46e5;"></i> العميل: ${escapeHtml(chat.customerName)}</h4>
+                            <span style="background:${chatTotal >= 80 ? '#f0fdf4' : chatTotal >= 60 ? '#fff7ed' : '#fef2f2'}; color:${chatTotal >= 80 ? '#166534' : chatTotal >= 60 ? '#c2410c' : '#991b1b'}; border:1px solid ${chatTotal >= 80 ? '#bbf7d0' : chatTotal >= 60 ? '#fed7aa' : '#fecdd3'}; font-size:0.8rem; font-weight:800; padding:2px 10px; border-radius:20px;">
+                                تقييم المحادثة: ${chatTotal}%
+                            </span>
+                        </div>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:0.8rem; color:#475569;">
+                            <div>• التحية والتعريف: <strong style="color:${chatGreeting === possibleGreeting && possibleGreeting > 0 ? '#16a34a' : '#dc2626'}">${chatGreeting} / ${possibleGreeting}</strong></div>
+                            <div>• فهم واستيضاح المشكلة: <strong style="color:${chatProbing === possibleProbing && possibleProbing > 0 ? '#16a34a' : '#dc2626'}">${chatProbing} / ${possibleProbing}</strong></div>
+                            <div>• دقة الحل والمعلومات: <strong style="color:${chatAccuracy === possibleAccuracy && possibleAccuracy > 0 ? '#16a34a' : '#dc2626'}">${chatAccuracy} / ${possibleAccuracy}</strong></div>
+                            <div>• الأسلوب واللغة والكتابة: <strong style="color:${chatTone === possibleTone && possibleTone > 0 ? '#16a34a' : '#dc2626'}">${chatTone} / ${possibleTone}</strong></div>
+                            <div>• السياسات والسرية والخصوصية: <strong style="color:${chatCompliance === possibleCompliance && possibleCompliance > 0 ? '#16a34a' : '#dc2626'}">${chatCompliance} / ${possibleCompliance}</strong></div>
+                            <div>• تصنيف التذكرة المعتمد: <strong style="color:${chatDispScore === possibleDisp && possibleDisp > 0 ? '#16a34a' : '#dc2626'}">${chatDispScore} / ${possibleDisp}</strong></div>
+                        </div>
+                        <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #f1f5f9; font-size:0.75rem; color:#64748b;">
+                            <strong>التصنيف المختار:</strong> ${escapeHtml(selectedDisp)} / ${escapeHtml(selectedSub)} 
+                            ${mainCorrect && subCorrect ? '<span style="color:#16a34a; font-weight:bold;">(مطابق للسياسة ✓)</span>' : '<span style="color:#dc2626; font-weight:bold;">(غير مطابق للسياسة ✗)</span>'}
+                        </div>
                     </div>
                 `;
             });
 
-            const overallScore = Math.round((totalPoints / maxPoints) * 100);
+            // Calculate exact weighted averages relative to the rubrics possible points
+            const gp = window.totalGreetingPossible || 15;
+            const tp = window.totalTonePossible || 15;
+            const pp = window.totalProbingPossible || 45;
+            const ap = window.totalAccuracyPossible || 105;
+            const cp = window.totalCompliancePossible || 105;
+            const dp = window.totalDispPossible || 15;
+
+            const avgGreeting = Math.round(totalGreeting / gp * 5);
+            const avgTone = Math.round(totalTone / tp * 5);
+            const avgProbing = Math.round(totalProbing / pp * 15);
+            const avgAccuracy = Math.round(totalAccuracy / ap * 35);
+            const avgCompliance = Math.round(totalCompliance / cp * 35);
+            const avgDisp = Math.round(totalDisp / dp * 5);
+
+            // Reset temp window possible totals
+            window.totalGreetingPossible = 0;
+            window.totalTonePossible = 0;
+            window.totalProbingPossible = 0;
+            window.totalAccuracyPossible = 0;
+            window.totalCompliancePossible = 0;
+            window.totalDispPossible = 0;
+
+            // Final Overall Score
+            const overallScore = Math.round(avgGreeting + avgTone + avgProbing + avgAccuracy + avgCompliance + avgDisp);
+
             let grade = 'مقبول';
-            if (overallScore >= 90) grade = 'امتياز';
-            else if (overallScore >= 75) grade = 'جيد جداً';
-            else if (overallScore >= 60) grade = 'جيد';
-            else grade = 'ضعيف / يحتاج تدريب';
+            let gradeColor = 'text-gradient';
+            if (overallScore === 100) {
+                grade = 'خبير معتمد (امتياز كامل) 🌟';
+                gradeColor = 'text-green';
+            } else if (overallScore >= 90) {
+                grade = 'امتياز';
+                gradeColor = 'text-green';
+            } else if (overallScore >= 75) {
+                grade = 'جيد جداً';
+                gradeColor = 'text-green';
+            } else if (overallScore >= 60) {
+                grade = 'جيد';
+                gradeColor = 'text-gradient';
+            } else {
+                grade = 'ضعيف / يحتاج تدريب ومراجعة';
+                gradeColor = 'text-red';
+            }
+
+            // Summary Rubric Table
+            detailsHtml += `
+                <div style="background:#f8fafc; border:2px solid #cbd5e1; border-radius:14px; padding:18px; margin-top:5px;">
+                    <h4 style="margin:0 0 10px 0; color:#0f172a; font-size:0.95rem; font-weight:800; border-bottom:1px solid #cbd5e1; padding-bottom:6px;">
+                        🎯 الخلاصة الإجمالية لتوزيع درجات التقييم (Weighted Score):
+                    </h4>
+                    <table style="width:100%; border-collapse:collapse; font-size:0.82rem; text-align:right;">
+                        <thead>
+                            <tr style="border-bottom:2px solid #cbd5e1; color:#0f172a; font-weight:800;">
+                                <th style="padding:6px 0;">معيار التقييم</th>
+                                <th style="padding:6px 0; text-align:center;">الوزن</th>
+                                <th style="padding:6px 0; text-align:center;">الدرجة المكتسبة</th>
+                                <th style="padding:6px 0; text-align:center;">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:8px 0;">التحية والتعريف</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700;">5%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:800; color:${avgGreeting === 5 ? '#16a34a' : '#dc2626'}">${avgGreeting}%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700; color:${avgGreeting === 5 ? '#16a34a' : '#dc2626'}">${avgGreeting === 5 ? 'مستوفى' : 'غير مستوفى'}</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:8px 0;">الأسلوب واللغة والكتابة</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700;">5%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:800; color:${avgTone === 5 ? '#16a34a' : '#dc2626'}">${avgTone}%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700; color:${avgTone === 5 ? '#16a34a' : '#dc2626'}">${avgTone === 5 ? 'مستوفى' : 'غير مستوفى'}</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:8px 0;">فهم المشكلة واستيضاحها</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700;">15%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:800; color:${avgProbing === 15 ? '#16a34a' : '#dc2626'}">${avgProbing}%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700; color:${avgProbing === 15 ? '#16a34a' : '#dc2626'}">${avgProbing === 15 ? 'مستوفى' : 'غير مستوفى'}</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:8px 0;">دقة الحل والمعلومات المقدمة</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700;">35%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:800; color:${avgAccuracy === 35 ? '#16a34a' : '#dc2626'}">${avgAccuracy}%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700; color:${avgAccuracy === 35 ? '#16a34a' : '#dc2626'}">${avgAccuracy === 35 ? 'مستوفى' : 'غير مستوفى'}</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid #e2e8f0;">
+                                <td style="padding:8px 0;">الالتزام بالإجراءات والسياسات والخصوصية</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700;">35%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:800; color:${avgCompliance === 35 ? '#16a34a' : '#dc2626'}">${avgCompliance}%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700; color:${avgCompliance === 35 ? '#16a34a' : '#dc2626'}">${avgCompliance === 35 ? 'مستوفى' : 'غير مستوفى'}</td>
+                            </tr>
+                            <tr style="border-bottom:2px solid #cbd5e1;">
+                                <td style="padding:8px 0;">تصنيف المكالمة / الشات الصحيح</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700;">5%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:800; color:${avgDisp === 5 ? '#16a34a' : '#dc2626'}">${avgDisp}%</td>
+                                <td style="padding:8px 0; text-align:center; font-weight:700; color:${avgDisp === 5 ? '#16a34a' : '#dc2626'}">${avgDisp === 5 ? 'مستوفى' : 'غير مستوفى'}</td>
+                            </tr>
+                            <tr style="background:#e2e8f0; font-weight:800; font-size:0.9rem;">
+                                <td style="padding:10px 8px;">النتيجة الكلية الموزونة</td>
+                                <td style="padding:10px 8px; text-align:center;">100%</td>
+                                <td style="padding:10px 8px; text-align:center; color:${overallScore === 100 ? '#16a34a' : '#dc2626'}">${overallScore}%</td>
+                                <td style="padding:10px 8px; text-align:center; color:${overallScore === 100 ? '#16a34a' : '#dc2626'}">${overallScore === 100 ? 'معتمد كامل' : 'غير مكتمل'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // 3. Handle Certificate Block rendering (ONLY unlocked at 100%)
+            const certBlock = document.getElementById('certificate-block');
+            if (overallScore === 100) {
+                // Generate a unique Certificate ID
+                const randomId = Math.floor(1000 + Math.random() * 9000);
+                const today = new Date().toLocaleDateString('ar-IQ', { year: 'numeric', month: 'long', day: 'numeric' });
+                const agentName = currentUser ? currentUser.name : "ممثل خدمة العملاء";
+                
+                detailsHtml += `
+                    <div id="certificate-print-area" style="background:#ffffff; border:12px double #d97706; border-radius:16px; padding:35px; text-align:center; font-family:'Cairo', sans-serif; direction:rtl; margin-top:20px; box-shadow:0 10px 30px rgba(217,119,6,0.15); position:relative;">
+                        <!-- Gold seal icon -->
+                        <div style="font-size:3.5rem; color:#d97706; margin-bottom:12px;"><i class="fa-solid fa-award"></i></div>
+                        <h2 style="font-size:1.6rem; font-weight:900; color:#1e1b4b; margin:0 0 10px 0; letter-spacing:0.5px;">شهادة تميز وإنجاز رسمي</h2>
+                        <p style="font-size:0.9rem; color:#64748b; margin:0 0 20px 0;">تمنحها أكاديمية تدريب خدمة العملاء لشركة زين كاش</p>
+                        
+                        <p style="font-size:0.95rem; color:#475569; margin:0 0 8px 0;">نشهد بموجب هذا أن ممثل خدمة العملاء المتميز:</p>
+                        <h3 style="font-size:1.5rem; font-weight:900; color:#4f46e5; margin:0 0 15px 0; text-decoration:underline;">${escapeHtml(agentName)}</h3>
+                        
+                        <p style="font-size:0.95rem; color:#475569; line-height:1.6; margin:0 0 25px 0; max-width:600px; margin-left:auto; margin-right:auto;">
+                            قد اجتاز بنجاح تام **اختبار محاكي الدردشة المتكامل لخدمة تداول الأسهم والخدمات المالية** محققاً الدرجة الكاملة **(100%)** في دقة الحلول، الالتزام بقواعد الامتثال والسرية، وجودة الأسلوب واللغة الرسمية.
+                        </p>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:2px solid #cbd5e1; padding-top:20px; font-size:0.8rem; color:#64748b; max-width:550px; margin-left:auto; margin-right:auto;">
+                            <div>رقم الشهادة: <strong>ZC-STOCKS-${randomId}</strong></div>
+                            <div>تاريخ الإصدار: <strong>${today}</strong></div>
+                            <div style="font-weight:800; color:#d97706;"><i class="fa-solid fa-stamp"></i> ختم الأكاديمية الرسمي</div>
+                        </div>
+
+                        <!-- Print Trigger Button -->
+                        <button onclick="window.print();" class="btn btn-primary" style="margin-top:25px; padding:10px 24px; font-weight:800; font-size:0.85rem; background:linear-gradient(135deg, #d97706, #b45309); border:none; box-shadow:0 4px 12px rgba(217,119,6,0.3); border-radius:10px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+                            <i class="fa-solid fa-print"></i> طباعة وتنزيل الشهادة الرسمية
+                        </button>
+                    </div>
+                `;
+            } else {
+                detailsHtml += `
+                    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:15px; margin-top:20px; text-align:center; font-size:0.85rem; color:#b45309;">
+                        <i class="fa-solid fa-circle-exclamation" style="font-size:1.2rem;"></i> <strong>ملاحظة:</strong> شهادة التميز والإنجاز الذهبية تُمنح للموظفين الذين يحققون درجة <strong>100% كاملة</strong> في التقييم الموزون. حاول مرة أخرى لتحقيق الدرجة الكاملة!
+                    </div>
+                `;
+            }
 
             detailsHtml += '</div>';
 
@@ -1412,16 +1685,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const resultsOverlay = document.getElementById('results-overlay');
 
             if (resScore) resScore.textContent = `${overallScore}%`;
-            if (resErrors) resErrors.textContent = errorsCount;
+            // Errors count is any criteria not 100% satisfied
+            let finalErrorsCount = 0;
+            if (avgGreeting < 5) finalErrorsCount++;
+            if (avgTone < 5) finalErrorsCount++;
+            if (avgProbing < 15) finalErrorsCount++;
+            if (avgAccuracy < 35) finalErrorsCount++;
+            if (avgCompliance < 35) finalErrorsCount++;
+            if (avgDisp < 5) finalErrorsCount++;
+            
+            if (resErrors) resErrors.textContent = finalErrorsCount;
             if (resGrade) {
                 resGrade.textContent = grade;
-                if (overallScore >= 75) {
-                    resGrade.className = 'res-val text-green';
-                } else if (overallScore >= 60) {
-                    resGrade.className = 'res-val text-gradient';
-                } else {
-                    resGrade.className = 'res-val text-red';
-                }
+                resGrade.className = `res-val ${gradeColor}`;
             }
             if (resNotes) {
                 resNotes.innerHTML = detailsHtml;
@@ -1432,18 +1708,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     userId: currentUser.id,
                     userName: currentUser.name,
                     score: overallScore,
-                    errorsCount: errorsCount,
-                    grade: grade
+                    errorsCount: finalErrorsCount,
+                    grade: grade,
+                    detailsHtml: detailsHtml
                 };
                 try {
                     await apiCall('/api/results', 'POST', resultData);
                     
                     if (isTestAssigned) {
-                        let assignments = await apiCall('/api/assignments', 'GET');
-                        assignments = assignments.filter(id => id !== currentUser.id && id !== 'all');
-                        await apiCall('/api/assignments', 'POST', assignments);
-                        isTestAssigned = false;
-                        window.isTestAssigned = false;
+                        await apiCall('/api/test-session/complete', 'POST', { userId: currentUser.id, testType: 'simulator' });
+                        if (testTimerInterval) clearInterval(testTimerInterval);
+                        const timerBanner = document.getElementById('test-timer-banner');
+                        if (timerBanner) timerBanner.classList.add('hidden');
                         await checkTestAssignment();
                     }
                 } catch (e) {
@@ -1460,7 +1736,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> Submit Session & Get Evaluation';
+                submitBtn.innerHTML = '<i class="fa-solid fa-cloud-upload-alt"></i> تسليم التقييم واستخراج النتيجة';
             }
         }
     }
@@ -1545,7 +1821,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const sc = scenarios[idx];
         if (editScenarioId) editScenarioId.value = idx;
         if (editCustomerName) editCustomerName.value = sc.customerName || '';
-        if (editTurnSelect) editTurnSelect.value = "0";
+
+        // Dynamically rebuild Turn options dropdown based on actual turns
+        if (editTurnSelect) {
+            editTurnSelect.innerHTML = '';
+            const turnsCount = (sc.turns || []).length || 1;
+            for (let t = 0; t < turnsCount; t++) {
+                const opt = document.createElement('option');
+                opt.value = t.toString();
+                opt.textContent = `Turn ${t + 1}${t === 0 ? ' (Beginning of Conversation)' : ''}`;
+                editTurnSelect.appendChild(opt);
+            }
+            editTurnSelect.value = "0";
+        }
 
         // Populate new configuration settings fields
         const chSelect = document.getElementById('edit-scenario-channel');
@@ -1557,6 +1845,11 @@ document.addEventListener('DOMContentLoaded', () => {
             dispSelect.value = sc.correctDisp || '';
             populateAdminSubDispositions(sc.correctDisp || '', subSelect);
             subSelect.value = sc.correctSubDisp || '';
+        }
+
+        const wClass = document.getElementById('edit-scenario-weight-classification');
+        if (wClass) {
+            wClass.value = sc.classificationWeight !== undefined ? sc.classificationWeight : 5;
         }
 
         loadScenarioTurn(idx, 0);
@@ -1581,6 +1874,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const turn = sc.turns[turnIdx];
         if (editCustomerQuery) editCustomerQuery.value = turn.customerText || '';
+
+        const wGreeting = document.getElementById('edit-turn-weight-greeting');
+        const wTone = document.getElementById('edit-turn-weight-tone');
+        const wProbing = document.getElementById('edit-turn-weight-probing');
+        const wAccuracy = document.getElementById('edit-turn-weight-accuracy');
+        const wCompliance = document.getElementById('edit-turn-weight-compliance');
+
+        if (wGreeting) wGreeting.value = turn.greetingWeight !== undefined ? turn.greetingWeight : (turnIdx === 0 ? 5 : 0);
+        if (wTone) wTone.value = turn.toneWeight !== undefined ? turn.toneWeight : (turnIdx === 2 ? 5 : 0);
+        if (wProbing) wProbing.value = turn.probingWeight !== undefined ? turn.probingWeight : (turnIdx === 0 ? 15 : 0);
+        if (wAccuracy) wAccuracy.value = turn.accuracyWeight !== undefined ? turn.accuracyWeight : (turnIdx === 1 ? 35 : 0);
+        if (wCompliance) wCompliance.value = turn.complianceWeight !== undefined ? turn.complianceWeight : (turnIdx === 2 ? 35 : 0);
 
         // Load 3 Options
         for (let i = 0; i < 3; i++) {
@@ -1610,6 +1915,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const turn = sc.turns[turnIdx];
         if (editCustomerQuery) {
             turn.customerText = editCustomerQuery.value;
+        }
+
+        const wGreeting = document.getElementById('edit-turn-weight-greeting');
+        const wTone = document.getElementById('edit-turn-weight-tone');
+        const wProbing = document.getElementById('edit-turn-weight-probing');
+        const wAccuracy = document.getElementById('edit-turn-weight-accuracy');
+        const wCompliance = document.getElementById('edit-turn-weight-compliance');
+
+        if (wGreeting) turn.greetingWeight = parseInt(wGreeting.value) || 0;
+        if (wTone) turn.toneWeight = parseInt(wTone.value) || 0;
+        if (wProbing) turn.probingWeight = parseInt(wProbing.value) || 0;
+        if (wAccuracy) turn.accuracyWeight = parseInt(wAccuracy.value) || 0;
+        if (wCompliance) turn.complianceWeight = parseInt(wCompliance.value) || 0;
+
+        const wClass = document.getElementById('edit-scenario-weight-classification');
+        if (wClass) {
+            sc.classificationWeight = parseInt(wClass.value) || 0;
         }
 
         let correctIdx = 1;
@@ -1642,6 +1964,88 @@ document.addEventListener('DOMContentLoaded', () => {
             // Switch to the new turn index
             selectedTurnIndex = parseInt(editTurnSelect.value);
             loadScenarioTurn(selectedScenarioIndex, selectedTurnIndex);
+        });
+    }
+
+    const btnAddTurn = document.getElementById('btn-add-turn');
+    if (btnAddTurn) {
+        btnAddTurn.addEventListener('click', () => {
+            if (selectedScenarioIndex === null) return;
+            const sc = scenarios[selectedScenarioIndex];
+            if (!sc) return;
+            if (!sc.turns) sc.turns = [];
+
+            // Save current turn state first
+            saveTurnToMemory(selectedScenarioIndex, selectedTurnIndex);
+
+            // Add a new turn with empty options
+            const newTurnIdx = sc.turns.length;
+            sc.turns.push({
+                step: newTurnIdx + 1,
+                customerText: `رسالة الجولة ${newTurnIdx + 1}...`,
+                greetingWeight: 0,
+                toneWeight: 0,
+                probingWeight: 0,
+                accuracyWeight: 0,
+                complianceWeight: 0,
+                options: [
+                    { text: "الرد المقترح الأول", isCorrect: false, feedback: "" },
+                    { text: "الرد المقترح الثاني", isCorrect: true, feedback: "" },
+                    { text: "الرد المقترح الثالث", isCorrect: false, feedback: "" }
+                ]
+            });
+
+            // Rebuild dropdown select
+            if (editTurnSelect) {
+                editTurnSelect.innerHTML = '';
+                for (let t = 0; t < sc.turns.length; t++) {
+                    const opt = document.createElement('option');
+                    opt.value = t.toString();
+                    opt.textContent = `Turn ${t + 1}${t === 0 ? ' (Beginning of Conversation)' : ''}`;
+                    editTurnSelect.appendChild(opt);
+                }
+                editTurnSelect.value = newTurnIdx.toString();
+            }
+
+            selectedTurnIndex = newTurnIdx;
+            loadScenarioTurn(selectedScenarioIndex, selectedTurnIndex);
+            showToast("تمت إضافة جولة جديدة بنجاح", "success");
+        });
+    }
+
+    const btnDeleteTurn = document.getElementById('btn-delete-turn');
+    if (btnDeleteTurn) {
+        btnDeleteTurn.addEventListener('click', () => {
+            if (selectedScenarioIndex === null) return;
+            const sc = scenarios[selectedScenarioIndex];
+            if (!sc || !sc.turns || sc.turns.length <= 1) {
+                showToast("لا يمكن حذف الجولة الوحيدة المتبقية!", "error");
+                return;
+            }
+
+            // Remove current turn
+            sc.turns.splice(selectedTurnIndex, 1);
+
+            // Re-index steps
+            sc.turns.forEach((t, idx) => {
+                t.step = idx + 1;
+            });
+
+            // Rebuild dropdown select
+            if (editTurnSelect) {
+                editTurnSelect.innerHTML = '';
+                for (let t = 0; t < sc.turns.length; t++) {
+                    const opt = document.createElement('option');
+                    opt.value = t.toString();
+                    opt.textContent = `Turn ${t + 1}${t === 0 ? ' (Beginning of Conversation)' : ''}`;
+                    editTurnSelect.appendChild(opt);
+                }
+                editTurnSelect.value = "0";
+            }
+
+            selectedTurnIndex = 0;
+            loadScenarioTurn(selectedScenarioIndex, 0);
+            showToast("تم حذف الجولة بنجاح", "success");
         });
     }
 
@@ -2157,6 +2561,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let isTestAssigned = false;
     let isAiTestAssigned = false;
+    let isTestSessionActive = false;
+    window.isTestSessionActive = false;
     
     async function checkUserSession() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -2293,9 +2699,47 @@ document.addEventListener('DOMContentLoaded', () => {
             try { window.onAIUserLoggedIn(currentUser); } catch(e){}
         }
 
-        switchTab('tab-kb');
+        if (!window.isTestAssigned && !window.isAiTestAssigned) {
+            switchTab('tab-kb');
+        }
     }
     
+    let assignmentTimerInterval = null;
+
+    function startAssignmentTimer(assignedAt) {
+        if (assignmentTimerInterval) clearInterval(assignmentTimerInterval);
+        
+        const banner = document.getElementById('active-test-banner');
+        const bannerText = document.getElementById('active-test-banner-text') || (banner ? banner.querySelector('span') : null);
+        if (!banner || !bannerText) return;
+
+        banner.classList.remove('hidden');
+
+        function updateTicking() {
+            const now = Date.now();
+            const elapsed = now - assignedAt;
+            const remainingMs = Math.max(0, (24 * 60 * 60 * 1000) - elapsed);
+
+            if (remainingMs <= 0) {
+                clearInterval(assignmentTimerInterval);
+                banner.classList.add('hidden');
+                checkTestAssignment();
+                return;
+            }
+
+            const totalSecs = Math.floor(remainingMs / 1000);
+            const hrs = Math.floor(totalSecs / 3600);
+            const mins = Math.floor((totalSecs % 3600) / 60);
+            const secs = totalSecs % 60;
+
+            const timeStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            bannerText.innerHTML = `⚠️ <strong>تنبيه:</strong> لديك اختبار نشط مستحق! يرجى قراءة المادة التدريبية (السلايدات) والبدء بالاختبار قبل انتهاء صلاحية الدخول: <span style="font-family: monospace; font-weight: 800; background: #ea580c; color: white; padding: 2px 8px; border-radius: 4px; margin-right: 5px;">${timeStr}</span>`;
+        }
+
+        updateTicking();
+        assignmentTimerInterval = setInterval(updateTicking, 1000);
+    }
+
     async function checkTestAssignment() {
         window.checkTestAssignment = checkTestAssignment;
         const navBtnKb = document.querySelector('.amy-nav-btn[data-amy-tab="tab-kb"]');
@@ -2303,10 +2747,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const navBtnSimHidden = document.getElementById('nav-btn-simulator-hidden');
         const navBtnAIHidden = document.getElementById('nav-btn-ai-agent-hidden');
         const backBtns = document.querySelectorAll('.btn-back-to-tc');
+        const openAdminBtn = document.getElementById('open-admin-btn');
+        const banner = document.getElementById('active-test-banner');
+        const bannerText = document.getElementById('active-test-banner-text') || (banner ? banner.querySelector('span') : null);
 
-        if (!currentUser || currentUser.role === 'Admin') {
-            const banner = document.getElementById('active-test-banner');
-            if (banner) banner.classList.add('hidden');
+        if (!currentUser) return;
+
+        // Defensive Default State: Hide test tabs and Training Center by default for everyone (except admin override below)
+        if (navBtnTC) navBtnTC.style.display = 'none';
+        if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+        if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+        if (navBtnKb) navBtnKb.style.display = '';
+        if (banner) banner.classList.add('hidden');
+        if (assignmentTimerInterval) {
+            clearInterval(assignmentTimerInterval);
+            assignmentTimerInterval = null;
+        }
+
+        if (currentUser.role === 'Admin') {
             isTestAssigned = false;
             isAiTestAssigned = false;
             window.isTestAssigned = false;
@@ -2314,9 +2772,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (navBtnKb) navBtnKb.style.display = '';
             if (navBtnTC) navBtnTC.style.display = '';
-            if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
-            if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+            if (openAdminBtn) openAdminBtn.style.display = '';
             backBtns.forEach(btn => btn.style.display = '');
+            
+            const lockOverlay = document.getElementById('test-locked-overlay');
+            if (lockOverlay) lockOverlay.classList.add('hidden');
             return;
         }
         
@@ -2326,68 +2786,142 @@ document.addEventListener('DOMContentLoaded', () => {
                 apiCall('/api/ai-assignments', 'GET')
             ]);
             
-            isTestAssigned = assignments.includes(currentUser.id) || assignments.includes('all');
-            isAiTestAssigned = aiAssignments.includes(currentUser.id) || aiAssignments.includes('all');
+            const metaRes = await apiCall('/api/assignments/meta', 'GET').catch(() => ({ assignmentsMeta: { assignedAt: 0 }, aiAssignmentsMeta: { assignedAt: 0 } }));
+            
+            let rawIsTest = assignments.includes(currentUser.id) || assignments.includes('all');
+            let rawIsAiTest = aiAssignments.includes(currentUser.id) || aiAssignments.includes('all');
+
+            const now = Date.now();
+            const assignTime = metaRes.assignmentsMeta?.assignedAt;
+            const aiAssignTime = metaRes.aiAssignmentsMeta?.assignedAt;
+
+            // Validity of 24 hours from assignment (fallback to valid if assignedAt is missing/0)
+            isTestAssigned = rawIsTest && (!assignTime || (now - assignTime <= 24 * 60 * 60 * 1000));
+            isAiTestAssigned = rawIsAiTest && (!aiAssignTime || (now - aiAssignTime <= 24 * 60 * 60 * 1000));
+            
             window.isTestAssigned = isTestAssigned;
             window.isAiTestAssigned = isAiTestAssigned;
             
-            const banner = document.getElementById('active-test-banner');
-            const bannerText = document.getElementById('active-test-banner-text') || (banner ? banner.querySelector('span') : null);
-            
             if (isTestAssigned || isAiTestAssigned) {
                 const activeTestType = isTestAssigned ? 'simulator' : 'ai-agent';
-                try {
-                    const sessionRes = await apiCall('/api/test-session/start', 'POST', {
-                        userId: currentUser.id,
-                        testType: activeTestType
-                    });
+                
+                // Get the session state
+                const sessionRes = await apiCall(`/api/test-session?userId=${currentUser.id}&testType=${activeTestType}`, 'GET');
+                
+                if (sessionRes && (sessionRes.status === 'completed' || sessionRes.status === 'expired')) {
+                    window.isTestSessionActive = false;
+                    // Check if it's been less than 1 hour since completion/expiration
+                    const completedTime = sessionRes.completedAt ? new Date(sessionRes.completedAt).getTime() : 0;
+                    const elapsedSinceCompleted = now - completedTime;
 
-                    if (sessionRes && (sessionRes.status === 'completed' || sessionRes.status === 'expired')) {
-                        if (typeof showTestLockedScreen === 'function') {
-                            showTestLockedScreen("لقد قمت بإكمال هذا الاختبار مسبقاً، أو انتهت مدة الساعة المحددة للاختبار. تم تسليم نتائجك بنجاح للإدارة ولا يمكنك إعادة الدخول.");
+                    if (elapsedSinceCompleted < 60 * 60 * 1000) {
+                        // Less than 1 hour: Show results overlay / lock screen so they can ONLY view their results
+                        if (banner) banner.classList.remove('hidden');
+                        if (bannerText) bannerText.textContent = "تم إكمال الاختبار. يمكنك الاطلاع على النتيجة والشهادة فقط لمدة ساعة بعد الإكمال.";
+                        
+                        // Hide main navigation buttons
+                        if (navBtnKb) navBtnKb.style.display = 'none';
+                        if (navBtnTC) navBtnTC.style.display = 'none';
+                        if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+                        if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                        backBtns.forEach(btn => btn.style.display = 'none');
+                        
+                        // Show the results overlay corresponding to the active test
+                        if (activeTestType === 'simulator') {
+                            const simOverlay = document.getElementById('results-overlay');
+                            if (simOverlay) simOverlay.classList.remove('hidden');
+                            switchTab('tab-simulator');
+                        } else {
+                            const aiOverlay = document.getElementById('ai-results-overlay');
+                            if (aiOverlay) aiOverlay.classList.remove('hidden');
+                            switchTab('tab-ai-agent');
                         }
+                        
+                        // Hide the blocking overlay so they can see the results overlay
+                        const lockOverlay = document.getElementById('test-locked-overlay');
+                        if (lockOverlay) lockOverlay.classList.add('hidden');
+                        
+                        return;
+                    } else {
+                        // More than 1 hour: Hide everything, revert to KB only!
+                        if (banner) banner.classList.add('hidden');
+                        if (navBtnKb) navBtnKb.style.display = '';
+                        if (navBtnTC) navBtnTC.style.display = 'none';
+                        if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+                        if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                        backBtns.forEach(btn => btn.style.display = 'none');
+                        
+                        // Hide results overlays
+                        const simOverlay = document.getElementById('results-overlay');
+                        if (simOverlay) simOverlay.classList.add('hidden');
+                        const aiOverlay = document.getElementById('ai-results-overlay');
+                        if (aiOverlay) aiOverlay.classList.add('hidden');
+                        const lockOverlay = document.getElementById('test-locked-overlay');
+                        if (lockOverlay) lockOverlay.classList.add('hidden');
+                        
+                        switchTab('tab-kb');
                         return;
                     }
-
-                    if (sessionRes && sessionRes.status === 'active') {
-                        if (typeof startTestTimer === 'function') {
-                            startTestTimer(sessionRes.remainingSeconds, activeTestType, currentUser.id);
-                        }
-                    }
-                } catch (errSession) {
-                    console.error("Session check error:", errSession);
                 }
 
-                if (banner) banner.classList.remove('hidden');
-                backBtns.forEach(btn => btn.style.display = 'none'); // Hide back buttons during tests
-                
-                // Hide normal navigation buttons to lock user
+                if (sessionRes && sessionRes.status === 'active') {
+                    window.isTestSessionActive = true;
+                    // Active test session: lock to test screen and start timer
+                    if (banner) banner.classList.remove('hidden');
+                    backBtns.forEach(btn => btn.style.display = 'none');
+                    if (navBtnKb) navBtnKb.style.display = 'none';
+                    if (navBtnTC) navBtnTC.style.display = 'none';
+
+                    if (activeTestType === 'simulator') {
+                        if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة! يرجى إكمال الحالات قبل نهاية الوقت.";
+                        if (navBtnSimHidden) { navBtnSimHidden.style.display = ''; navBtnSimHidden.textContent = 'اختبار المحاكي النشط'; }
+                        if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                        switchTab('tab-simulator');
+                    } else {
+                        if (bannerText) bannerText.textContent = "لديك اختبار نشط في الأيجنت الذكي! يرجى إكمال التقييم وتصنيف التذكرة.";
+                        if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+                        if (navBtnAIHidden) { navBtnAIHidden.style.display = ''; navBtnAIHidden.textContent = 'اختبار الأيجنت النشط'; }
+                        switchTab('tab-ai-agent');
+                    }
+
+                    if (typeof startTestTimer === 'function') {
+                        startTestTimer(sessionRes.remainingSeconds, activeTestType, currentUser.id);
+                    }
+                    
+                    const lockOverlay = document.getElementById('test-locked-overlay');
+                    if (lockOverlay) lockOverlay.classList.add('hidden');
+                    return;
+                }
+
+                // If not started yet: Show Slides tab first, and hide KB/TC tabs
+                window.isTestSessionActive = false;
                 if (navBtnKb) navBtnKb.style.display = 'none';
                 if (navBtnTC) navBtnTC.style.display = 'none';
+                if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+                if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
                 
-                if (isTestAssigned && isAiTestAssigned) {
-                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة والأيجنت الذكي! يرجى إكمالهما لتسجيل درجاتك.";
-                    if (navBtnSimHidden) { navBtnSimHidden.style.display = ''; navBtnSimHidden.textContent = 'اختبار المحاكي النشط'; }
-                    if (navBtnAIHidden) { navBtnAIHidden.style.display = ''; navBtnAIHidden.textContent = 'اختبار الأيجنت النشط'; }
-                    switchTab('tab-simulator');
-                } else if (isTestAssigned) {
-                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة! يرجى إكمال جميع المحادثات وتصنيفها.";
-                    if (navBtnSimHidden) { navBtnSimHidden.style.display = ''; navBtnSimHidden.textContent = 'اختبار المحاكي النشط'; }
-                    if (navBtnAIHidden) { navBtnAIHidden.style.display = 'none'; }
-                    switchTab('tab-simulator');
-                } else {
-                    if (bannerText) bannerText.textContent = "لديك اختبار نشط في الأيجنت الذكي! يرجى إكمال التقييم وتصنيف التذكرة.";
-                    if (navBtnSimHidden) { navBtnSimHidden.style.display = 'none'; }
-                    if (navBtnAIHidden) { navBtnAIHidden.style.display = ''; navBtnAIHidden.textContent = 'اختبار الأيجنت النشط'; }
-                    switchTab('tab-ai-agent');
-                }
+                // Show hidden slides tab
+                const navBtnSlides = document.getElementById('nav-btn-slides-hidden');
+                if (navBtnSlides) navBtnSlides.style.display = '';
+                
+                switchTab('tab-slides');
+
+                // Start the 24-hour warning countdown ticking clock
+                const activeAssignedAt = isTestAssigned 
+                    ? (metaRes.assignmentsMeta?.assignedAt || Date.now())
+                    : (metaRes.aiAssignmentsMeta?.assignedAt || Date.now());
+                startAssignmentTimer(activeAssignedAt);
             } else {
+                // Revert to showing Knowledge Base only (hide Training Center button for non-admins)
                 if (banner) banner.classList.add('hidden');
                 if (navBtnKb) navBtnKb.style.display = '';
-                if (navBtnTC) navBtnTC.style.display = '';
+                if (navBtnTC) navBtnTC.style.display = 'none';
                 if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
                 if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
                 backBtns.forEach(btn => btn.style.display = '');
+                
+                const lockOverlay = document.getElementById('test-locked-overlay');
+                if (lockOverlay) lockOverlay.classList.add('hidden');
             }
         } catch (e) {
             console.error("Failed to check assignments", e);
@@ -2475,9 +3009,16 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast("⏳ انتهت مدة الساعة المحددة للاختبار! جاري تسليم إجاباتك تلقائياً...", "warning");
         try {
             await apiCall('/api/test-session/complete', 'POST', { userId, testType });
-        } catch(e) {}
-
-        showTestLockedScreen("انتهت مدة الساعة المحددة للاختبار. تم إغلاق الرابط وتسليم نتائجك للإدارة.");
+            if (testType === 'simulator') {
+                const btn = document.getElementById('btn-submit-session');
+                if (btn) btn.click();
+            } else {
+                const btn = document.getElementById('btn-submit-ai-session');
+                if (btn) btn.click();
+            }
+        } catch(e) {
+            console.error("Auto submit failed:", e);
+        }
     }
 
     // Excel Export Handlers
@@ -2505,6 +3046,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function cleanHtmlToText(html) {
+        if (!html) return "";
+        let text = html
+            .replace(/<\/div>/gi, '\n')
+            .replace(/<\/tr>/gi, '\n')
+            .replace(/<\/p>/gi, '\n')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/th>/gi, ' | ')
+            .replace(/<\/td>/gi, ' | ');
+        // Strip remaining HTML tags
+        text = text.replace(/<[^>]*>/g, '');
+        // Replace multiple consecutive newlines/spaces
+        text = text.replace(/\n\s*\n/g, '\n').trim();
+        return text;
+    }
+
+    function escapeCsvValue(val) {
+        if (val === null || val === undefined) return '""';
+        let str = String(val);
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+
     function exportToCsv(data, filename, type) {
         if (!data || data.length === 0) {
             showToast("لا توجد نتائج مسجلة للتحميل حالياً", "warning");
@@ -2513,14 +3076,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let csvContent = "\uFEFF"; // UTF-8 BOM for Microsoft Excel Arabic rendering
         if (type === 'simulator') {
-            csvContent += "رمز الموظف (Code),اسم الموظف (Name),النتيجة (Score %),الأخطاء (Errors),التقييم (Grade),تاريخ وساعة التسليم (Submitted At)\n";
+            csvContent += "رمز الموظف (Code),اسم الموظف (Name),نوع الاختبار (Test Type),النتيجة (Score %),الأخطاء (Errors),التقييم (Grade),تاريخ وساعة التسليم (Submitted At),تفاصيل التقييم (Evaluation Details)\n";
             data.forEach(r => {
-                csvContent += `"${r.userId || ''}","${r.userName || ''}","${r.score || 0}%","${r.errorsCount || 0}","${r.grade || ''}","${r.date || ''}"\n`;
+                const cleanedDetails = cleanHtmlToText(r.detailsHtml);
+                csvContent += `${escapeCsvValue(r.userId)},${escapeCsvValue(r.userName)},"محاكي المحادثات",${escapeCsvValue(r.score + '%')},${escapeCsvValue(r.errorsCount)},${escapeCsvValue(r.grade)},${escapeCsvValue(r.date)},${escapeCsvValue(cleanedDetails)}\n`;
             });
         } else {
-            csvContent += "رمز الموظف (Code),اسم الموظف (Name),النتيجة (Score %),التقييم (Grade),تاريخ وساعة التسليم (Submitted At)\n";
+            csvContent += "رمز الموظف (Code),اسم الموظف (Name),نوع الاختبار (Test Type),النتيجة (Score %),التقييم (Grade),تاريخ وساعة التسليم (Submitted At),تفاصيل التقييم (Evaluation Details)\n";
             data.forEach(r => {
-                csvContent += `"${r.userId || ''}","${r.userName || ''}","${r.score || 0}%","${r.grade || ''}","${r.date || ''}"\n`;
+                const cleanedDetails = cleanHtmlToText(r.detailsHtml);
+                csvContent += `${escapeCsvValue(r.userId)},${escapeCsvValue(r.userName)},"المدرب الذكي",${escapeCsvValue(r.score + '%')},${escapeCsvValue(r.grade)},${escapeCsvValue(r.date)},${escapeCsvValue(cleanedDetails)}\n`;
             });
         }
 
@@ -2591,6 +3156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let allUsers = [];
+    let allTestSessions = {};
     let currentTestType = 'simulator'; // 'simulator' or 'ai-agent'
     let currentAssignments = [];
     let currentAiAssignments = [];
@@ -2607,6 +3173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allUsers = await apiCall('/api/users', 'GET');
             currentAssignments = await apiCall('/api/assignments', 'GET');
             currentAiAssignments = await apiCall('/api/ai-assignments', 'GET');
+            allTestSessions = (await apiCall('/api/test-sessions', 'GET').catch(() => ({}))) || {};
             
             allUsers = allUsers.filter(u => u.role !== 'Admin');
             
@@ -2640,6 +3207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             grid.innerHTML = '<p style="grid-column: span 3; text-align: center; color: var(--error);">فشل في تحميل قائمة الموظفين.</p>';
         }
     }
+    window.loadAssignmentsTab = loadAssignmentsTab;
     
     function renderUsersGrid() {
         const grid = document.getElementById('users-selection-grid');
@@ -2678,6 +3246,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const isSimAssigned = currentAssignments.includes(user.id) || simulatorAssignAll;
             const isAiAssigned = currentAiAssignments.includes(user.id) || aiAssignAll;
             
+            // Calculate status badges for the selected test type
+            let statusBadgeHtml = '';
+            const testKey = `${user.id}_${currentTestType}`;
+            const sess = (allTestSessions || {})[testKey];
+            
+            if (isChecked) {
+                if (sess && sess.completed) {
+                    statusBadgeHtml = `<span class="status-badge" style="background:#def7ec; color:#03543f; border:1px solid #bcf0da; padding:2px 8px; border-radius:12px; font-weight:800; font-size:0.72rem; margin-right:5px;"><i class="fa-solid fa-circle-check"></i> مكتمل</span>`;
+                } else {
+                    statusBadgeHtml = `<span class="status-badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; padding:2px 8px; border-radius:12px; font-weight:800; font-size:0.72rem; margin-right:5px;"><i class="fa-solid fa-hourglass-half"></i> قيد الاختبار</span>`;
+                }
+            } else {
+                if (sess && sess.completed) {
+                    statusBadgeHtml = `<span class="status-badge" style="background:#def7ec; color:#03543f; border:1px solid #bcf0da; padding:2px 8px; border-radius:12px; font-weight:800; font-size:0.72rem; margin-right:5px;"><i class="fa-solid fa-circle-check"></i> مكتمل</span>`;
+                }
+            }
+
             const card = document.createElement('div');
             card.className = `user-checkbox-card ${isChecked ? 'selected' : ''}`;
             card.dataset.userId = user.id;
@@ -2691,9 +3276,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="user-card-main">
                     <div class="user-name">${user.name}</div>
-                    <div class="user-sub-row">
+                    <div class="user-sub-row" style="display:flex; align-items:center; gap:8px;">
                         <span class="user-id-badge">${user.id}</span>
                         <span class="user-role-badge">${user.role || 'Inbound'}</span>
+                        ${statusBadgeHtml}
                     </div>
                     <div class="user-assignment-badges">
                         ${isSimAssigned ? '<span class="status-badge badge-simulator"><i class="fa-solid fa-comments"></i> Chat Simulator Active</span>' : ''}
@@ -2942,7 +3528,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (placeholder) placeholder.classList.add('hidden');
             results.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
+            window.currentSimResults = results;
             results.forEach(res => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -2952,6 +3538,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${res.errorsCount || 0}</td>
                     <td><span class="${res.score >= 80 ? 'text-green' : (res.score >= 60 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade || '-'}</span></td>
                     <td>${res.date || '-'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm btn-show-sim-result" data-userid="${res.userId}" data-date="${res.date}" style="font-size:0.72rem; padding:4px 8px; border-radius:6px; background:#4f46e5; color:#ffffff; border:none; cursor:pointer; margin-left:5px;">
+                            <i class="fa-solid fa-eye"></i> SHOW
+                        </button>
+                        <button class="btn btn-red btn-sm btn-delete-sim-result" data-userid="${res.userId}" data-date="${res.date}" style="font-size:0.72rem; padding:4px 8px; border-radius:6px; background:#ef4444; color:#ffffff; border:none; cursor:pointer;">
+                            <i class="fa-solid fa-trash-can"></i> مسح
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -2996,6 +3590,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (placeholder) placeholder.classList.add('hidden');
             results.sort((a, b) => new Date(b.date) - new Date(a.date));
+            window.currentAIResults = results;
             
             results.forEach(res => {
                 const tr = document.createElement('tr');
@@ -3005,6 +3600,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><strong>${res.score}%</strong></td>
                     <td><span class="${res.score >= 80 ? 'text-green' : (res.score >= 60 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade || '-'}</span></td>
                     <td>${res.date || '-'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm btn-show-ai-result" data-userid="${res.userId}" data-date="${res.date}" style="font-size:0.72rem; padding:4px 8px; border-radius:6px; background:#4f46e5; color:#ffffff; border:none; cursor:pointer; margin-left:5px;">
+                            <i class="fa-solid fa-eye"></i> SHOW
+                        </button>
+                        <button class="btn btn-red btn-sm btn-delete-ai-result" data-userid="${res.userId}" data-date="${res.date}" style="font-size:0.72rem; padding:4px 8px; border-radius:6px; background:#ef4444; color:#ffffff; border:none; cursor:pointer;">
+                            <i class="fa-solid fa-trash-can"></i> مسح
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -3030,6 +3633,148 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshAIResultsBtn = document.getElementById('btn-refresh-results-ai');
     if (refreshAIResultsBtn) {
         refreshAIResultsBtn.addEventListener('click', loadAIResults);
+    }
+
+    // Event delegation for deleting/showing simulator results
+    const resultsTbody = document.getElementById('results-table-tbody');
+    if (resultsTbody) {
+        resultsTbody.addEventListener('click', async (e) => {
+            // SHOW button
+            const btnShow = e.target.closest('.btn-show-sim-result');
+            if (btnShow) {
+                const userId = btnShow.getAttribute('data-userid');
+                const date = btnShow.getAttribute('data-date');
+                if (!userId || !date) return;
+                
+                const results = window.currentSimResults || [];
+                const res = results.find(r => r.userId === userId && r.date === date);
+                if (res) {
+                    const modal = document.getElementById('admin-details-modal');
+                    const modalTitle = document.getElementById('admin-details-modal-title');
+                    const modalBody = document.getElementById('admin-details-modal-body');
+                    
+                    if (modal && modalTitle && modalBody) {
+                        modalTitle.textContent = `تفاصيل إجابات الموظف: ${res.userName} (${res.userId})`;
+                        
+                        let bodyContent = res.detailsHtml || '';
+                        if (!bodyContent) {
+                            bodyContent = `
+                                <div style="text-align:center; padding:30px; color:#64748b; font-size:0.9rem;">
+                                    <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:#f59e0b; margin-bottom:10px; display:block;"></i>
+                                    لا تتوفر تفاصيل إضافية مخزنة لهذه النتيجة القديمة.<br>
+                                    الدرجة الإجمالية المحرزة: <strong>${res.score}%</strong> (التقييم: ${res.grade})
+                                </div>
+                            `;
+                        } else if (!bodyContent.includes('<div') && !bodyContent.includes('<table')) {
+                            bodyContent = `<div style="white-space: pre-wrap; text-align: right; direction: rtl; font-family: var(--font-ar); font-size: 0.95rem; line-height: 1.6; padding: 15px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; color: #1e293b;">${bodyContent}</div>`;
+                        }
+                        
+                        modalBody.innerHTML = bodyContent;
+                        modal.style.display = 'flex';
+                    }
+                }
+                return;
+            }
+
+            // DELETE button
+            const btn = e.target.closest('.btn-delete-sim-result');
+            if (!btn) return;
+            
+            const userId = btn.getAttribute('data-userid');
+            const date = btn.getAttribute('data-date');
+            if (!userId || !date) return;
+            
+            if (confirm(`هل أنت متأكد من مسح نتيجة الموظف ${userId} بتاريخ ${date}؟`)) {
+                try {
+                    await apiCall('/api/results', 'DELETE', { userId, date });
+                    
+                    // Remove from localStorage
+                    let localResults = [];
+                    try {
+                        localResults = JSON.parse(localStorage.getItem('zain_sim_results') || '[]');
+                    } catch(err) {}
+                    localResults = localResults.filter(r => !(r.userId === userId && r.date === date));
+                    localStorage.setItem('zain_sim_results', JSON.stringify(localResults));
+                    
+                    showToast('تم مسح نتيجة المحاكاة بنجاح!', 'success');
+                    loadSimResults();
+                    if (window.loadAssignmentsTab) window.loadAssignmentsTab();
+                } catch (err) {
+                    showToast('فشل مسح النتيجة: ' + err.message, 'error');
+                }
+            }
+        });
+    }
+
+    // Event delegation for deleting/showing AI coach results
+    const aiResultsTbody = document.getElementById('ai-results-table-tbody');
+    if (aiResultsTbody) {
+        aiResultsTbody.addEventListener('click', async (e) => {
+            // SHOW button
+            const btnShow = e.target.closest('.btn-show-ai-result');
+            if (btnShow) {
+                const userId = btnShow.getAttribute('data-userid');
+                const date = btnShow.getAttribute('data-date');
+                if (!userId || !date) return;
+                
+                const results = window.currentAIResults || [];
+                const res = results.find(r => r.userId === userId && r.date === date);
+                if (res) {
+                    const modal = document.getElementById('admin-details-modal');
+                    const modalTitle = document.getElementById('admin-details-modal-title');
+                    const modalBody = document.getElementById('admin-details-modal-body');
+                    
+                    if (modal && modalTitle && modalBody) {
+                        modalTitle.textContent = `تفاصيل تقييم مدرب الذكاء الاصطناعي: ${res.userName} (${res.userId})`;
+                        
+                        let bodyContent = res.detailsHtml || '';
+                        if (!bodyContent) {
+                            bodyContent = `
+                                <div style="text-align:center; padding:30px; color:#64748b; font-size:0.9rem;">
+                                    <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:#f59e0b; margin-bottom:10px; display:block;"></i>
+                                    لا تتوفر تفاصيل إضافية مخزنة لهذه النتيجة القديمة.<br>
+                                    الدرجة الإجمالية المحرزة: <strong>${res.score}%</strong> (التقييم: ${res.grade})
+                                </div>
+                            `;
+                        } else if (!bodyContent.includes('<div') && !bodyContent.includes('<table')) {
+                            bodyContent = `<div style="white-space: pre-wrap; text-align: right; direction: rtl; font-family: var(--font-ar); font-size: 0.95rem; line-height: 1.6; padding: 15px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; color: #1e293b;">${bodyContent}</div>`;
+                        }
+                        
+                        modalBody.innerHTML = bodyContent;
+                        modal.style.display = 'flex';
+                    }
+                }
+                return;
+            }
+
+            // DELETE button
+            const btn = e.target.closest('.btn-delete-ai-result');
+            if (!btn) return;
+            
+            const userId = btn.getAttribute('data-userid');
+            const date = btn.getAttribute('data-date');
+            if (!userId || !date) return;
+            
+            if (confirm(`هل أنت متأكد من مسح نتيجة الموظف ${userId} بتاريخ ${date}؟`)) {
+                try {
+                    await apiCall('/api/ai-results', 'DELETE', { userId, date });
+                    
+                    // Remove from localStorage
+                    let localResults = [];
+                    try {
+                        localResults = JSON.parse(localStorage.getItem('zain_ai_results') || '[]');
+                    } catch(err) {}
+                    localResults = localResults.filter(r => !(r.userId === userId && r.date === date));
+                    localStorage.setItem('zain_ai_results', JSON.stringify(localResults));
+                    
+                    showToast('تم مسح نتيجة الذكاء الاصطناعي بنجاح!', 'success');
+                    loadAIResults();
+                    if (window.loadAssignmentsTab) window.loadAssignmentsTab();
+                } catch (err) {
+                    showToast('فشل مسح النتيجة: ' + err.message, 'error');
+                }
+            }
+        });
     }
 
     // Prevent input and button click bubbles & auto-save email changes
@@ -3268,12 +4013,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // KNOWLEDGE BASE (NOLGE BASIC) LOGIC
+    // KNOWLEDGE BASE LOGIC
     // ==========================================
     let kbArticles = [];
     let selectedKbCategory = 'all';
     let selectedKbArticleId = null;
     let kbArticleListAdmin = [];
+    let currentKbSearchQuery = '';
 
     async function initKb() {
         try {
@@ -3285,34 +4031,46 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('KB: loaded from embedded data (offline mode)');
                 }
             }
-            renderKbCategories();
-            renderKbPopularArticles();
-            bindKbSearchEvents();
-            if (currentUser && currentUser.role === 'Admin') {
-                initAdminKb();
-                initLivePreviews();
-            }
         } catch (err) {
             console.warn("KB API failed, trying embedded data:", err);
-            // Fallback to embedded KB data when running from file://
             if (window.EMBEDDED_KB_DATA && window.EMBEDDED_KB_DATA.length > 0) {
                 kbArticles = window.EMBEDDED_KB_DATA;
-                renderKbCategories();
-                renderKbPopularArticles();
-                bindKbSearchEvents();
                 console.log('KB: loaded', kbArticles.length, 'articles from embedded data');
             }
         }
-    }
 
+        // Ensure every article has a valid numeric/string id
+        if (kbArticles && Array.isArray(kbArticles)) {
+            kbArticles.forEach((a, idx) => {
+                if (!a.id) a.id = idx + 1;
+            });
+        }
+
+        renderKbCategories();
+        renderKbPopularArticles();
+        bindKbSearchEvents();
+        filterAndRenderKbArticles();
+
+        if (currentUser && currentUser.role === 'Admin') {
+            initAdminKb();
+            initLivePreviews();
+        }
+    }
 
     function renderKbCategories() {
         const ul = document.getElementById('kb-categories-ul');
         if (!ul) return;
 
+        // Derived unique categories from loaded articles
+        const uniqueCats = Array.from(new Set((kbArticles || []).map(a => a.category).filter(Boolean)));
+
         const categories = [
             { id: 'all', name: 'الكل (All)', icon: 'fa-cubes' },
-            { id: 'الأسهم والتداول', name: 'تداول الأسهم الأمريكية (US Stocks)', icon: 'fa-chart-line' }
+            ...uniqueCats.map(cat => ({
+                id: cat,
+                name: cat,
+                icon: cat === 'الأسهم والتداول' ? 'fa-chart-line' : 'fa-folder-open'
+            }))
         ];
 
         ul.innerHTML = categories.map(cat => `
@@ -3360,7 +4118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const queryLower = rawQuery.toLowerCase();
         const tokens = queryLower.split(/\s+/).filter(t => t.length > 0);
         
-        let filtered = kbArticles;
+        let filtered = kbArticles || [];
         if (selectedKbCategory !== 'all') {
             filtered = filtered.filter(a => a.category === selectedKbCategory);
         }
@@ -3387,55 +4145,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewArea = document.querySelector('.kb-content-area');
         if (!viewArea) return;
 
-        if (selectedKbCategory !== 'all' || rawQuery) {
+        // Directly display the full master comprehensive article if available
+        if (filtered.length > 0) {
+            viewKbArticle(filtered[0].id);
+        } else {
             document.getElementById('kb-no-article-selected').classList.add('hidden');
             document.getElementById('kb-article-view').classList.add('hidden');
             
             let listHtml = `
-                <div class="kb-results-container" style="display:flex; flex-direction:column; gap:15px; width:100%;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:5px;">
-                        <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0;">
-                            <i class="fa-solid fa-magnifying-glass" style="color:var(--primary);"></i> نتائج البحث والأسهم (${filtered.length} مقال)
-                        </h2>
-                        ${rawQuery ? `<span style="font-size:0.8rem; color:#64748b;">كلمة البحث: <mark class="search-highlight">${escapeHtml(rawQuery)}</mark></span>` : ''}
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div class="kb-results-container" style="display:flex; flex-direction:column; gap:18px; width:100%;">
+                    <p style="text-align:center; color:#94a3b8; padding:50px 20px;"><i class="fa-solid fa-circle-info" style="font-size:3rem; margin-bottom:14px; color:#cbd5e1;"></i><br/>عذراً، لم نجد أي محتوى يطابق <strong>"${escapeHtml(rawQuery)}"</strong>.</p>
+                </div>
             `;
-            if (filtered.length === 0) {
-                listHtml += `<p style="grid-column: span 2; text-align:center; color:#94a3b8; padding:40px;"><i class="fa-solid fa-circle-info" style="font-size:2.5rem; margin-bottom:12px; color:#cbd5e1;"></i><br/>عذراً، لم نجد أي نتائج تطابق كلمة البحث <strong>"${escapeHtml(rawQuery)}"</strong>.</p>`;
-            } else {
-                listHtml += filtered.map(a => {
-                    const cleanText = cleanSnippetText(a.content);
-                    const snippet = cleanText.length > 150 ? cleanText.substring(0, 150) + '...' : cleanText;
-                    return `
-                        <div class="kb-article-preview-item" data-art-id="${a.id}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; cursor:pointer; transition:all 0.22s; text-align:right; display:flex; flex-direction:column; gap:8px;">
-                            <span style="background: #fff8e8; color: #d97706; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; border: 1px solid #fef3c7; align-self: flex-start;">${escapeHtml(a.category)}</span>
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin:0; line-height:1.4;">${highlightText(a.title, rawQuery)}</h3>
-                            <p style="font-size: 0.82rem; color:#475569; margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; line-height:1.6;">${highlightText(snippet, rawQuery)}</p>
-                        </div>
-                    `;
-                }).join('');
-            }
-            listHtml += `</div></div>`;
-            
             const oldResults = viewArea.querySelector('.kb-results-container');
             if (oldResults) oldResults.remove();
             
             const welcomeDiv = document.getElementById('kb-no-article-selected');
             welcomeDiv.insertAdjacentHTML('afterend', listHtml);
-            
-            viewArea.querySelectorAll('.kb-article-preview-item').forEach(card => {
-                card.addEventListener('click', () => {
-                    const artId = parseInt(card.getAttribute('data-art-id'));
-                    viewKbArticle(artId);
-                });
-            });
-        } else {
-            const oldResults = viewArea.querySelector('.kb-results-container');
-            if (oldResults) oldResults.remove();
-            
-            document.getElementById('kb-no-article-selected').classList.remove('hidden');
-            document.getElementById('kb-article-view').classList.add('hidden');
         }
     }
 
@@ -3443,7 +4169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('kb-popular-grid');
         if (!grid) return;
 
-        grid.innerHTML = kbArticles.slice(0, 4).map(a => `
+        grid.innerHTML = (kbArticles || []).slice(0, 4).map(a => `
             <div class="popular-item" data-art-id="${a.id}">
                 <i class="fa-solid fa-circle-play" style="color:var(--primary);"></i>
                 <span>${escapeHtml(a.title)}</span>
@@ -3452,48 +4178,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.querySelectorAll('.popular-item').forEach(item => {
             item.addEventListener('click', () => {
-                const artId = parseInt(item.getAttribute('data-art-id'));
+                const artId = item.getAttribute('data-art-id');
                 viewKbArticle(artId);
             });
         });
     }
 
     function viewKbArticle(articleId) {
-        const article = kbArticles.find(a => a.id === articleId);
+        const article = (kbArticles || []).find(a => String(a.id) === String(articleId));
         if (!article) return;
 
         selectedKbArticleId = articleId;
         
-        document.getElementById('kb-no-article-selected').classList.add('hidden');
+        const welcomeDiv = document.getElementById('kb-no-article-selected');
+        if (welcomeDiv) welcomeDiv.classList.add('hidden');
+        
         const results = document.querySelector('.kb-results-container');
         if (results) results.remove();
 
         const view = document.getElementById('kb-article-view');
-        view.classList.remove('hidden');
+        if (view) view.classList.remove('hidden');
 
-        document.getElementById('kb-view-category').textContent = article.category;
+        const catEl = document.getElementById('kb-view-category');
+        if (catEl) catEl.textContent = article.category || 'الأسهم والتداول';
         
         const titleEl = document.getElementById('kb-view-title');
         const contentEl = document.getElementById('kb-view-content');
         
-        if (currentKbSearchQuery) {
-            titleEl.innerHTML = highlightText(article.title, currentKbSearchQuery);
-            const rawHtml = article.content || '';
-            const tokens = currentKbSearchQuery.trim().split(/\s+/).filter(t => t.length > 0);
-            if (tokens.length > 0) {
-                const escapedTokens = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-                const regex = new RegExp(`(?<!<[^>]*>)(${escapedTokens.join('|')})`, 'gi');
-                contentEl.innerHTML = rawHtml.replace(regex, '<mark class="search-highlight">$1</mark>');
+        if (titleEl) {
+            if (currentKbSearchQuery) {
+                titleEl.innerHTML = highlightText(article.title, currentKbSearchQuery);
             } else {
-                contentEl.innerHTML = rawHtml;
+                titleEl.textContent = article.title || '';
             }
-        } else {
-            titleEl.textContent = article.title;
-            contentEl.innerHTML = article.content || '';
         }
 
-        document.getElementById('kb-view-correct-disp').textContent = article.correctDisp || 'N/A';
-        document.getElementById('kb-view-correct-sub').textContent = article.correctSubDisp || 'N/A';
+        if (contentEl) {
+            if (currentKbSearchQuery) {
+                const rawHtml = article.content || '';
+                const tokens = currentKbSearchQuery.trim().split(/\s+/).filter(t => t.length > 0);
+                if (tokens.length > 0) {
+                    const escapedTokens = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                    const regex = new RegExp(`(?<!<[^>]*>)(${escapedTokens.join('|')})`, 'gi');
+                    contentEl.innerHTML = rawHtml.replace(regex, '<mark class="search-highlight">$1</mark>');
+                } else {
+                    contentEl.innerHTML = rawHtml;
+                }
+            } else {
+                contentEl.innerHTML = article.content || '';
+            }
+        }
+
+        const dispEl = document.getElementById('kb-view-correct-disp');
+        if (dispEl) dispEl.textContent = article.category || 'الأسهم والتداول';
+        
+        const subDispEl = document.getElementById('kb-view-correct-sub');
+        if (subDispEl) subDispEl.textContent = article.title || 'تداول الأسهم الأمريكية';
     }
 
     function bindKbSearchEvents() {
@@ -3641,6 +4381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAdminKbList();
         
         populateKBDispositionsDropdowns();
+        populateKBCategoriesDatalist();
 
         const addNewBtn = document.getElementById('add-new-kb-btn');
         if (addNewBtn) {
@@ -3756,6 +4497,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderKbCategories();
             renderKbPopularArticles();
             renderAdminKbList();
+            populateKBCategoriesDatalist();
             document.getElementById('kb-edit-form').classList.add('hidden');
             document.getElementById('no-kb-selected').classList.remove('hidden');
             document.getElementById('kb-live-preview-panel').classList.add('hidden');
@@ -3794,6 +4536,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>';
         }
+    }
+
+    function populateKBCategoriesDatalist() {
+        const datalist = document.getElementById('kb-categories-datalist');
+        if (!datalist) return;
+        const uniqueCats = Array.from(new Set((kbArticleListAdmin || []).map(a => a.category).filter(Boolean)));
+        datalist.innerHTML = uniqueCats.map(cat => `<option value="${cat}">${cat}</option>`).join('');
     }
 
     // ==========================================
@@ -3988,15 +4737,16 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
 
         if (!sc || !sc.turns || !sc.turns[turnIdx]) {
+            const isAdm = currentUser && currentUser.role === 'Admin';
             container.innerHTML = `
                 <div style="text-align: center; color: #16a34a; font-size: 0.8rem; font-weight: 700; padding: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-family: var(--font-ar); direction: rtl;">
-                    <i class="fa-solid fa-circle-check"></i> اكتملت المحادثة! يرجى إغلاقها وتصنيف التذكرة من الأعلى (X).
+                    <i class="fa-solid fa-circle-check"></i> ${isAdm ? 'اكتملت المحادثة! يرجى إغلاقها من الأعلى (X).' : 'اكتملت المحادثة! يرجى إغلاقها وتصنيف التذكرة من الأعلى (X).'}
                 </div>
             `;
             if (turnIdx > 0) {
                 const dispPanel = document.getElementById(`disposition-panel-${chatId}`);
                 const profPanel = document.getElementById(`profile-panel-${chatId}`);
-                if (dispPanel) {
+                if (dispPanel && !isAdm) {
                     dispPanel.classList.remove('hidden');
                 }
                 if (profPanel) {
@@ -4045,32 +4795,7 @@ document.addEventListener('DOMContentLoaded', () => {
             simulatorCorrectCountMap[chatId] = (simulatorCorrectCountMap[chatId] || 0) + 1;
         }
 
-        if (chatBody) {
-            const fbEl = document.createElement('div');
-            fbEl.className = 'system-message';
-            fbEl.style.padding = '8px 12px';
-            fbEl.style.borderRadius = '8px';
-            fbEl.style.fontSize = '0.78rem';
-            fbEl.style.marginTop = '6px';
-            fbEl.style.marginBottom = '6px';
-            fbEl.style.fontFamily = 'var(--font-ar)';
-            fbEl.style.direction = 'rtl';
-            fbEl.style.textAlign = 'right';
-            
-            if (selectedOpt.isCorrect) {
-                fbEl.style.background = '#d1fae5';
-                fbEl.style.color = '#065f46';
-                fbEl.style.border = '1px solid #a7f3d0';
-                fbEl.innerHTML = `<strong>💡 تقييم المدرب:</strong> رد ممتاز! ${escapeHtml(selectedOpt.feedback)}`;
-            } else {
-                fbEl.style.background = '#fee2e2';
-                fbEl.style.color = '#991b1b';
-                fbEl.style.border = '1px solid #fca5a5';
-                fbEl.innerHTML = `<strong>💡 تقييم المدرب:</strong> رد غير دقيق. ${escapeHtml(selectedOpt.feedback)}`;
-            }
-            chatBody.appendChild(fbEl);
-            chatBody.scrollTop = chatBody.scrollHeight;
-        }
+        // Silent recording: No instant green/red feedback message added during test mode
 
         const container = document.getElementById(`chat-options-container-${chatId}`);
         if (container) container.innerHTML = '';
@@ -4100,6 +4825,23 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             renderSimulatorTurnOptions(chatId, nextTurnIdx);
         }
+    }
+
+    // Modal close bindings
+    const adminDetailsModal = document.getElementById('admin-details-modal');
+    const btnCloseModal = document.getElementById('btn-close-details-modal');
+    const btnCloseModalBottom = document.getElementById('btn-close-details-modal-bottom');
+
+    const closeModalFunc = () => {
+        if (adminDetailsModal) adminDetailsModal.style.display = 'none';
+    };
+
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closeModalFunc);
+    if (btnCloseModalBottom) btnCloseModalBottom.addEventListener('click', closeModalFunc);
+    if (adminDetailsModal) {
+        adminDetailsModal.addEventListener('click', (e) => {
+            if (e.target === adminDetailsModal) closeModalFunc();
+        });
     }
 
     // Initial session check

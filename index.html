@@ -15,22 +15,6 @@
 </head>
 <body>
 
-    <!-- Sticky Top 1-Hour Timer Banner -->
-    <div id="test-timer-banner" class="hidden" style="position: sticky; top: 0; z-index: 9999; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 10px 20px; border-bottom: 3px solid #ff9900; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); direction: rtl; text-align: right;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="background: rgba(255, 153, 0, 0.2); color: #ff9900; border: 1px solid rgba(255, 153, 0, 0.4); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 800;">
-                <i class="fa-solid fa-clock-rotate-left"></i> جلسة اختبار تقييمي مباشرة (ساعة واحدة)
-            </span>
-            <span id="test-timer-title" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">اختبار تقييم خدمة الزبائن</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">الوقت المتبقي للاختبار:</span>
-            <span id="test-timer-display" style="font-family: monospace; font-size: 1.25rem; font-weight: 900; color: #38bdf8; background: rgba(15, 23, 42, 0.85); padding: 4px 14px; border-radius: 8px; border: 1px solid #334155;">
-                60:00
-            </span>
-        </div>
-    </div>
-
     <!-- Locked Screen Modal Overlay (Single-Use Link Enforcement) -->
     <div id="test-locked-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 10000; direction: rtl; text-align: center; color: #ffffff;">
         <div style="background: #ffffff; color: #0f172a; padding: 35px 30px; border-radius: 24px; max-width: 500px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.25); border: 1px solid #e2e8f0;">
@@ -49,6 +33,21 @@
     </div>
 
     <div class="app-container">
+        <!-- Sticky Top 1-Hour Timer Banner -->
+        <div id="test-timer-banner" class="hidden" style="width: 100%; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 10px 20px; border-bottom: 3px solid #ff9900; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); direction: rtl; text-align: right; z-index: 9999;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="background: rgba(255, 153, 0, 0.2); color: #ff9900; border: 1px solid rgba(255, 153, 0, 0.4); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 800;">
+                    <i class="fa-solid fa-clock-rotate-left"></i> جلسة اختبار تقييمي مباشرة (ساعة واحدة)
+                </span>
+                <span id="test-timer-title" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">اختبار تقييم خدمة الزبائن</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">الوقت المتبقي للاختبار:</span>
+                <span id="test-timer-display" style="font-family: monospace; font-size: 1.25rem; font-weight: 900; color: #38bdf8; background: rgba(15, 23, 42, 0.85); padding: 4px 14px; border-radius: 8px; border: 1px solid #334155;">
+                    60:00
+                </span>
+            </div>
+        </div>
         <!-- Brand Header Bar -->
         <header class="brand-header">
             <div class="brand-logo-container">
@@ -153,19 +152,21 @@
                         </div>
                         
                         <article id="kb-article-view" class="kb-article-card hidden" style="display: flex; flex-direction: column; gap: 15px; height: 100%;">
-                            <div class="kb-article-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 10px;">
-                                <span class="kb-article-category-badge" id="kb-view-category" style="background: #fff8e8; color: #ff9900; font-size: 0.78rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #ffeeba; display: inline-block; margin-bottom: 8px;">Western Union</span>
-                                <h1 id="kb-view-title" style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 0;">عنوان المقال</h1>
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:5px;">
+                                <span class="kb-article-category-badge" id="kb-view-category" style="background: #eff6ff; color: #1d4ed8; font-size: 0.8rem; font-weight: 800; padding: 4px 14px; border-radius: 20px; border: 1px solid #bfdbfe; display:inline-flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-chart-line"></i> الأسهم والتداول
+                                </span>
+                                <span style="font-size:0.8rem; color:#64748b; font-weight:700;"><i class="fa-solid fa-book-open"></i> الدليل الكامل والمباشر</span>
                             </div>
-                            <div class="kb-article-body" id="kb-view-content" style="flex: 1; font-size: 0.95rem; color: #334155; line-height: 1.7; white-space: pre-line; overflow-y: auto;">
+                            <div class="kb-article-body" id="kb-view-content" style="flex: 1; font-size: 0.95rem; color: #334155; line-height: 1.7; overflow-y: auto; padding-right: 5px;">
                                 <!-- Loaded dynamically -->
                             </div>
                             <div class="kb-article-footer" style="margin-top: auto; border-top: 1px solid #e2e8f0; padding-top: 15px;">
                                 <div class="kb-classification-box" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px;">
                                     <h4 style="font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 8px;"><i class="fa-solid fa-tags" style="color: var(--primary);"></i> التصنيف المعتمد في تذاكر الدعم:</h4>
                                     <div class="classification-badges" style="display: flex; gap: 8px;">
-                                        <span class="disp-badge main-disp" id="kb-view-correct-disp" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;">WU Issue</span>
-                                        <span class="disp-badge sub-disp" id="kb-view-correct-sub" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;">Hold Transaction Issue</span>
+                                        <span class="disp-badge main-disp" id="kb-view-correct-disp" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;">الأسهم والتداول</span>
+                                        <span class="disp-badge sub-disp" id="kb-view-correct-sub" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;">تداول الأسهم الأمريكية</span>
                                     </div>
                                 </div>
                             </div>
@@ -281,6 +282,10 @@
                         <span>Next</span>
                         <i class="fa-solid fa-arrow-right"></i>
                     </button>
+                    <button class="btn btn-primary hidden" id="btn-enter-assigned-test" style="font-family: var(--font-ar); font-size: 0.9rem; font-weight: 800; padding: 10px 24px; border-radius: 8px; background: linear-gradient(135deg, #4f46e5 0%, #1e1b4b 100%); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <span>الدخول إلى الاختبار (بدء مؤقت 1 ساعة)</span>
+                    </button>
                 </footer>
             </div>
             
@@ -292,13 +297,13 @@
                         <span>العودة لمركز التدريب والتقييم</span>
                     </button>
                 </div>
-                <div class="simulator-header-bar">
+                <div class="simulator-header-bar" style="font-family: var(--font-ar); direction: rtl; text-align: right; display:flex; justify-content:space-between; align-items:center;">
                     <div class="sim-header-title">
-                        <h2>Live Multitask Chat Simulator</h2>
-                        <p>Simulate handling 3 customer tickets concurrently in real-time. Speak in professional Iraqi Arabic.</p>
+                        <h2 style="font-size:1.3rem; font-weight:800; color:var(--text-primary); margin:0 0 4px 0;"><i class="fa-solid fa-comments" style="color:var(--primary);"></i> اختبار محاكي الدردشة الحية (Chat Simulation Exam)</h2>
+                        <p style="font-size:0.85rem; color:#64748b; margin:0;">أجرِ 3 محادثات حية مع الزبائن، اختر الردود المناسبة، وسلّم التقييم لاستخراج التقرير والشهادة عند تحقيق 100%.</p>
                     </div>
-                    <button class="btn btn-primary" id="btn-submit-session">
-                        <i class="fa-solid fa-cloud-upload-alt"></i> Submit Session & Get Evaluation
+                    <button class="btn btn-primary" id="btn-submit-session" style="font-size:0.85rem; font-weight:800; padding:10px 18px; display:inline-flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-paper-plane"></i> تسليم التقييم واستخراج النتيجة
                     </button>
                 </div>
 
@@ -307,33 +312,33 @@
                 </div>
 
                 <!-- Certificate / Final Results Screen (Hidden initially) -->
-                <div class="results-overlay hidden" id="results-overlay">
-                    <div class="results-card">
-                        <div class="success-icon-wrapper">
-                            <i class="fa-solid fa-award"></i>
+                <div class="results-overlay hidden" id="results-overlay" style="font-family: var(--font-ar); direction: rtl; text-align: right;">
+                    <div class="results-card" style="max-width: 800px; width: 90%; padding: 30px;">
+                        <div class="success-icon-wrapper" style="background: #fff8e8; color: #d97706; border: 1px solid #ffeeba;">
+                            <i class="fa-solid fa-medal"></i>
                         </div>
-                        <h2 class="result-title text-gradient">Training Session Completed!</h2>
-                        <p class="result-desc" id="result-description-text">
-                            Congratulations! Your multitask chat simulation results have been evaluated by our AI Coach.
+                        <h2 class="result-title text-gradient" style="font-size:1.6rem; font-weight:900;">اكتمل تقييم اختبار المحاكاة!</h2>
+                        <p class="result-desc" id="result-description-text" style="font-size:0.95rem; color:#64748b; margin-bottom:20px;">
+                            تم تصحيح إجاباتك وتصنيفاتك للتذاكر وفقاً للمعايير الستة المعتمدة في خدمة عملاء زين كاش.
                         </p>
-                        <div class="result-stats-grid">
-                            <div class="res-stat">
-                                <span class="res-label">Overall Score</span>
-                                <span class="res-val" id="res-score">100%</span>
+                        <div class="result-stats-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin-bottom:25px;">
+                            <div class="res-stat" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; text-align:center;">
+                                <span class="res-label" style="font-size:0.8rem; color:#64748b; font-weight:700;">النتيجة الكلية</span>
+                                <span class="res-val" id="res-score" style="font-size:1.8rem; font-weight:900; color:var(--primary); display:block; margin-top:5px;">100%</span>
                             </div>
-                            <div class="res-stat">
-                                <span class="res-label">Incorrect Attempts</span>
-                                <span class="res-val" id="res-errors">0</span>
+                            <div class="res-stat" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; text-align:center;">
+                                <span class="res-label" style="font-size:0.8rem; color:#64748b; font-weight:700;">المعايير غير المستوفاة</span>
+                                <span class="res-val" id="res-errors" style="font-size:1.8rem; font-weight:900; color:#dc2626; display:block; margin-top:5px;">0</span>
                             </div>
-                            <div class="res-stat">
-                                <span class="res-label">Final Evaluation</span>
-                                <span class="res-val text-gradient" id="res-grade">Certified Agent</span>
+                            <div class="res-stat" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px; text-align:center;">
+                                <span class="res-label" style="font-size:0.8rem; color:#64748b; font-weight:700;">التقييم العام</span>
+                                <span class="res-val text-gradient" id="res-grade" style="font-size:1.15rem; font-weight:900; display:block; margin-top:8px;">ممتاز معتمد</span>
                             </div>
                         </div>
                         <p class="result-notes-card" id="res-notes-text" style="font-size:0.9rem; line-height:1.5; margin-bottom:20px; color:#475569; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:15px; text-align:right; font-family:var(--font-ar); direction:rtl;"></p>
-                        <button class="btn btn-primary restart-training-btn-final">
+                        <button class="btn btn-primary restart-training-btn-final" style="display: none !important; font-size:0.85rem; font-weight:800; padding:10px 24px; display:inline-flex; align-items:center; gap:8px;">
                             <i class="fa-solid fa-rotate-right"></i>
-                            <span>Restart Training Path</span>
+                            <span>إعادة محاولة الاختبار</span>
                         </button>
                     </div>
                 </div>
@@ -387,7 +392,7 @@
                             </div>
                         </div>
                         <p class="result-notes-card" id="ai-res-notes-text" style="font-size:0.9rem; line-height:1.5; margin-bottom:20px; color:#475569; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:15px; text-align:right; font-family:var(--font-ar); direction:rtl;"></p>
-                        <button class="btn btn-primary" id="btn-restart-ai-training-final">
+                        <button class="btn btn-primary" id="btn-restart-ai-training-final" style="display: none !important;">
                             <i class="fa-solid fa-rotate-right"></i>
                             <span>Restart AI Training Path</span>
                         </button>
@@ -458,16 +463,44 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="edit-scenario-turn-select">Conversation Turn:</label>
-                                            <select id="edit-scenario-turn-select" class="form-select" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-ar); font-size: 0.9rem; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); cursor: pointer; outline: none;">
-                                                <option value="0">Turn 1 (Beginning of Conversation)</option>
-                                                <option value="1">Turn 2</option>
-                                                <option value="2">Turn 3</option>
-                                            </select>
+                                            <div style="display: flex; gap: 8px; align-items: center;">
+                                                <select id="edit-scenario-turn-select" class="form-select" style="flex: 1; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-ar); font-size: 0.9rem; font-weight: 600; color: var(--text-primary); background-color: var(--bg-card); cursor: pointer; outline: none;">
+                                                    <option value="0">Turn 1 (Beginning of Conversation)</option>
+                                                </select>
+                                                <button type="button" id="btn-add-turn" class="btn" style="height: 38px; padding: 0 12px; font-size: 0.8rem; background: #10b981; border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer;">+ إضافة جولة</button>
+                                                <button type="button" id="btn-delete-turn" class="btn" style="height: 38px; padding: 0 12px; font-size: 0.8rem; background: #ef4444; border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer;">حذف الجولة</button>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
                                         <label for="edit-customer-query">Customer message in this turn:</label>
                                         <input type="text" id="edit-customer-query" required placeholder="e.g. My Master card has been frozen">
+                                    </div>
+                                    
+                                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 15px; direction: rtl;">
+                                        <div style="font-weight: 800; font-size: 0.8rem; color: var(--text-primary); margin-bottom: 8px;"><i class="fa-solid fa-calculator" style="color:var(--primary);"></i> توزيع درجات الجولة الحالية (Turn Score Distribution):</div>
+                                        <div style="display: flex; gap: 8px;">
+                                            <div style="flex: 1; display:flex; flex-direction:column; gap:4px;">
+                                                <label style="font-size: 0.68rem; font-weight: 700; color: #475569;">التحية (5%):</label>
+                                                <input type="number" id="edit-turn-weight-greeting" min="0" max="100" style="width:100%; height:32px; border:1px solid #cbd5e1; border-radius:6px; padding:0 8px; font-size:0.8rem; font-weight:bold;" value="0">
+                                            </div>
+                                            <div style="flex: 1; display:flex; flex-direction:column; gap:4px;">
+                                                <label style="font-size: 0.68rem; font-weight: 700; color: #475569;">الأسلوب (5%):</label>
+                                                <input type="number" id="edit-turn-weight-tone" min="0" max="100" style="width:100%; height:32px; border:1px solid #cbd5e1; border-radius:6px; padding:0 8px; font-size:0.8rem; font-weight:bold;" value="0">
+                                            </div>
+                                            <div style="flex: 1; display:flex; flex-direction:column; gap:4px;">
+                                                <label style="font-size: 0.68rem; font-weight: 700; color: #475569;">الفهم (15%):</label>
+                                                <input type="number" id="edit-turn-weight-probing" min="0" max="100" style="width:100%; height:32px; border:1px solid #cbd5e1; border-radius:6px; padding:0 8px; font-size:0.8rem; font-weight:bold;" value="0">
+                                            </div>
+                                            <div style="flex: 1; display:flex; flex-direction:column; gap:4px;">
+                                                <label style="font-size: 0.68rem; font-weight: 700; color: #475569;">الحل (35%):</label>
+                                                <input type="number" id="edit-turn-weight-accuracy" min="0" max="100" style="width:100%; height:32px; border:1px solid #cbd5e1; border-radius:6px; padding:0 8px; font-size:0.8rem; font-weight:bold;" value="0">
+                                            </div>
+                                            <div style="flex: 1; display:flex; flex-direction:column; gap:4px;">
+                                                <label style="font-size: 0.68rem; font-weight: 700; color: #475569;">السياسة (35%):</label>
+                                                <input type="number" id="edit-turn-weight-compliance" min="0" max="100" style="width:100%; height:32px; border:1px solid #cbd5e1; border-radius:6px; padding:0 8px; font-size:0.8rem; font-weight:bold;" value="0">
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <div class="form-row-double" style="margin-top: 15px; margin-bottom: 15px; display: flex; gap: 15px;">
@@ -490,7 +523,14 @@
                                             <select id="edit-scenario-correct-sub" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
                                                 <option value="">Select Sub Disposition</option>
                                             </select>
+                                    </div>
+                                    
+                                    <div class="form-row-double" style="margin-top: 15px; margin-bottom: 15px; display: flex; gap: 15px;">
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="edit-scenario-weight-classification">Classification Weight (5%):</label>
+                                            <input type="number" id="edit-scenario-weight-classification" min="0" max="100" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;" value="5">
                                         </div>
+                                        <div style="flex: 1;"></div>
                                     </div>
                                     
                                     <div class="options-edit-section">
@@ -883,6 +923,7 @@
                                                 <th>Errors</th>
                                                 <th>Final Grade</th>
                                                 <th>Submitted At</th>
+                                                <th>التحكم</th>
                                             </tr>
                                         </thead>
                                         <tbody id="results-table-tbody">
@@ -923,6 +964,7 @@
                                                 <th>Score</th>
                                                 <th>Final Grade</th>
                                                 <th>Submitted At</th>
+                                                <th>التحكم</th>
                                             </tr>
                                         </thead>
                                         <tbody id="ai-results-table-tbody">
@@ -1250,13 +1292,10 @@
                                             </div>
                                             <div class="form-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
                                                 <label for="edit-kb-category" style="font-size: 0.82rem; font-weight: 700; color: #475569;">الفئة / القسم:</label>
-                                                <select id="edit-kb-category" style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
-                                                    <option value="MasterCard & Visa">MasterCard & Visa</option>
-                                                    <option value="Western Union">Western Union</option>
-                                                    <option value="Wallet & App">Wallet & App</option>
-                                                    <option value="Agents & Merchants">Agents & Merchants</option>
-                                                    <option value="Digital Goods">Digital Goods</option>
-                                                </select>
+                                                <input type="text" id="edit-kb-category" list="kb-categories-datalist" placeholder="اختر فئة أو اكتب فئة جديدة..." style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; font-family: inherit; height: 38px;">
+                                                <datalist id="kb-categories-datalist">
+                                                    <!-- Filled dynamically from existing articles -->
+                                                </datalist>
                                             </div>
                                         </div>
                                         
@@ -1369,6 +1408,22 @@
                     <i class="fa-solid fa-shield-halved" style="color:#00B5E2;"></i>
                     Secured System &mdash; ZainCash Customer Care &copy; 2025
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Details Modal -->
+    <div id="admin-details-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center; padding:20px; font-family:var(--font-ar); direction:rtl; text-align:right;">
+        <div style="background:#ffffff; border-radius:16px; width:100%; max-width:800px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden;">
+            <div style="padding:18px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+                <h3 style="margin:0; font-size:1.1rem; color:#1e1b4b; font-weight:800;" id="admin-details-modal-title">تفاصيل إجابات الموظف</h3>
+                <button id="btn-close-details-modal" style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer; font-weight:bold; outline:none; line-height:1;">&times;</button>
+            </div>
+            <div style="padding:24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px; background:#f1f5f9;" id="admin-details-modal-body">
+                <!-- Details HTML populated dynamically -->
+            </div>
+            <div style="padding:14px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; background:#f8fafc;">
+                <button id="btn-close-details-modal-bottom" class="btn btn-secondary" style="font-size:0.85rem; padding:8px 20px; border-radius:8px; background:#64748b; color:#fff; border:none; cursor:pointer; font-weight:700;">إغلاق</button>
             </div>
         </div>
     </div>
