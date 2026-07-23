@@ -1,7 +1,12 @@
 const nodemailer = require('nodemailer');
 const https = require('https');
 
-const BLOB_URL = 'https://jsonblob.com/api/jsonBlob/019f7ac0-fcfd-7d7a-a5bd-b3a8753923a8';
+const BLOB_URL = 'https://extendsclass.com/api/json-storage/bin/cdfabaa';
+
+// Load static assets directly from committed repository files
+const defaultKb = require('../../kb-data.js');
+const defaultScenarios = require('../../scenarios.js');
+const defaultSlides = require('../../slides.js');
 
 const defaultUsers = [
     { id: "ZC000", name: "Amr Nasr", role: "Admin" },
@@ -95,7 +100,7 @@ function httpReq(url, method = 'GET', body = null) {
     });
 }
 
-const defaultKb = [
+const oldDefaultKb = [
     {
         id: 1,
         title: "تفعيل بطاقة الماستر كارد المقفلة",
@@ -247,32 +252,48 @@ async function getDb() {
         const res = await httpReq(BLOB_URL, 'GET');
         if (res.statusCode === 200) {
             const db = JSON.parse(res.body);
-            db.aiScenarios = db.aiScenarios && db.aiScenarios.length > 0 ? db.aiScenarios : defaultAiScenarios;
-            db.knowledgeBase = db.knowledgeBase || defaultKb;
+            db.scenarios = defaultScenarios;
+            db.slides = defaultSlides;
+            db.knowledgeBase = defaultKb;
+            db.aiScenarios = defaultAiScenarios;
+            db.users = db.users && db.users.length > 0 ? db.users : defaultUsers;
             db.smtp = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
             return db;
         }
     } catch (e) {
-        console.error("JSONBlob Fetch error:", e);
+        console.error("DB Fetch error:", e);
     }
     return {
         users: defaultUsers,
-        assignments: [],
+        assignments: {},
         aiAssignments: [],
         results: [],
-        scenarios: null,
+        scenarios: defaultScenarios,
         aiScenarios: defaultAiScenarios,
         knowledgeBase: defaultKb,
+        slides: defaultSlides,
         smtp: defaultSmtp,
-        aiResults: []
+        aiResults: [],
+        testSessions: {},
+        assignmentsMeta: {}
     };
 }
 
 async function saveDb(db) {
     try {
-        await httpReq(BLOB_URL, 'PUT', db);
+        const cleanDb = {
+            users: db.users || [],
+            assignments: db.assignments || {},
+            aiAssignments: db.aiAssignments || [],
+            results: db.results || [],
+            aiResults: db.aiResults || [],
+            testSessions: db.testSessions || {},
+            smtp: db.smtp || {},
+            assignmentsMeta: db.assignmentsMeta || {}
+        };
+        await httpReq(BLOB_URL, 'PUT', cleanDb);
     } catch (e) {
-        console.error("JSONBlob Save error:", e);
+        console.error("DB Save error:", e);
     }
 }
 

@@ -4512,8 +4512,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const subSel = document.getElementById('edit-kb-correct-sub');
         if (!mainSel || !subSel) return;
 
+        const dispData = window.DISPOSITION_DATA || {};
         mainSel.innerHTML = '<option value="">اختر التصنيف الرئيسي</option>' + 
-            Object.keys(TICKET_DISPOSITIONS).map(k => `<option value="${k}">${k}</option>`).join('');
+            Object.keys(dispData).map(k => `<option value="${k}">${k}</option>`).join('');
 
         mainSel.addEventListener('change', () => {
             populateKBSubDispositions();
@@ -4530,9 +4531,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!mainSel || !subSel) return;
 
         const mainVal = mainSel.value;
-        if (mainVal && TICKET_DISPOSITIONS[mainVal]) {
+        const dispData = window.DISPOSITION_DATA || {};
+        if (mainVal && dispData[mainVal]) {
             subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>' + 
-                TICKET_DISPOSITIONS[mainVal].map(s => `<option value="${s}">${s}</option>`).join('');
+                dispData[mainVal].map(s => `<option value="${s}">${s}</option>`).join('');
         } else {
             subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>';
         }

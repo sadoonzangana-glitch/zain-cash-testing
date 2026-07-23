@@ -85,3 +85,6 @@ const SCENARIOS_DATA = [
         ]
     }
 ];
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SCENARIOS_DATA;
+}
