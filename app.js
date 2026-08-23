@@ -1286,10 +1286,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const profPanel = document.getElementById(`profile-panel-${i}`);
             const selectDisp = document.getElementById(`disp-select-${i}`);
             const selectSub = document.getElementById(`sub-disp-select-${i}`);
+            const descBox = document.getElementById(`disp-desc-${i}`);
             const saveBtn = document.getElementById(`btn-save-dispose-${i}`);
 
             if (selectDisp) {
-                selectDisp.innerHTML = '<option value="">Select a Disposition</option>';
+                selectDisp.innerHTML = '<option value="">اختر القسم الرئيسي (Select a Disposition)</option>';
                 Object.keys(DISPOSITION_DATA).forEach(disp => {
                     const opt = document.createElement('option');
                     opt.value = disp;
@@ -1300,7 +1301,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const populateSubDispositions = (dispVal) => {
                 if (!selectSub) return;
-                selectSub.innerHTML = '<option value="">Select a Sub Disposition</option>';
+                selectSub.innerHTML = '<option value="">اختر القسم الفرعي (Select a Sub Disposition)</option>';
+                if (descBox) descBox.style.display = 'none';
                 if (dispVal && DISPOSITION_DATA[dispVal]) {
                     DISPOSITION_DATA[dispVal].forEach(sub => {
                         const opt = document.createElement('option');
@@ -1311,21 +1313,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
+            const updateDescription = () => {
+                if (!descBox) return;
+                const dispVal = selectDisp ? selectDisp.value : '';
+                const subVal = selectSub ? selectSub.value : '';
+                if (dispVal && subVal && DISPOSITION_DETAILS[dispVal] && DISPOSITION_DETAILS[dispVal][subVal]) {
+                    descBox.textContent = DISPOSITION_DETAILS[dispVal][subVal];
+                    descBox.style.display = 'block';
+                } else {
+                    descBox.style.display = 'none';
+                }
+            };
+
             if (closeBtn && dispPanel) {
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (disposedChats[i]) return;
-                    
-                    if (currentUser && currentUser.role === 'Admin') {
-                        disposedChats[i] = true;
-                        const disposedOverlay = document.getElementById(`disposed-overlay-${i}`);
-                        if (disposedOverlay) disposedOverlay.classList.remove('hidden');
-                        dispPanel.classList.add('hidden');
-                        showToast("تم إغلاق المحادثة (مسؤول)", "success");
-                    } else {
-                        dispPanel.classList.toggle('hidden');
-                        if (profPanel) profPanel.classList.add('hidden');
-                    }
+                    dispPanel.classList.toggle('hidden');
+                    if (profPanel) profPanel.classList.add('hidden');
                 });
             }
 
@@ -1358,11 +1363,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectDisp) {
                 selectDisp.addEventListener('change', () => {
                     populateSubDispositions(selectDisp.value);
+                    updateDescription();
                     checkFormValidity();
                 });
             }
             if (selectSub) {
-                selectSub.addEventListener('change', checkFormValidity);
+                selectSub.addEventListener('change', () => {
+                    updateDescription();
+                    checkFormValidity();
+                });
             }
 
             const quickButtons = document.querySelectorAll(`.quick-disp-btn[data-chat="${i}"]`);
@@ -1378,6 +1387,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     if (selectSub) selectSub.value = subVal;
 
+                    updateDescription();
                     quickButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
 
@@ -1395,7 +1405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (disposedOverlay) {
                             disposedOverlay.classList.remove('hidden');
                         }
-                        showToast(`Chat ${i} disposed successfully.`, 'success');
+                        showToast(`تم تصنيف وإغلاق المحادثة ${i} بنجاح`, 'success');
                     }
                 });
             }
