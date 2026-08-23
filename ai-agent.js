@@ -1896,24 +1896,27 @@ ${articlesContext}
                 <!-- Disposition Panel -->
                 <div class="disposition-panel hidden" id="ai-disposition-panel-${i}">
                     <div class="disposition-form">
-                        <div class="form-group">
-                            <label>القسم الرئيسي (Main Disposition)</label>
-                            <select class="disposition-select" id="ai-disp-select-${i}">
-                                <option value="">اختر القسم الرئيسي (Select a Disposition)</option>
-                            </select>
+                        <div class="form-group" style="position: relative;">
+                            <label>Disposition</label>
+                            <div class="searchable-select-wrapper">
+                                <input type="text" class="disposition-search-input" id="ai-disp-search-${i}" placeholder="Select a Disposition" autocomplete="off">
+                                <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                <div class="searchable-dropdown-list hidden" id="ai-disp-list-${i}"></div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>القسم الفرعي (Sub Disposition)</label>
-                            <select class="sub-disposition-select" id="ai-sub-disp-select-${i}">
-                                <option value="">اختر القسم الفرعي (Select a Sub Disposition)</option>
-                            </select>
+                        <div class="form-group" style="position: relative;">
+                            <label>Sub Disposition</label>
+                            <div class="searchable-select-wrapper">
+                                <input type="text" class="sub-disposition-search-input" id="ai-sub-disp-search-${i}" placeholder="Select a Sub Disposition" autocomplete="off">
+                                <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                <div class="searchable-dropdown-list hidden" id="ai-sub-disp-list-${i}"></div>
+                            </div>
                         </div>
-                        <div class="disp-desc-box" id="ai-disp-desc-${i}" style="display:none; font-size:0.82rem; color:#1e3a8a; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; line-height:1.6; direction:rtl; text-align:right; margin:4px 0;"></div>
                         <div class="quick-dispositions-grid">
-                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Inquiry" data-sub="Application Usage">استخدام التطبيق</button>
-                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Inquiry" data-sub="Wallet Balance">معرفة الرصيد</button>
-                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Request" data-sub="Reset Wallet PIN">تصفير الرمز السري</button>
-                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Complaint" data-sub="Local Transfer Failure">فشل التحويل</button>
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Agent attitude">Agent/ROS attitude</button>
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Customer Care attitude">Customer Care attit...</button>
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Process or Policy">Process or Policy</button>
+                            <button type="button" class="ai-quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Field Team attitude">Field Team attitude</button>
                         </div>
                         <div class="ticket-status-row">
                             <span class="section-title">Ticket</span>
@@ -1921,7 +1924,7 @@ ${articlesContext}
                                 <span class="ticket-pill active"><i class="fa-solid fa-check"></i> New Ticket</span>
                             </div>
                         </div>
-                        <button type="button" class="btn-save-dispose" id="ai-btn-save-dispose-${i}" disabled>حفظ التصنيف وإغلاق التذكرة (Save & Dispose)</button>
+                        <button type="button" class="btn-save-dispose" id="ai-btn-save-dispose-${i}" disabled>Save and Dispose</button>
                     </div>
                 </div>
 
