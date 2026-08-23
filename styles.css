@@ -3473,7 +3473,8 @@ body::after {
     text-decoration: underline;
 }
 
-/* Disposition Form & Overlays */
+
+/* Exact Reference Disposition Form & Overlays */
 .disposition-panel {
     position: absolute;
     top: 48px;
@@ -3484,9 +3485,11 @@ body::after {
     z-index: 25 !important;
     display: flex;
     flex-direction: column;
-    padding: 15px;
+    padding: 16px 18px;
     font-family: var(--font-en);
     box-sizing: border-box;
+    direction: ltr;
+    text-align: left;
 }
 
 .disposition-panel.hidden {
@@ -3496,43 +3499,131 @@ body::after {
 .disposition-form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
     height: 100%;
     overflow-y: auto;
 }
 
-.disposition-form .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.disp-field-block {
+    position: relative;
+    margin-bottom: 12px;
 }
 
-.disposition-form label {
-    font-size: 0.8rem;
+.disp-field-label {
+    font-size: 0.85rem;
     font-weight: 700;
-    color: #64748b;
-    margin-bottom: 2px;
+    color: #475569;
+    margin-bottom: 4px;
     display: block;
 }
 
-.disposition-select, .sub-disposition-select {
-    width: 100%;
-    height: 38px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 0 10px;
-    font-size: 0.85rem;
-    color: #334155;
-    background-color: #f8fafc;
-    outline: none;
+.disp-custom-select {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     cursor: pointer;
+    padding: 4px 0 8px 0;
+    font-size: 0.95rem;
+    color: #64748b;
+    border-bottom: 1px solid transparent;
+    user-select: none;
+}
+
+.disp-custom-select.has-value {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.disp-custom-select .disp-chevron {
+    font-size: 0.8rem;
+    color: #64748b;
+    transition: transform 0.2s ease;
+}
+
+.disp-field-block.open .disp-chevron {
+    transform: rotate(180deg);
+}
+
+.disp-dropdown-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 240px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.disp-dropdown-popup.hidden {
+    display: none !important;
+}
+
+.disp-dropdown-search-wrap {
+    padding: 8px 10px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.disp-dropdown-search-input {
+    width: 100%;
+    height: 32px;
+    border: 1px solid #cbd5e1;
+    border-radius: 16px;
+    padding: 0 12px;
+    font-size: 0.85rem;
+    color: #0f172a;
+    outline: none;
+    font-family: var(--font-en);
+    box-sizing: border-box;
+}
+
+.disp-dropdown-search-input:focus {
+    border-color: var(--primary, #0c4f8a);
+}
+
+.disp-dropdown-list {
+    overflow-y: auto;
+    max-height: 190px;
+    display: flex;
+    flex-direction: column;
+}
+
+.disp-dropdown-item {
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.disp-dropdown-item:hover {
+    background: #f1f5f9;
+}
+
+.disp-dropdown-item.selected {
+    background: #e2e8f0;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.disp-dotted-divider {
+    border-top: 1px dotted #cbd5e1;
+    margin: 6px 0 10px 0;
 }
 
 .quick-dispositions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-top: 5px;
+    gap: 8px;
+    margin-bottom: 12px;
 }
 
 .quick-disp-btn {
@@ -3540,35 +3631,35 @@ body::after {
     border: 1px solid #cbd5e1;
     border-radius: 6px;
     padding: 6px 8px;
-    font-size: 0.75rem;
-    color: #475569;
+    font-size: 0.78rem;
+    color: #334155;
     cursor: pointer;
-    text-align: left;
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: all 0.2s ease;
+    font-family: var(--font-en);
 }
 
 .quick-disp-btn:hover, .quick-disp-btn.active {
-    border-color: var(--primary);
-    background: rgba(12, 79, 138, 0.05);
-    color: var(--primary);
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.08);
+    color: #16a34a;
+    font-weight: 700;
 }
 
 .ticket-status-row {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    border-top: 1px dashed #e2e8f0;
-    padding-top: 10px;
-    margin-top: 5px;
+    margin-bottom: 14px;
 }
 
 .ticket-status-row .section-title {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: #64748b;
+    color: #475569;
 }
 
 .ticket-pills {
@@ -3578,31 +3669,29 @@ body::after {
 
 .ticket-pill {
     background: #ffffff;
-    border: 1px solid #cbd5e1;
+    border: 1px solid #22c55e;
     border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 0.8rem;
-    color: #64748b;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    color: #16a34a;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-}
-
-.ticket-pill.active {
-    border-color: #22c55e;
-    color: #16a34a;
-    background: rgba(34, 197, 94, 0.05);
+    font-weight: 600;
 }
 
 .btn-link-tickets {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #94a3b8;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
     border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    cursor: not-allowed;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    cursor: default;
     text-align: center;
+    width: 100%;
+    margin-top: 4px;
+    font-family: var(--font-en);
 }
 
 .btn-save-dispose {
@@ -3611,26 +3700,22 @@ body::after {
     border: none;
     border-radius: 20px;
     padding: 10px;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 700;
     cursor: not-allowed;
     text-align: center;
     margin-top: auto;
     transition: all 0.2s ease;
+    font-family: var(--font-en);
 }
 
 .btn-save-dispose.active {
-    background: var(--primary);
+    background: var(--primary, #0c4f8a);
     color: #ffffff;
     cursor: pointer;
-    box-shadow: 0 4px 12px var(--primary-glow);
+    box-shadow: 0 4px 12px rgba(12, 79, 138, 0.25);
 }
 
-.btn-save-dispose.active:hover {
-    filter: brightness(1.1);
-}
-
-/* Disposed state overlay */
 .disposed-overlay {
     position: absolute;
     top: 48px;
