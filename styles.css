@@ -3415,7 +3415,7 @@ body::after {
     width: 100%;
     height: calc(100% - 48px);
     background: #ffffff;
-    z-index: 9;
+    z-index: 20 !important;
     display: flex;
     flex-direction: column;
     padding: 20px 15px;
@@ -3481,7 +3481,7 @@ body::after {
     width: 100%;
     height: calc(100% - 48px);
     background: #ffffff;
-    z-index: 10;
+    z-index: 25 !important;
     display: flex;
     flex-direction: column;
     padding: 15px;
@@ -3637,15 +3637,14 @@ body::after {
     left: 0;
     width: 100%;
     height: calc(100% - 48px);
-    background: rgba(248, 250, 252, 0.98);
-    z-index: 15;
+    background: #ffffff;
+    z-index: 30 !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 12px;
+    text-align: center;
     padding: 20px;
-    box-sizing: border-box;
 }
 
 .disposed-overlay.hidden {

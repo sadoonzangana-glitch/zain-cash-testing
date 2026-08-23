@@ -904,22 +904,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="disposition-panel hidden" id="disposition-panel-${i}">
                     <div class="disposition-form">
                         <div class="form-group">
-                            <label>Disposition</label>
+                            <label>القسم الرئيسي (Main Disposition)</label>
                             <select class="disposition-select" id="disp-select-${i}">
-                                <option value="">Select a Disposition</option>
+                                <option value="">اختر القسم الرئيسي (Select a Disposition)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Sub Disposition</label>
+                            <label>القسم الفرعي (Sub Disposition)</label>
                             <select class="sub-disposition-select" id="sub-disp-select-${i}">
-                                <option value="">Select a Sub Disposition</option>
+                                <option value="">اختر القسم الفرعي (Select a Sub Disposition)</option>
                             </select>
                         </div>
+                        <div class="disp-desc-box" id="disp-desc-${i}" style="display:none; font-size:0.82rem; color:#1e3a8a; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; line-height:1.6; direction:rtl; text-align:right; margin:4px 0;"></div>
                         <div class="quick-dispositions-grid">
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Card Issues" data-sub="Top-up or Transfer Issue">Refund Delay</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Card Inquiries" data-sub="Reset PIN Request">Reset PIN request</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Card Inquiries" data-sub="Card Order / Delivery Inquiry">Card Inquiry</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Junk" data-sub="Junk">Junk call</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Inquiry" data-sub="Application Usage">استخدام التطبيق</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Inquiry" data-sub="Wallet Balance">معرفة الرصيد</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Request" data-sub="Reset Wallet PIN">تصفير الرمز السري</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Complaint" data-sub="Local Transfer Failure">فشل التحويل</button>
                         </div>
                         <div class="ticket-status-row">
                             <span class="section-title">Ticket</span>
@@ -928,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <button type="button" class="btn-link-tickets" disabled>Link with Existing Tickets</button>
                         </div>
-                        <button type="button" class="btn-save-dispose" id="btn-save-dispose-${i}" disabled>Save and Dispose</button>
+                        <button type="button" class="btn-save-dispose" id="btn-save-dispose-${i}" disabled>حفظ التصنيف وإغلاق التذكرة (Save & Dispose)</button>
                     </div>
                 </div>
 
@@ -1001,147 +1002,281 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const DISPOSITION_DATA = {
-            "Wallet / Application Issue": [
-                "Wallet Registration Issue",
-                "PIN/OTP Issue",
-                "Login Issue & Notifications Issue",
-                "Failed Local Transaction - With Deduction",
-                "Failed Local Transaction - Without Deduction",
-                "Statement of Account Issue",
-                "Complaint Against Agent/Mercahant",
-                "Wallet Termination/Change MSISDN Issue",
-                "Other Technical Issue",
-                "Wallet / Application Incident"
-            ],
-            "Wallet / Application Inquiry": [
-                "Wallet Limit / Fees Inquiry",
-                "Statement of Account Inquiry",
-                "Update Wallet Type / Docs Request",
-                "Wrong Transfer Inquiry",
-                "Nearest Shop / Agent Inquiry",
-                "Cash Disbursement Inquiry",
-                "Wallet Registration Inquiry",
-                "PIN/OTP Inquiry/Request",
-                "How to Use the Wallet",
-                "Locked/CI Wallet Inquiry",
-                "Wallet Termination/Change MSISDN Inquiry/Request"
-            ],
-            "Report Fraud or Scam Issue": [
-                "Disputed Card Transaction",
-                "Disputed Wallet Transaction",
-                "Other Security Concern"
-            ],
-            "Report Fraud or Scam Inquiry": [
-                "Fraud or Scam Inquiry"
-            ],
-            "Card Issues": [
-                "Card Order/Delivery Issue",
-                "Activation Issue",
-                "Top-up or Transfer Issue",
-                "Failed Card Transaction - With Deduction",
-                "Failed Card Transaction - Without Deduction",
-                "International Transactions Issue",
-                "Expired/Canceled Card Refund Issue",
-                "Hold Card Issue",
-                "Card Statement Issue",
-                "Cards Incident"
-            ],
-            "Card Inquiries": [
-                "Card Order / Delivery Inquiry",
-                "Card Statement Request",
-                "How to Use the Cards",
-                "Reset PIN Request"
-            ],
-            "Western Union Issue": [
-                "WU Send Money Issue",
-                "WU Unauthorized Transaction",
-                "WU Receive Money Issue",
-                "Hold Transfer Issue",
-                "Add / Edit Beneficiary Issue",
-                "Western Union Incident"
-            ],
-            "Western Union Inquiry": [
-                "How to Use WU",
-                "WU Limit/Fee Inquiry",
-                "Refund a WU Transfer"
-            ],
-            "Digital Goods Issue": [
-                "Egoods Failed Transaction - Without Deduction",
-                "Egoods Failed Transaction - With Deduction",
-                "Card PIN Receiving Issue",
-                "Unavailability of Certain Card",
-                "Redeem Issue",
-                "Card Already Redeemed",
-                "Digital Goods Incident"
-            ],
-            "Digital Goods Inquiry": [
-                "How to Use Digital Cards",
-                "Card PIN Resend Request"
-            ],
-            "Cash-In by VISA/MC (HC) Issue": [
-                "HC Failed Transaction - With Deduction",
-                "HC Failed Transaction - Without Deduction",
-                "HC Incident"
-            ],
-            "Cash-In by VISA/MC (HC) Inquiry": [
-                "How to Cashin by VISA/MC Inquiry"
-            ],
-            "GOV Bill Payment Issue": [
-                "Failed Bill Payment - With Deduction",
-                "Failed Bill Payment - Without Deduction",
-                "Bill Payment Incident"
-            ],
-            "GOV Bill Payment Inquiry": [
-                "How to Use (GOV Bill Payment)"
-            ],
-            "NBI Issue": [
-                "NBI Linking Issue",
-                "NBI Top-Up Issue",
-                "NBI Incident"
-            ],
-            "NBI Inquiry": [
-                "How to Use NBI"
-            ],
-            "Merchant Payment Issue": [
-                "Failed Merchant Payment - With Deduction",
-                "Failed Merchant Payment - Without Deduction",
-                "Merchant Payment Incident"
-            ],
-            "Merchant Payment Inquiry": [
-                "How to Use Merchant Payment"
-            ],
-            "Zain IQ Top-Up Issue": [
-                "Zain IQ Failed Topup - With Deduction",
-                "Zain IQ Failed Topup - Without Deduction",
-                "Zain IQ Incident"
-            ],
-            "Zain IQ Topup Inquiry": [
-                "How to Recharge Zain IQ Line"
-            ],
-            "Junk": [
-                "Junk"
-            ],
-            "Agent Issue": [
-                "PIN/OTP Issue",
-                "Login & Notifications Issue",
-                "Wallet Status Issue",
-                "Wallet Funds Issue",
-                "Failed Transaction - With Deduction",
-                "Failed Transaction - Without Deduction",
-                "Application Issue",
-                "Complaint Against Field Team",
-                "Statement of Account Issue/Request",
-                "Report Fraud or Scam Issue",
-                "Agent Incident"
-            ],
-            "Agent Inquiry": [
-                "PIN/OTP Inquiry/Request",
-                "How to Use the Agent Wallet",
-                "Wallet Status Inquiry",
-                "Report Fraud or Scam Inquiry"
-            ]
-        };
+    "Inquiry": [
+        "Agent & Shop Location",
+        "Application Usage",
+        "Become a agent & merchant",
+        "E-Goods",
+        "Forgot Wallet Number",
+        "Government Bill Payment",
+        "Wallet Top-up throught Visa or Master",
+        "Merchant Wallet Linking",
+        "Mastercard card top-up and transfer",
+        "MasterCard Activation/Status",
+        "MasterCard Limits & Fees",
+        "MasterCard Order/ Delivery",
+        "MasterCard Transaction",
+        "Merchant Payment Service",
+        "NBI Service",
+        "Passport Upload for International TRX",
+        "Top-Up Other Cards Using ZainCash Wallet",
+        "Wallet Account Status",
+        "Wallet Balance",
+        "Wallet Cash-Out",
+        "Wallet Limits & Fees",
+        "Wallet Local Transfer",
+        "Wallet Login",
+        "Wallet PIN Reset or Change",
+        "Wallet Registration Process",
+        "Wallet Top-Up through Agent or Bank",
+        "Western Union",
+        "Zain IQ Recharge",
+        "Wallet Change Number and Termination Process",
+        "Inquiry About Outbound Call",
+        "Change Wallet MSISDN(Korek)"
+    ],
+    "Request": [
+        "Cancel Wallet Termination Request",
+        "Card Statement",
+        "Change Wallet MSISDN Status",
+        "E-Goods PIN Send",
+        "Lock / Unlock Wallet",
+        "MasterCard Order Status - Delivery Schedule",
+        "MasterCard Balance Refund Request",
+        "Request Follow-up",
+        "MasterCard Resend PIN",
+        "Reset Wallet PIN",
+        "Transaction Status Verification",
+        "Update Customer Information & Documents",
+        "Wallet Statement"
+    ],
+    "Complaint": [
+        "Application Usage",
+        "Cashback Issue",
+        "E-Goods Other Issue",
+        "E-Goods Redemption Failure",
+        "Follow-up on Previous Escalation Ticket",
+        "Government Bill Payment",
+        "Local Transfer Failure",
+        "MasterCard Activation Failure",
+        "MasterCard Hold / Cancelled Card",
+        "MasterCard International Transactions",
+        "MasterCard Local Transactions",
+        "MasterCard Negative Balance",
+        "MasterCard Order or Delay Delivery",
+        "MasterCard Top-up Transfer",
+        "MasterCard Transaction Dispute",
+        "Merchant Payment Failure",
+        "NBI Link Issue",
+        "Passport Upload",
+        "Wallet Cash Disbursement",
+        "Wallet Cash-out",
+        "Wallet Change MSISDN",
+        "Wallet Delay in Receiving OTP/PIN",
+        "Wallet Limit-Fees",
+        "Wallet Login Failure",
+        "Wallet Registration",
+        "Wallet Status",
+        "Wallet Termination",
+        "Wallet Top-up through Visa/Master",
+        "Wallet Top-Up through Agent/Bank",
+        "Western Union Add-Edit Beneficiary",
+        "Western Union Received Money",
+        "Western Union Refund Money",
+        "Western Union Service on Hold",
+        "WU Send Money",
+        "Zain IQ Recharge",
+        "IllegalAgentCharge"
+    ],
+    "Fraud & Security": [
+        "Fraud or Scam",
+        "Other Security Concern",
+        "Suspicious Activity",
+        "Unauthorized Transaction"
+    ],
+    "Customer Concern": [
+        "Agent attitude",
+        "Customer Care attitude",
+        "Field Team attitude",
+        "Process or Policy"
+    ],
+    "Support": [
+        "English Support",
+        "Kurdish Support",
+        "Supervisor"
+    ],
+    "Incident": [
+        "Application",
+        "Hold Balance",
+        "MasterCard",
+        "Wallet Service Outage",
+        "Western Union Outage"
+    ],
+    "Incomplete Contact": [
+        "Disconnected Before Verification",
+        "Disconnected During Conversation",
+        "No Response",
+        "Silent Call Only",
+        "Spam / Junk",
+        "Unclear Customer Request",
+        "Traning & Test"
+    ],
+    "Social Media": [
+        "Wallet / Application",
+        "Mastercards (WalletCards)",
+        "Western Union",
+        "Digital Goods",
+        "Cash-In by VISA/MC (HC)",
+        "Zain IQ Top-Up",
+        "Merchant Payment",
+        "NBI",
+        "GOV Bill Payment",
+        "Report Fraud or Scam",
+        "Junk",
+        "Suggestion",
+        "Positive Feedback",
+        "Negative Feedback"
+    ]
+};
+        const DISPOSITION_DETAILS = {
+    "Inquiry": {
+        "Agent & Shop Location": "استفسار عن مواقع وكلاء أو منافذ زين كاش أو أوقات الدوام أو أقرب نقطة خدمة.",
+        "Application Usage": "استفسار عن كيفية استخدام تطبيق زين كاش أو إحدى ميزاته مثل كيفية معرفة الرصيد ، رمز الQR،تسجيل خروج ، تفعيل بصمة الوجه لاستخدامها بدال كتابة الرمز ،كيفية الاطلاع على الاشعارات ،العمليات، الاطلاع على الشروط والاحكام .",
+        "Become a agent & merchant": "استفسار عن شروط وإجراءات التسجيل ك(وكيل أو تاجر )مع زين كاش.",
+        "E-Goods": "استفسار عن خدمات شراء البطاقات الإلكترونية، الألعاب،،القسائم الرقمية المتوفرة عبر التطبيق  وكيفية استخدامها .",
+        "Forgot Wallet Number": "استفسار من العميل لمعرفة رقم المحفظة المرتبط بحسابه.",
+        "Government Bill Payment": "استفسار عن آلية دفع الفواتير الحكومية والفواتير المتوفرة.",
+        "Wallet Top-up throught Visa or Master": "استفسار عن خدمة التعبئة بواسطة فيزا او ماستر.",
+        "Merchant Wallet Linking": "استفسار عن كيفية ربط محفظة زين كاش مع تطبيق بلي أو استخدام الخدمة.",
+        "Mastercard card top-up and transfer": "يُستخدم هذا التصنيف للاستفسارات المتعلقة بعمليات تعبئة بطاقة الماستر كارد، بالإضافة إلى الاستفسارات الخاصة بعمليات التحويل من بطاقة  الماستر كارد إلى المحفظة.",
+        "MasterCard Activation/Status": "استفسار عن حالة بطاقة الماستر كارد أو ما إذا كانت مفعلة وجاهزة للاستخدام او كيفية تفعيلها وربطها.",
+        "MasterCard Limits & Fees": "استفسار عن حدود الاستخدام أو الرسوم الخاصة ببطاقة الماستر كارد.",
+        "MasterCard Order/ Delivery": "استفسار عن خطوات طلب البطاقة أو آلية التوصيل، الوقت المحدد للتوصيل ، كيفية طلب البطاقة عن طريق خدمة التوصيل،رسوم التوصيل.",
+        "MasterCard Transaction": "استفسار عن العمليات المنفذة باستخدام بطاقة الماستر كارد.",
+        "Merchant Payment Service": "استفسار عن خدمة الدفع للتجار وآلية استخدامها أو التجار المدعومين.",
+        "NBI Service": "استفسار عن خدمة NBI وآلية استخدامها أو شروطها.",
+        "Passport Upload for International TRX": "استفسار عن رفع جواز السفر لتفعيل العمليات الدولية ومتطلباتها.",
+        "Top-Up Other Cards Using ZainCash Wallet": "استفسار عن تعبئة البطاقات الأخرى باستخدام محفظة زين كاش.",
+        "Wallet Account Status": "استفسار عن حالة المحفظة (نشطة، موقوفة، مقيدة، مغلقة).",
+        "Wallet Balance": "استفسار عن الرصيد الحالي أو الرصيد المتاح في المحفظة.",
+        "Wallet Cash-Out": "استفسار عن خدمة السحب النقدي وآلية تنفيذها.",
+        "Wallet Limits & Fees": "استفسار عن حدود المحفظة ورسوم الخدمات المختلفة.",
+        "Wallet Local Transfer": "استفسار عن التحويل المحلي من محفظة زين كاش الى اخرى  او بين المحافظ المحلية مثل اسياباي ،ناس وليت .",
+        "Wallet Login": "استفسار عن تسجيل الدخول أو خطوات الوصول إلى الحساب.",
+        "Wallet PIN Reset or Change": "استفسار عن تغيير أو إعادة تعيين الرقم السري للمحفظة.",
+        "Wallet Registration Process": "استفسار عن خطوات فتح محفظة جديدة ومتطلبات التسجيل والوقت المحدد للتسجيل .",
+        "Wallet Top-Up through Agent or Bank": "استفسار عن طرق شحن المحفظة والقنوات المتاحة.",
+        "Western Union": "استفسار عن خدمات ويسترن يونيون المتوفرة عبر زين كاش.",
+        "Zain IQ Recharge": "استفسار عن خدمة شحن خطوط زين باستخدام المحفظة.",
+        "Wallet Change Number and Termination Process": "يُستخدم لتصنيف استفسارات المشتركين المتعلقة بإجراءات تغيير رقم المحفظة، بالإضافة إلى إجراءات  إغلاق المحفظة.",
+        "Inquiry About Outbound Call": "استفسار العميل عن مكالمة صادرة من زين كاش، مثل معرفة سبب الاتصال، الجهة التي قامت بالاتصال، أو الغرض من المكالمة، بما في ذلك المكالمات الفائتة ومتابعة الخدمة أو طلب التحقق من صحة الاتصال.",
+        "Change Wallet MSISDN(Korek)": "استفسارات المشتركين من أصحاب أرقام كورك الراغبين بتغيير رقم المحفظة الخاص بهم إلى رقم جديد."
+    },
+    "Request": {
+        "Cancel Wallet Termination Request": "طلب إلغاء طلب إغلاق المحفظة قبل إتمام العملية.",
+        "Card Statement": "طلب كشف حساب خاص ببطاقة الماستر كارد.",
+        "Change Wallet MSISDN Status": "طلب متابعة أو معرفة حالة تغيير رقم الهاتف المرتبط بالمحفظة.",
+        "E-Goods PIN Send": "طلب إعادة إرسال رمز PIN الخاص بالبطاقات الإلكترونية.",
+        "Lock / Unlock Wallet": "طلب قفل أو فتح المحفظة لأسباب أمنية أو بطلب العميل.",
+        "MasterCard Order Status - Delivery Schedule": "طلب معرفة موعد أو حالة توصيل بطاقة الماستر كارد.",
+        "MasterCard Balance Refund Request": "طلب استرجاع الرصيد المتبقي في البطاقة عند انتهاء صلاحيتها او الغاءها .",
+        "Request Follow-up": "طلب متابعة معاملة أو طلب تم تقديمه سابقًا.",
+        "MasterCard Resend PIN": "طلب إعادة إرسال الرقم السري الخاص ببطاقة الماستر كارد.",
+        "Reset Wallet PIN": "طلب إعادة تعيين الرقم السري للمحفظة.",
+        "Transaction Status Verification": "طلب التحقق من حالة عملية مالية.",
+        "Update Customer Information & Documents": "طلب تحديث بيانات العميل أو مستندات KYC.",
+        "Wallet Statement": "طلب إصدار كشف حساب للمحفظة لفترة محددة."
+    },
+    "Complaint": {
+        "Application Usage": "شكوى تتعلق بأداء التطبيق أو تجربة استخدامه.",
+        "Cashback Issue": "شكوى بشأن عدم استلام الكاش باك أو وجود اختلاف في قيمته.",
+        "E-Goods Other Issue": "شكوى تتعلق بخدمات البطاقات الإلكترونية غير مصنفة ضمن التصنيفات الأخرى.",
+        "E-Goods Redemption Failure": "شكوى بسبب فشل استخدام أو استرداد البطاقة الإلكترونية.",
+        "Follow-up on Previous Escalation Ticket": "شكوى بسبب عدم معالجة تصعيد سابق أو تأخر الرد عليه.",
+        "Government Bill Payment": "شكوى تتعلق بدفع الفواتير الحكومية.",
+        "Local Transfer Failure": "شكوى بسبب فشل التحويل المحلي.",
+        "MasterCard Activation Failure": "شكوى بسبب عدم نجاح تفعيل البطاقة.",
+        "MasterCard Hold / Cancelled Card": "شكوى بسبب تعليق أو إلغاء البطاقة.",
+        "MasterCard International Transactions": "شكوى تتعلق بالعمليات الدولية باستخدام البطاقة.",
+        "MasterCard Local Transactions": "شكوى تتعلق بالعمليات المحلية باستخدام البطاقة.",
+        "MasterCard Negative Balance": "شكوى حول ظهور رصيد سالب في البطاقة.",
+        "MasterCard Order or Delay Delivery": "شكوى بسبب تأخر إصدار أو توصيل البطاقة.",
+        "MasterCard Top-up Transfer": "شكوى تتعلق بشحن البطاقة من المحفظة.",
+        "MasterCard Transaction Dispute": "اعتراض أو نزاع على عملية تمت باستخدام البطاقة.",
+        "Merchant Payment Failure": "شكوى بسبب فشل الدفع لدى أحد التجار.",
+        "NBI Link Issue": "شكوى بسبب مشاكل ربط خدمة NBI.",
+        "Passport Upload": "شكوى تتعلق برفع جواز السفر أو رفضه.",
+        "Wallet Cash Disbursement": "شكوى تتعلق باستلام الأموال نقدًا.",
+        "Wallet Cash-out": "شكوى بسبب فشل أو تأخير السحب النقدي.",
+        "Wallet Change MSISDN": "شكوى تتعلق بتغيير رقم الهاتف للمحفظة.",
+        "Wallet Delay in Receiving OTP/PIN": "شكوى بسبب تأخر وصول رمز OTP أو PIN.",
+        "Wallet Limit-Fees": "شكوى على حدود أو رسوم المحفظة.",
+        "Wallet Login Failure": "شكوى بسبب تعذر تسجيل الدخول.",
+        "Wallet Registration": "شكوى تتعلق بعملية إنشاء المحفظة.",
+        "Wallet Status": "شكوى بسبب حالة المحفظة أو القيود المفروضة عليها.",
+        "Wallet Termination": "شكوى تتعلق بإغلاق المحفظة.",
+        "Wallet Top-up through Visa/Master": "شكوى تتعلق بشحن المحفظة عبر  الفيزا والماستر .",
+        "Wallet Top-Up through Agent/Bank": "شكوى تتعلق بشحن المحفظة عن طريق الوكيل أو البنك.",
+        "Western Union Add-Edit Beneficiary": "شكوى تتعلق بإضافة أو تعديل المستفيد في ويسترن يونيون.",
+        "Western Union Received Money": "شكاوى إستلام حوالات ويسترن يونيون، بما في ذلك الحالات التي تكون فيها الحوالة معلقة أو قيد المعالجة.",
+        "Western Union Refund Money": "شكاوى إسترداد حوالات ويسترن يونيون، بما في ذلك الحالات التي تكون فيها الحوالة معلقة أو قيد المعالجة.",
+        "Western Union Service on Hold": "شكوى تتعلف بخدمة الويسترن يونيون (معلقة)، بينما بقية خدمات المحفظة تعمل بشكل طبيعي.",
+        "WU Send Money": "شكاوى إرسال حوالات ويسترن يونيون، بما في ذلك الحالات التي تكون فيها الحوالة معلقة أو قيد المعالجة.",
+        "Zain IQ Recharge": "شكوى تتعلق بخدمة شحن خطوط زين.",
+        "IllegalAgentCharge": "شكاوى تتعلق بقيام الوكيل بفرض رسوم أو استيفاء مبالغ غير معتمدة أو غير مستحقة على المشترك."
+    },
+    "Fraud & Security": {
+        "Fraud or Scam": "بلاغ من العميل عن تعرضه أو الاشتباه بمحاولة احتيال أو خداع مالي باستخدام حسابه أو بياناته.",
+        "Other Security Concern": "أي استفسار أو بلاغ يتعلق بأمان الحساب أو البيانات ولا يندرج ضمن تصنيفات الأمان الأخرى.",
+        "Suspicious Activity": "بلاغ عن وجود نشاط أو عملية غير معتادة أو مشبوهة على المحفظة أو البطاقة.",
+        "Unauthorized Transaction": "بلاغ عن عملية مالية لم يقم بها العميل أو تمت دون موافقته."
+    },
+    "Customer Concern": {
+        "Agent attitude": "ملاحظة أو اعتراض يتعلق بخدمة الوكيل أو منفذ البيع، مثل سوء التعامل أو عدم الالتزام بالإجراءات.",
+        "Customer Care attitude": "ملاحظة أو اعتراض على مستوى الخدمة المقدمة من موظفي خدمة العملاء أو تجربة التواصل معهم.",
+        "Field Team attitude": "ملاحظة أو اعتراض يتعلق بعمل الفريق الميداني أو زياراته أو الإجراءات التي قام بها.",
+        "Process or Policy": "ملاحظة أو اعتراض على سياسة أو إجراء معتمد لدى زين كاش مثل المتطلبات أو آلية تنفيذ الخدمة."
+    },
+    "Support": {
+        "English Support": "تحويل المكالمة / تذكرة لتقديم الدعم للعميل باللغة الإنجليزية.",
+        "Kurdish Support": "تحويل المكالمة / تذكرة  لتقديم الدعم للعميل باللغة الكردية.",
+        "Supervisor": "تحويل العميل إلى المشرف بناءً على طلبه أو حسب الحاجة التشغيلية."
+    },
+    "Incident": {
+        "Application": "عطل عام أو مشكلة تؤثر على تطبيق زين كاش وتمنع العملاء من استخدام إحدى الخدمات أو التطبيق بالكامل.",
+        "Hold Balance": "مشكلة تتعلق بوجود مبلغ محجوز (Hold Balance) بشكل غير طبيعي أو يحتاج إلى متابعة.",
+        "MasterCard": "عطل عام يؤثر على خدمات بطاقات الماستر كارد ويطال أكثر من عميل.",
+        "Wallet Service Outage": "انقطاع أو توقف إحدى خدمات المحفظة بشكل عام نتيجة خلل فني أو صيانة.",
+        "Western Union Outage": "استفسار عن معلومة ما داخل خدمة الويسترن يونيون ولا يمكن تزويد المشترك بخطواتها بسبب ان  الخدمة تحت الصيانة أو عن وقت توفر خدمة ويسترن يونيون."
+    },
+    "Incomplete Contact": {
+        "Disconnected Before Verification": "انقطاع التواصل مع العميل  قبل إكمال التحقق من هوية العميل، لذلك لم يتم تقديم الخدمة.",
+        "Disconnected During Conversation": "انقطاع التواصل مع العميل  أثناء تقديم الخدمة أو أثناء مناقشة المشكلة قبل الانتهاء منها.",
+        "No Response": "لم يستجب العميل بعد محاولة التواصل أو طلب معلومات لشرح عن الاستفسار ولم يتمكن الموظف من الحصول على أي رد.",
+        "Silent Call Only": "تم استقبال مكالمة بدون أي صوت من العميل",
+        "Spam / Junk": "تواصل غير حقيقي أو مكالمة تجريبية أو غير مرتبطة بخدمات زين كاش.",
+        "Unclear Customer Request": "تعذر فهم طلب العميل أو لم يقم بتوضيح الخدمة المطلوبة بشكل كافٍ لاستكمال المعالجة.",
+        "Traning & Test": "الحالات المتعلقة بالتدريب، الاختبارات، والتقييمات الخاصة بالموظفين."
+    },
+    "Social Media": {
+        "Wallet / Application": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بمحفظة زين كاش او التطبيق.",
+        "Mastercards (WalletCards)": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق ببطاقة الماستر كارد.",
+        "Western Union": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بالويسترن يونيون.",
+        "Digital Goods": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بالبطاقات الإلكترونية.",
+        "Cash-In by VISA/MC (HC)": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بالتعبئة باستخدام فيزا أو ماستر كارد.",
+        "Zain IQ Top-Up": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بالتعبئة خط زين العراق.",
+        "Merchant Payment": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بالدفع للتجار.",
+        "NBI": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بالحساب المصرفي.",
+        "GOV Bill Payment": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بالفواتير الحكومية.",
+        "Report Fraud or Scam": "يُستخدم هذا التصنيف في حال وجود أي استفسار أو مشكلة تتعلق بعمليات النصب والاحتيال.",
+        "Junk": "يُستخدم هذا التصنيف في حال ورود أي استفسار أو مشكلة تتعلق بخدمة غير تابعة لنا، أو في حال احتوى المحتوى على رموز تعبيرية أو إعلانات.",
+        "Suggestion": "يُستخدم هذا التصنيف في حال وجود أي اقتراح يقدمه المشتركون.",
+        "Positive Feedback": "يُستخدم هذا التصنيف للتعليقات أو الرسائل التي تحتوي على رأي إيجابي من المشترك حول الخدمة أو التجربة العامة.",
+        "Negative Feedback": "يُستخدم هذا التصنيف للتعليقات أو الرسائل التي تتضمن شكوى أو ملاحظات سلبية من المشترك بخصوص الخدمة أو أي إجراء."
+    }
+};
         window.DISPOSITION_DATA = DISPOSITION_DATA;
+        window.DISPOSITION_DETAILS = DISPOSITION_DETAILS;
 
         for (let i = 1; i <= numChats; i++) {
             const closeBtn = document.getElementById(`chat-close-${i}`);
@@ -1759,6 +1894,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let selectedScenarioIndex = null;
     let selectedTurnIndex = 0;
+
+    function populateDispositionDropdowns(mainId, subId) {
+        const mainSel = document.getElementById(mainId);
+        const subSel = document.getElementById(subId);
+        if (!mainSel || !subSel) return;
+
+        const dispData = window.DISPOSITION_DATA || {};
+        mainSel.innerHTML = '<option value="">اختر التصنيف الرئيسي</option>' +
+            Object.keys(dispData).map(k => `<option value="${k}">${k}</option>`).join('');
+
+        mainSel.addEventListener('change', () => {
+            const mainVal = mainSel.value;
+            if (mainVal && dispData[mainVal]) {
+                subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>' +
+                    dispData[mainVal].map(s => `<option value="${s}">${s}</option>`).join('');
+            } else {
+                subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>';
+            }
+        });
+    }
 
     function openAdminPanel() {
         populateDispositionDropdowns('edit-scenario-correct-disp', 'edit-scenario-correct-sub');
