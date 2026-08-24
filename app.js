@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v25_webrtc_turn_relay_and_audio_stream_fix';
+    const STOCKS_DISP_VERSION = 'v26_peerjs_webrtc_full_voice_sync';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for WebRTC TURN Relay & Audio Stream update!");
+        console.log("Purged legacy localStorage cache for PeerJS WebRTC Full Voice Sync update!");
     }
 
     // Global Dispositions Catalog
@@ -6024,21 +6024,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 🎙️ WebRTC Real-Time Audio Manager
+    // 🎙️ WebRTC Real-Time Audio Manager (PeerJS)
     // ==========================================
     let localStream = null;
-    let peerConn = null;
+    let peerInstance = null;
+    let activePeerCall = null;
     let remoteAudioEl = null;
-    let pendingOfferSdp = null;
-    let pendingIceCandidates = [];
 
     const rtcConfig = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
             { urls: 'stun:stun.relay.metered.ca:80' },
             {
                 urls: 'turn:openrelay.metered.ca:80',
@@ -6055,8 +6052,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 username: 'openrelay',
                 credential: 'openrelay'
             }
-        ],
-        iceCandidatePoolSize: 10
+        ]
     };
 
     function ensureRemoteAudioElement() {
@@ -6105,14 +6101,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function initPeerSession(userId) {
+        if (!userId || typeof Peer === 'undefined') return null;
+        if (peerInstance && !peerInstance.destroyed) return peerInstance;
+
+        try {
+            const peerId = 'zc_user_' + String(userId).toLowerCase().replace(/[^a-z0-9]/g, '_');
+            peerInstance = new Peer(peerId, {
+                debug: 1,
+                config: rtcConfig
+            });
+
+            peerInstance.on('open', (id) => {
+                console.log("🟢 PeerJS Connected successfully! Peer ID:", id);
+                const badgeText = document.getElementById('webrtc-audio-status-text');
+                if (badgeText) badgeText.textContent = 'WebRTC Audio Online 🎙️';
+            });
+
+            peerInstance.on('call', async (incomingCall) => {
+                console.log("📞 Incoming PeerJS call from:", incomingCall.peer);
+                activePeerCall = incomingCall;
+
+                const stream = await startLocalAudioStream();
+                incomingCall.answer(stream || undefined);
+
+                incomingCall.on('stream', (remoteStream) => {
+                    console.log("🔊 PeerJS remote audio stream received on answerer:", remoteStream);
+                    const el = ensureRemoteAudioElement();
+                    el.srcObject = remoteStream;
+                    el.play().catch(e => console.warn("Audio play() blocked:", e));
+                    startAudioVisualizers(stream, remoteStream);
+                    showToast("🎙️ تم اتصال الصوت المباشر بنجاح (Voice Connected)", "success");
+                });
+
+                incomingCall.on('close', () => {
+                    stopLocalAudioStream();
+                });
+
+                incomingCall.on('error', (err) => {
+                    console.warn("PeerJS call error:", err);
+                });
+            });
+
+            peerInstance.on('error', (err) => {
+                console.warn("PeerJS error:", err);
+            });
+
+            return peerInstance;
+        } catch(e) {
+            console.error("PeerJS initialization failed:", e);
+            return null;
+        }
+    }
+
     function stopLocalAudioStream() {
         if (localStream) {
             localStream.getTracks().forEach(t => t.stop());
             localStream = null;
         }
-        if (peerConn) {
-            try { peerConn.close(); } catch(e){}
-            peerConn = null;
+        if (activePeerCall) {
+            try { activePeerCall.close(); } catch(e){}
+            activePeerCall = null;
         }
         if (remoteAudioEl) {
             remoteAudioEl.srcObject = null;
@@ -6121,7 +6170,6 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelAnimationFrame(visualizerAnimId);
             visualizerAnimId = null;
         }
-        pendingIceCandidates = [];
     }
 
     let localAnalyser = null;
@@ -6201,181 +6249,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateVisualizer();
         } catch(e) {
             console.warn("Visualizer init error:", e);
-        }
-    }
-
-    async function applyPendingIceCandidates() {
-        if (!peerConn || !peerConn.remoteDescription) return;
-        while (pendingIceCandidates.length > 0) {
-            const cand = pendingIceCandidates.shift();
-            try {
-                await peerConn.addIceCandidate(new RTCIceCandidate(cand));
-            } catch(e) {
-                console.warn("Failed to apply queued ICE candidate:", e);
-            }
-        }
-    }
-
-    function waitForIceGathering(pc, maxWaitMs = 800) {
-        return new Promise((resolve) => {
-            if (pc.iceGatheringState === 'complete') {
-                resolve();
-                return;
-            }
-            const check = () => {
-                if (pc.iceGatheringState === 'complete') {
-                    pc.removeEventListener('icegatheringstatechange', check);
-                    resolve();
-                }
-            };
-            pc.addEventListener('icegatheringstatechange', check);
-            setTimeout(() => {
-                pc.removeEventListener('icegatheringstatechange', check);
-                resolve();
-            }, maxWaitMs);
-        });
-    }
-
-    async function initWebRTCOffer(targetUserId, currentUserId) {
-        stopLocalAudioStream();
-        pendingIceCandidates = [];
-        const audio = ensureRemoteAudioElement();
-        audio.play().catch(() => {});
-        const stream = await startLocalAudioStream();
-        
-        peerConn = new RTCPeerConnection(rtcConfig);
-
-        if (stream && stream.getAudioTracks().length > 0) {
-            stream.getAudioTracks().forEach(track => {
-                track.enabled = true;
-                peerConn.addTrack(track, stream);
-            });
-        } else {
-            try { peerConn.addTransceiver('audio', { direction: 'sendrecv' }); } catch(e){}
-        }
-
-        peerConn.ontrack = (event) => {
-            console.log("WebRTC ontrack received remote audio stream:", event);
-            const el = ensureRemoteAudioElement();
-            let remoteStream = null;
-            if (event.streams && event.streams[0]) {
-                remoteStream = event.streams[0];
-                el.srcObject = remoteStream;
-            } else if (event.track) {
-                remoteStream = new MediaStream([event.track]);
-                el.srcObject = remoteStream;
-            }
-            el.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
-            startAudioVisualizers(localStream, remoteStream);
-        };
-
-        peerConn.onconnectionstatechange = () => {
-            console.log("WebRTC connectionState (Caller):", peerConn?.connectionState);
-            if (peerConn?.connectionState === 'connected') {
-                showToast("🎙️ تم اتصال الصوت المباشر بنجاح (Voice Connected)", "success");
-            }
-        };
-
-        peerConn.onicecandidate = (event) => {
-            if (event.candidate) {
-                apiCall('/api/call-signal', 'POST', {
-                    toUserId: targetUserId,
-                    fromUserId: currentUserId,
-                    type: 'ice_candidate',
-                    candidate: event.candidate
-                }).catch(() => {});
-            }
-        };
-
-        const offer = await peerConn.createOffer({ offerToReceiveAudio: true });
-        await peerConn.setLocalDescription(offer);
-
-        await waitForIceGathering(peerConn, 800);
-
-        return peerConn.localDescription;
-    }
-
-    async function handleWebRTCOffer(offerSdp, fromUserId, currentUserId) {
-        stopLocalAudioStream();
-        pendingIceCandidates = [];
-        const audio = ensureRemoteAudioElement();
-        audio.play().catch(() => {});
-        const stream = await startLocalAudioStream();
-
-        peerConn = new RTCPeerConnection(rtcConfig);
-
-        if (stream && stream.getAudioTracks().length > 0) {
-            stream.getAudioTracks().forEach(track => {
-                track.enabled = true;
-                peerConn.addTrack(track, stream);
-            });
-        } else {
-            try { peerConn.addTransceiver('audio', { direction: 'sendrecv' }); } catch(e){}
-        }
-
-        peerConn.ontrack = (event) => {
-            console.log("WebRTC ontrack received remote audio stream on answerer:", event);
-            const el = ensureRemoteAudioElement();
-            let remoteStream = null;
-            if (event.streams && event.streams[0]) {
-                remoteStream = event.streams[0];
-                el.srcObject = remoteStream;
-            } else if (event.track) {
-                remoteStream = new MediaStream([event.track]);
-                el.srcObject = remoteStream;
-            }
-            el.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
-            startAudioVisualizers(localStream, remoteStream);
-        };
-
-        peerConn.onconnectionstatechange = () => {
-            console.log("WebRTC connectionState (Answerer):", peerConn?.connectionState);
-            if (peerConn?.connectionState === 'connected') {
-                showToast("🎙️ تم اتصال الصوت المباشر بنجاح (Voice Connected)", "success");
-            }
-        };
-
-        peerConn.onicecandidate = (event) => {
-            if (event.candidate) {
-                apiCall('/api/call-signal', 'POST', {
-                    toUserId: fromUserId,
-                    fromUserId: currentUserId,
-                    type: 'ice_candidate',
-                    candidate: event.candidate
-                }).catch(() => {});
-            }
-        };
-
-        await peerConn.setRemoteDescription(new RTCSessionDescription(offerSdp));
-        await applyPendingIceCandidates();
-
-        const answer = await peerConn.createAnswer();
-        await peerConn.setLocalDescription(answer);
-
-        await waitForIceGathering(peerConn, 800);
-
-        return peerConn.localDescription;
-    }
-
-    async function handleWebRTCAnswer(answerSdp) {
-        if (peerConn && peerConn.signalingState !== 'closed') {
-            await peerConn.setRemoteDescription(new RTCSessionDescription(answerSdp));
-            await applyPendingIceCandidates();
-            const audio = ensureRemoteAudioElement();
-            audio.play().catch(() => {});
-        }
-    }
-
-    async function handleRemoteIceCandidate(candidate) {
-        if (!candidate) return;
-        if (peerConn && peerConn.remoteDescription && peerConn.signalingState !== 'closed') {
-            try {
-                await peerConn.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch(e){
-                console.warn("Failed to add direct ICE candidate:", e);
-            }
-        } else {
-            pendingIceCandidates.push(candidate);
         }
     }
 
@@ -6710,6 +6583,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Initialize PeerJS session for live bidirectional audio streaming
+        if (user.id) {
+            initPeerSession(user.id);
+        }
+
         // Always Populate Target Employee / Customer Dropdown
         if (employeeTargetSelect) {
             try {
@@ -6839,22 +6717,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     showToast(`📞 جاري الاتصال المباشر بالموظف: ${targetEmpName}...`, 'info');
 
-                    let offerSdp = null;
-                    try {
-                        offerSdp = await initWebRTCOffer(targetEmpId, user.id);
-                    } catch (e) {
-                        console.warn("WebRTC offer init:", e);
+                    // Pre-capture audio stream
+                    const stream = await startLocalAudioStream();
+                    if (!peerInstance && user.id) initPeerSession(user.id);
+
+                    // Dial via PeerJS
+                    if (peerInstance) {
+                        const targetPeerId = 'zc_user_' + String(targetEmpId).toLowerCase().replace(/[^a-z0-9]/g, '_');
+                        console.log("Dialing PeerJS peer:", targetPeerId);
+                        try {
+                            const call = peerInstance.call(targetPeerId, stream || undefined);
+                            if (call) {
+                                activePeerCall = call;
+                                call.on('stream', (remoteStream) => {
+                                    console.log("🔊 PeerJS remote audio stream received on caller:", remoteStream);
+                                    const el = ensureRemoteAudioElement();
+                                    el.srcObject = remoteStream;
+                                    el.play().catch(e => console.warn("Audio play() blocked:", e));
+                                    startAudioVisualizers(stream, remoteStream);
+                                    showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
+                                });
+                                call.on('close', () => stopLocalAudioStream());
+                                call.on('error', (err) => console.warn("PeerJS call error:", err));
+                            }
+                        } catch(err) {
+                            console.warn("Peer call exception:", err);
+                        }
                     }
 
-                    // Send Call Offer Signal to target employee
+                    // Send Call Offer Signal to target employee (triggers UI Ringing)
                     await apiCall('/api/call-signal', 'POST', {
                         toUserId: targetEmpId,
                         fromUserId: user.id,
                         fromUserName: user.name || 'المشرف (Admin)',
                         type: 'call_offer',
                         campaign: campVal,
-                        phone: targetEmpPhone,
-                        sdp: offerSdp
+                        phone: targetEmpPhone
                     }).catch(console.error);
 
                     const liveSc = {
@@ -6894,20 +6792,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnAnswer) {
             btnAnswer.onclick = async () => {
                 if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
-                    let answerSdp = null;
-                    if (pendingOfferSdp) {
+                    const stream = await startLocalAudioStream();
+                    if (activePeerCall) {
                         try {
-                            answerSdp = await handleWebRTCOffer(pendingOfferSdp, activeCallScenario.fromUserId, user.id);
+                            activePeerCall.answer(stream || undefined);
+                            activePeerCall.on('stream', (remoteStream) => {
+                                console.log("🔊 PeerJS remote audio stream received on answerer click:", remoteStream);
+                                const el = ensureRemoteAudioElement();
+                                el.srcObject = remoteStream;
+                                el.play().catch(e => console.warn("Audio play() blocked:", e));
+                                startAudioVisualizers(stream, remoteStream);
+                                showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
+                            });
                         } catch(e) {
-                            console.warn("WebRTC answer handle:", e);
+                            console.warn("PeerJS answer error:", e);
                         }
                     }
 
                     await apiCall('/api/call-signal', 'POST', {
                         toUserId: activeCallScenario.fromUserId,
                         fromUserId: user.id,
-                        type: 'call_answered',
-                        sdp: answerSdp
+                        type: 'call_answered'
                     }).catch(console.error);
                 }
                 connectActiveCall();
@@ -7006,9 +6911,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnCopyPhone = document.getElementById('btn-copy-active-phone');
         if (btnCopyPhone) {
             btnCopyPhone.onclick = () => {
-                const phone = document.getElementById('active-call-phone-display')?.textContent || '';
-                if (navigator.clipboard) navigator.clipboard.writeText(phone);
-                showToast('✅ تم نسخ رقم الهاتف: ' + phone, 'success');
+                const phone = document.getElementById('active-call-phone-display')?.textContent || '07723065187';
+                navigator.clipboard?.writeText(phone);
+                showToast(`📋 تم نسخ رقم الزبون: ${phone}`, 'success');
             };
         }
 
