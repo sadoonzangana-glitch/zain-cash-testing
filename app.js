@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v15_ameyo_live_calling';
+    const STOCKS_DISP_VERSION = 'v16_ameyo_live_calling_v2';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Ameyo Live Calling update!");
+        console.log("Purged legacy localStorage cache for Ameyo Live Calling v2 update!");
     }
 
     // Global Dispositions Catalog
@@ -3666,9 +3666,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="fa-solid fa-envelope"></i>
                         <input type="email" class="user-email-input user-email-field" id="email-user-${user.id}" placeholder="Enter email..." value="${user.email || ''}">
                     </div>
-                    <button type="button" class="btn-send-invite btn-send-invite-card" data-user-id="${user.id}">
-                        <i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite
-                    </button>
+                    <div style="display:flex; gap:6px; margin-top:4px; align-items:center;">
+                        <button type="button" class="btn-send-invite btn-send-invite-card" data-user-id="${user.id}">
+                            <i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite
+                        </button>
+                        <button type="button" class="btn-call-user-direct" data-user-id="${user.id}" data-user-name="${escapeHtml(user.name)}" style="background:#0284c7; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px; transition:0.2s;">
+                            <i class="fa-solid fa-phone"></i> اتصل الآن
+                        </button>
+                    </div>
                 </div>
             `;
             
@@ -4238,6 +4243,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     inviteBtn.disabled = false;
                     inviteBtn.innerHTML = '<i class="fa-solid fa-paper-plane" style="font-size: 0.7rem;"></i> Invite';
                 }
+            });
+        }
+
+        const callDirectBtn = card.querySelector('.btn-call-user-direct');
+        if (callDirectBtn) {
+            callDirectBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                // Switch to Call Simulator tab
+                switchTab('tab-call-simulator');
+                if (window.initAmeyoCallSimulator) window.initAmeyoCallSimulator();
+
+                setTimeout(() => {
+                    const employeeTargetSelect = document.getElementById('widget-employee-target-select');
+                    if (employeeTargetSelect) {
+                        employeeTargetSelect.value = 'emp_' + user.id;
+                        employeeTargetSelect.dispatchEvent(new Event('change'));
+                    }
+                    const btnMakeCall = document.getElementById('btn-widget-make-call');
+                    if (btnMakeCall) btnMakeCall.click();
+                }, 300);
             });
         }
     }
@@ -5963,6 +5988,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Campaign Change Listener
         const campaignSelect = document.getElementById('widget-campaign-select');
+        const employeeTargetSelect = document.getElementById('widget-employee-target-select');
+        const phoneInput = document.getElementById('widget-customer-search-input');
+
         if (campaignSelect) {
             campaignSelect.addEventListener('change', (e) => {
                 const val = e.target.value;
@@ -5976,12 +6004,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Admin Target Employee Dropdown Handling
-        const adminWrap = document.getElementById('widget-admin-employee-wrap');
-        const employeeTargetSelect = document.getElementById('widget-employee-target-select');
-
-        if (isAdmin && adminWrap && employeeTargetSelect) {
-            adminWrap.classList.remove('hidden');
+        // Always Populate Target Employee / Customer Dropdown
+        if (employeeTargetSelect) {
             try {
                 const [usersList, callAssignments] = await Promise.all([
                     apiCall('/api/users', 'GET').catch(() => []),
@@ -5991,22 +6015,69 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nonAdmins = usersList.filter(u => u.role !== 'Admin');
                 const isAllAssigned = callAssignments.includes('all');
 
-                if (nonAdmins.length === 0) {
-                    employeeTargetSelect.innerHTML = `<option value="">لا يوجد موظفون متاحون</option>`;
-                } else {
-                    employeeTargetSelect.innerHTML = `<option value="">-- اختر الموظف للاتصال به --</option>` +
-                        nonAdmins.map(u => {
-                            const isAssigned = isAllAssigned || callAssignments.includes(u.id);
-                            return `<option value="${u.id}" data-name="${escapeHtml(u.name)}" data-phone="${u.phone || '07700000000'}">
-                                ${escapeHtml(u.name)} (${u.code || u.id}) ${isAssigned ? '⭐ [مسند له كول]' : ''}
-                            </option>`;
-                        }).join('');
+                let opts = `<option value="">-- اختر الموظف أو الزبون المستهدف --</option>`;
+
+                // Registered Employees Optgroup
+                if (nonAdmins.length > 0) {
+                    opts += `<optgroup label="👥 موظفو خدمة العملاء (Active Agents)">`;
+                    nonAdmins.forEach(u => {
+                        const isAssigned = isAllAssigned || callAssignments.includes(u.id);
+                        opts += `<option value="emp_${u.id}" data-type="employee" data-id="${u.id}" data-name="${escapeHtml(u.name)}" data-phone="${u.phone || '07723065187'}">
+                            📞 ${escapeHtml(u.name)} (${u.code || u.id}) ${isAssigned ? '⭐ [مسند له اختبار]' : ''}
+                        </option>`;
+                    });
+                    opts += `</optgroup>`;
                 }
+
+                // Built-in Training Scenarios Optgroup
+                opts += `<optgroup label="📋 سيناريوهات تدريبية مسجلة مسبقاً (Scenarios)">
+                    <option value="sc_inbound-1" data-type="scenario" data-sc-id="inbound-1" data-name="أحمد محمد عبد الله" data-phone="07723065187">👤 سيناريو 1: أحمد محمد - تداول الأسهم (07723065187)</option>
+                    <option value="sc_inbound-2" data-type="scenario" data-sc-id="inbound-2" data-name="سارة فاضل عباس" data-phone="07802345678">👤 سيناريو 2: سارة فاضل - محفظة متوقفة CI (07802345678)</option>
+                    <option value="sc_inbound-3" data-type="scenario" data-sc-id="inbound-3" data-name="حيدر جاسم كاظم" data-phone="07719876543">👤 سيناريو 3: حيدر جاسم - ويسترن يونيون (07719876543)</option>
+                    <option value="sc_outbound-1" data-type="scenario" data-sc-id="outbound-1" data-name="علي مهدي صالح" data-phone="07727900402">👤 سيناريو 4: علي مهدي - مكالمة صادرة (07727900402)</option>
+                </optgroup>`;
+
+                employeeTargetSelect.innerHTML = opts;
+
+                // When user selects any item from the dropdown:
+                employeeTargetSelect.onchange = () => {
+                    const sel = employeeTargetSelect.options[employeeTargetSelect.selectedIndex];
+                    if (!sel || !sel.value) return;
+
+                    const dtype = sel.getAttribute('data-type');
+                    const dphone = sel.getAttribute('data-phone') || '07723065187';
+                    const dname = sel.getAttribute('data-name') || '';
+
+                    if (phoneInput) phoneInput.value = dphone;
+
+                    if (dtype === 'scenario') {
+                        const scId = sel.getAttribute('data-sc-id');
+                        const sc = CALL_SCENARIOS.find(s => s.id === scId) || CALL_SCENARIOS[0];
+                        activeCallScenario = sc;
+                        updateCrmCustomerProfile(sc);
+                    } else if (dtype === 'employee') {
+                        const empSc = {
+                            id: 'live_emp_' + sel.getAttribute('data-id'),
+                            type: campaignSelect && campaignSelect.value === 'Zain Cash' ? 'inbound' : 'outbound',
+                            customerName: dname,
+                            customerPhone: dphone,
+                            campaign: campaignSelect ? campaignSelect.value : 'Zain Cash',
+                            queue: 'Live_Training_Queue',
+                            heading: `مكالمة تدريبية مباشرة مع الموظف: ${dname}`,
+                            voiceText: `(اتصال صوتي تدريبي مباشر بين المشرف والموظف ${dname})`,
+                            balance: '350,000 د.ع',
+                            walletType: 'دائمية موثقة (Full KYC)',
+                            status: 'متصل الآن (Live Calling)',
+                            isLiveCall: true,
+                            targetUserId: sel.getAttribute('data-id')
+                        };
+                        activeCallScenario = empSc;
+                        updateCrmCustomerProfile(empSc);
+                    }
+                };
             } catch (err) {
-                console.error("Failed to load employee list for calling:", err);
+                console.error("Failed to populate target employee select:", err);
             }
-        } else if (adminWrap) {
-            adminWrap.classList.add('hidden');
         }
 
         // Quick Scenario Buttons
@@ -6016,12 +6087,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnOut = document.getElementById('btn-trigger-outbound-sim');
         const btnMakeCall = document.getElementById('btn-widget-make-call');
 
-        if (btnIn1) btnIn1.onclick = () => triggerIncomingCall(CALL_SCENARIOS[0]);
-        if (btnIn2) btnIn2.onclick = () => triggerIncomingCall(CALL_SCENARIOS[1]);
-        if (btnIn3) btnIn3.onclick = () => triggerIncomingCall(CALL_SCENARIOS[2]);
+        if (btnIn1) {
+            btnIn1.onclick = () => {
+                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_inbound-1';
+                triggerIncomingCall(CALL_SCENARIOS[0]);
+            };
+        }
+        if (btnIn2) {
+            btnIn2.onclick = () => {
+                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_inbound-2';
+                triggerIncomingCall(CALL_SCENARIOS[1]);
+            };
+        }
+        if (btnIn3) {
+            btnIn3.onclick = () => {
+                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_inbound-3';
+                triggerIncomingCall(CALL_SCENARIOS[2]);
+            };
+        }
         if (btnOut) {
             btnOut.onclick = () => {
                 const campVal = campaignSelect ? campaignSelect.value : 'Test Campaign';
+                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_outbound-1';
                 const sc = { ...CALL_SCENARIOS[3], campaign: campVal === 'Zain Cash' ? 'Test Campaign' : campVal };
                 triggerOutboundCall(sc);
             };
@@ -6030,15 +6117,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnMakeCall) {
             btnMakeCall.onclick = async () => {
                 const campVal = campaignSelect ? campaignSelect.value : 'Zain Cash';
-                
-                // If Admin has selected a specific employee from dropdown
-                if (isAdmin && employeeTargetSelect && employeeTargetSelect.value) {
-                    const targetEmpId = employeeTargetSelect.value;
-                    const selectedOpt = employeeTargetSelect.options[employeeTargetSelect.selectedIndex];
-                    const targetEmpName = selectedOpt.getAttribute('data-name') || 'الموظف';
-                    const targetEmpPhone = selectedOpt.getAttribute('data-phone') || '07700000000';
+                const sel = employeeTargetSelect && employeeTargetSelect.selectedIndex >= 0 ? employeeTargetSelect.options[employeeTargetSelect.selectedIndex] : null;
+                const dtype = sel ? sel.getAttribute('data-type') : null;
 
-                    showToastNotification(`📞 جاري الاتصال بالموظف: ${targetEmpName}...`, 'info');
+                // If calling a real employee from the list
+                if (dtype === 'employee' && sel) {
+                    const targetEmpId = sel.getAttribute('data-id');
+                    const targetEmpName = sel.getAttribute('data-name') || 'الموظف';
+                    const targetEmpPhone = sel.getAttribute('data-phone') || phoneInput?.value || '07723065187';
+
+                    showToastNotification(`📞 جاري الاتصال المباشر بالموظف: ${targetEmpName}...`, 'info');
 
                     // Send Call Offer Signal to target employee
                     await apiCall('/api/call-signal', 'POST', {
@@ -6060,11 +6148,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         heading: `مكالمة تدريبية مباشرة مع الموظف: ${targetEmpName}`,
                         voiceText: `(اتصال صوتي تدريبي مباشر بين الأدمن والموظف ${targetEmpName})`,
                         balance: '350,000 د.ع',
-                        status: 'متصل الآن (Live Call)'
+                        walletType: 'دائمية موثقة (Full KYC)',
+                        status: 'متصل الآن (Live Call)',
+                        isLiveCall: true,
+                        targetUserId: targetEmpId
                     };
                     triggerOutboundCall(liveSc);
+                } else if (dtype === 'scenario' && sel) {
+                    const scId = sel.getAttribute('data-sc-id');
+                    const sc = CALL_SCENARIOS.find(s => s.id === scId) || CALL_SCENARIOS[0];
+                    if (sc.type === 'outbound') triggerOutboundCall(sc);
+                    else triggerIncomingCall(sc);
                 } else {
-                    // Regular simulation call
+                    // Regular fallback call based on campaign
                     const isOut = campVal !== 'Zain Cash';
                     const sc = isOut ? { ...CALL_SCENARIOS[3], campaign: campVal } : CALL_SCENARIOS[0];
                     if (isOut) triggerOutboundCall(sc);

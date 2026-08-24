@@ -482,6 +482,15 @@
                     <div class="ameyo-workstation-body">
                         <!-- Left/Center: Ameyo CRM 360 Workspace -->
                         <div class="ameyo-crm-viewport">
+                            <!-- Live Calling Guidance Banner -->
+                            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; font-size:0.88rem; color:#166534; font-family:var(--font-ar); direction:rtl; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                                <i class="fa-solid fa-headset" style="font-size:1.4rem; color:#16a34a; flex-shrink:0;"></i>
+                                <div>
+                                    <div style="font-weight:800; font-size:0.95rem; margin-bottom:2px; color:#14532d;">🎙️ آلية اختبار المكالمات الصوتية المباشرة (Voice Call Test):</div>
+                                    <div><strong>1)</strong> اختر اسم الموظف المطلوب اختباره من قائمة <strong>(Select Agent)</strong> في هاتف Ameyo على اليمين ➔ <strong>2)</strong> اضغط <strong>[ Call 🟢 ]</strong> ليرن متصفح الموظف فوراً وتبدأ المكالمة الصوتية الحية معه ➔ <strong>3)</strong> عند انتهاء المكالمة اضغط <strong>[ End Call 🔴 ]</strong> ليظهر التصنيف والتقييم.</div>
+                                </div>
+                            </div>
+
                             <!-- Quick Simulation Scenario Launcher Bar -->
                             <div class="ameyo-scenario-launcher-bar">
                                 <div class="launcher-header">
@@ -579,7 +588,7 @@
                                 
                                 <!-- ================= STATE 1: IDLE / OUTBOUND DIALER (الصورة 1) ================= -->
                                 <div class="phone-view" id="phone-view-idle">
-                                    <div class="widget-form-group">
+                                    <div class="widget-form-group" style="margin-bottom: 8px;">
                                         <label class="widget-label">Campaign*</label>
                                         <select class="widget-select" id="widget-campaign-select">
                                             <option value="Zain Cash" selected>Zain Cash (Inbound)</option>
@@ -588,22 +597,22 @@
                                         </select>
                                     </div>
 
+                                    <!-- Employee / Target Customer Selector -->
+                                    <div class="widget-form-group" style="margin-bottom: 8px;">
+                                        <label class="widget-label" style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span>Target Agent / Customer*</span>
+                                            <span style="font-size:0.68rem; color:#0284c7; font-weight:700;"><i class="fa-solid fa-users"></i> الموظفون</span>
+                                        </label>
+                                        <select id="widget-employee-target-select" class="widget-select" style="width: 100%; border-color: #38bdf8; font-weight: 700; color: #0369a1; background: #f0f9ff; height: 36px;">
+                                            <option value="">-- جاري تحميل الموظفين... --</option>
+                                        </select>
+                                    </div>
+
                                     <div class="widget-search-row">
-                                        <!-- Standard Customer Search Input for Employee -->
                                         <div class="widget-search-input-wrap" id="widget-customer-search-wrap">
-                                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                                            <input type="text" id="widget-customer-search-input" placeholder="Search for customer" autocomplete="off" value="07723065187">
-                                            <i class="fa-solid fa-caret-down drop-icon"></i>
+                                            <i class="fa-solid fa-phone search-icon" style="color:#0284c7;"></i>
+                                            <input type="text" id="widget-customer-search-input" placeholder="Phone Number / رقم الهاتف" autocomplete="off" value="07723065187">
                                             <i class="fa-solid fa-table-cells keypad-icon" id="btn-toggle-dialpad" title="Dialpad"></i>
-                                        </div>
-                                        <!-- Target Employee Dropdown for Admin Live Calling -->
-                                        <div class="widget-admin-employee-wrap hidden" id="widget-admin-employee-wrap" style="margin-top: 4px;">
-                                            <label style="font-size: 0.72rem; font-weight: 700; color: #0284c7; display: block; margin-bottom: 2px;">
-                                                <i class="fa-solid fa-user-gear"></i> اختر الموظف المسند له الاختبار:
-                                            </label>
-                                            <select id="widget-employee-target-select" class="widget-select" style="width: 100%; border-color: #38bdf8; font-weight: 700; color: #0369a1; background: #f0f9ff; height: 34px;">
-                                                <option value="">-- تحميل الموظفين... --</option>
-                                            </select>
                                         </div>
                                     </div>
 
@@ -1871,11 +1880,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=3.5"></script>
-    <script src="scenarios.js?v=3.5"></script>
+    <script src="slides.js?v=3.6"></script>
+    <script src="scenarios.js?v=3.6"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=3.5"></script>
-    <script src="app.js?v=3.5"></script>
-    <script src="ai-agent.js?v=3.5"></script>
+    <script src="kb-data.js?v=3.6"></script>
+    <script src="app.js?v=3.6"></script>
+    <script src="ai-agent.js?v=3.6"></script>
 </body>
 </html>
