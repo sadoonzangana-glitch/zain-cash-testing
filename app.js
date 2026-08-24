@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Stock Trading & CI Compliance Knowledge Base update
-    const STOCKS_DISP_VERSION = 'v8_us_stocks_and_ci_compliance_kb';
+    const STOCKS_DISP_VERSION = 'v9_clean_sidebar_and_ci_wallet';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -4285,49 +4285,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const ul = document.getElementById('kb-categories-ul');
         if (!ul) return;
 
-        const categoriesConfig = [
-            {
-                groupTitle: "📈 الأسهم وتداول البورصة الأمريكية",
-                articleId: 1,
-                items: [
-                    { id: 'stocks-all', articleId: 1, name: 'الدليل الكامل للأسهم (الكل)', icon: 'fa-book-open', targetSec: null },
-                    { id: 'sec-1', articleId: 1, name: '1. المفاهيم والبورصة والكسور', icon: 'fa-compass', targetSec: 'sec-1' },
-                    { id: 'sec-2', articleId: 1, name: '2. إنشاء الحساب والاشتراك', icon: 'fa-user-check', targetSec: 'sec-2' },
-                    { id: 'sec-3', articleId: 1, name: '3. الإيداع والسحب ومحفظتك', icon: 'fa-wallet', targetSec: 'sec-3' },
-                    { id: 'sec-4', articleId: 1, name: '4. شراء وبيع الأسهم والأوامر', icon: 'fa-right-left', targetSec: 'sec-4' },
-                    { id: 'sec-5', articleId: 1, name: '5. المؤشرات والأساسيات والأرباح', icon: 'fa-chart-pie', targetSec: 'sec-5' },
-                    { id: 'sec-6', articleId: 1, name: '6. إعدادات الحساب وحماية SIPC', icon: 'fa-gears', targetSec: 'sec-6' },
-                    { id: 'sec-7', articleId: 1, name: '7. قاموس المصطلحات المالي', icon: 'fa-book-bookmark', targetSec: 'sec-7' },
-                    { id: 'sec-8', articleId: 1, name: '8. معلومات عامة وحالات خاصة', icon: 'fa-circle-info', targetSec: 'sec-8' }
-                ]
-            },
-            {
-                groupTitle: "🛡️ خدمات محفظة الأفراد والامتثال",
-                articleId: 2,
-                items: [
-                    { id: 'ci-all', articleId: 2, name: 'دليل المحافظ الموقوفة CI (الكل)', icon: 'fa-shield-halved', targetSec: null },
-                    { id: 'ci-sec-1', articleId: 2, name: '1. التعريف والعمليات المسموحة', icon: 'fa-scale-balanced', targetSec: 'ci-sec-1' },
-                    { id: 'ci-sec-2', articleId: 2, name: '2. مسارات التدقيق في Utilities', icon: 'fa-magnifying-glass-chart', targetSec: 'ci-sec-2' },
-                    { id: 'ci-sec-3', articleId: 2, name: '3. حالات استمارة التحقق (KYC)', icon: 'fa-list-check', targetSec: 'ci-sec-3' },
-                    { id: 'ci-sec-4', articleId: 2, name: '4. إعادة إرسال الرابط (SMS Push)', icon: 'fa-paper-plane', targetSec: 'ci-sec-4' },
-                    { id: 'ci-sec-5', articleId: 2, name: '5. إجراءات التصعيد (AML Queue)', icon: 'fa-triangle-exclamation', targetSec: 'ci-sec-5' }
-                ]
-            }
+        const categoriesList = [
+            { id: 'stocks-all', articleId: 1, name: '📈 الدليل الكامل للأسهم', icon: 'fa-chart-line', targetSec: null },
+            { id: 'ci-sec-1', articleId: 2, name: '🛡️ محفظة متوقفة CI (العمليات المسموحة)', icon: 'fa-scale-balanced', targetSec: 'ci-sec-1' },
+            { id: 'ci-sec-2', articleId: 2, name: '🔍 أسباب إيقاف المحفظة (برنامج Utilities)', icon: 'fa-magnifying-glass-chart', targetSec: 'ci-sec-2' },
+            { id: 'ci-sec-3', articleId: 2, name: '📋 حالات استمارة التحقق المالي', icon: 'fa-list-check', targetSec: 'ci-sec-3' },
+            { id: 'ci-sec-4', articleId: 2, name: '📩 إعادة إرسال الاستمارة (Send SMS Push)', icon: 'fa-paper-plane', targetSec: 'ci-sec-4' },
+            { id: 'ci-sec-5', articleId: 2, name: '⏳ التصعيد إلى AML-InactiveWallet', icon: 'fa-triangle-exclamation', targetSec: 'ci-sec-5' }
         ];
 
-        let html = '';
-        categoriesConfig.forEach(group => {
-            html += `<div style="padding:10px 14px 4px 14px; font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">${group.groupTitle}</div>`;
-            group.items.forEach(sec => {
-                const isActive = (selectedKbCategory === sec.id) || (selectedKbCategory === 'all' && sec.id === 'stocks-all');
-                html += `
-                    <li class="${isActive ? 'active' : ''}" data-cat-id="${sec.id}" data-article-id="${sec.articleId}" data-target-sec="${sec.targetSec || ''}" style="cursor:pointer; padding:9px 12px; margin:2px 8px; border-radius:8px; display:flex; align-items:center; gap:8px; font-size:0.84rem; font-weight:700; transition:all 0.2s;">
-                        <i class="fa-solid ${sec.icon}" style="color:var(--primary); font-size:0.9rem;"></i>
-                        <span>${sec.name}</span>
-                    </li>
-                `;
-            });
-        });
+        let html = categoriesList.map(sec => {
+            const isActive = (selectedKbCategory === sec.id) || (selectedKbCategory === 'all' && sec.id === 'stocks-all');
+            return `
+                <li class="${isActive ? 'active' : ''}" data-cat-id="${sec.id}" data-article-id="${sec.articleId}" data-target-sec="${sec.targetSec || ''}" style="cursor:pointer; padding:11px 14px; margin:4px 6px; border-radius:10px; display:flex; align-items:center; gap:10px; font-size:0.86rem; font-weight:700; transition:all 0.2s;">
+                    <i class="fa-solid ${sec.icon}" style="color:var(--primary); font-size:0.95rem; width:18px; text-align:center;"></i>
+                    <span>${sec.name}</span>
+                </li>
+            `;
+        }).join('');
 
         ul.innerHTML = html;
 
