@@ -1,15 +1,15 @@
 // Zain Cash Customer Care Training Application Logic (Amyo Style)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatic Cache-Busting for Stock Trading & CI Compliance Knowledge Base update
-    const STOCKS_DISP_VERSION = 'v9_clean_sidebar_and_ci_wallet';
+    // Automatic Cache-Busting for Stock Trading & Complete Individual Wallet Services Knowledge Base
+    const STOCKS_DISP_VERSION = 'v10_complete_word_knowledge_base';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
         localStorage.removeItem('zain_cash_kb');
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for new Stock Trading & CI Compliance KB update!");
+        console.log("Purged legacy localStorage cache for new Complete Knowledge Base update!");
     }
 
     // API base URL
@@ -4281,25 +4281,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-        function renderKbCategories() {
+    function renderKbCategories() {
         const ul = document.getElementById('kb-categories-ul');
         if (!ul) return;
 
-        const categoriesList = [
-            { id: 'stocks-all', articleId: 1, name: '📈 الدليل الكامل للأسهم', icon: 'fa-chart-line', targetSec: null },
-            { id: 'ci-sec-1', articleId: 2, name: '🛡️ محفظة متوقفة CI (العمليات المسموحة)', icon: 'fa-scale-balanced', targetSec: 'ci-sec-1' },
-            { id: 'ci-sec-2', articleId: 2, name: '🔍 أسباب إيقاف المحفظة (برنامج Utilities)', icon: 'fa-magnifying-glass-chart', targetSec: 'ci-sec-2' },
-            { id: 'ci-sec-3', articleId: 2, name: '📋 حالات استمارة التحقق المالي', icon: 'fa-list-check', targetSec: 'ci-sec-3' },
-            { id: 'ci-sec-4', articleId: 2, name: '📩 إعادة إرسال الاستمارة (Send SMS Push)', icon: 'fa-paper-plane', targetSec: 'ci-sec-4' },
-            { id: 'ci-sec-5', articleId: 2, name: '⏳ التصعيد إلى AML-InactiveWallet', icon: 'fa-triangle-exclamation', targetSec: 'ci-sec-5' }
-        ];
+        if (!kbArticles || kbArticles.length === 0) {
+            ul.innerHTML = '<li style="padding:12px; color:#94a3b8; font-size:0.85rem; text-align:center;">جاري تحميل الأقسام...</li>';
+            return;
+        }
 
-        let html = categoriesList.map(sec => {
-            const isActive = (selectedKbCategory === sec.id) || (selectedKbCategory === 'all' && sec.id === 'stocks-all');
+        let html = kbArticles.map(article => {
+            const isStocks = (article.id === 1);
+            const displayName = isStocks ? '📈 الدليل الشامل لخدمة تداول الأسهم' : article.title;
+            const icon = isStocks ? 'fa-chart-line' : (article.icon || 'fa-folder-open');
+            const isActive = (String(selectedKbArticleId) === String(article.id)) || (!selectedKbArticleId && isStocks);
+
             return `
-                <li class="${isActive ? 'active' : ''}" data-cat-id="${sec.id}" data-article-id="${sec.articleId}" data-target-sec="${sec.targetSec || ''}" style="cursor:pointer; padding:11px 14px; margin:4px 6px; border-radius:10px; display:flex; align-items:center; gap:10px; font-size:0.86rem; font-weight:700; transition:all 0.2s;">
-                    <i class="fa-solid ${sec.icon}" style="color:var(--primary); font-size:0.95rem; width:18px; text-align:center;"></i>
-                    <span>${sec.name}</span>
+                <li class="${isActive ? 'active' : ''}" data-article-id="${article.id}" style="cursor:pointer; padding:10px 12px; margin:3px 6px; border-radius:10px; display:flex; align-items:center; gap:10px; font-size:0.85rem; font-weight:700; transition:all 0.2s; line-height:1.4;">
+                    <i class="fa-solid ${icon}" style="color:var(--primary); font-size:0.95rem; width:18px; text-align:center; flex-shrink:0;"></i>
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(displayName)}</span>
                 </li>
             `;
         }).join('');
@@ -4310,21 +4310,14 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => {
                 ul.querySelectorAll('li').forEach(item => item.classList.remove('active'));
                 li.classList.add('active');
-                selectedKbCategory = li.getAttribute('data-cat-id');
                 const articleId = parseInt(li.getAttribute('data-article-id')) || 1;
-                const targetSec = li.getAttribute('data-target-sec');
+                selectedKbArticleId = articleId;
+                selectedKbCategory = String(articleId);
                 
                 viewKbArticle(articleId);
                 
-                if (targetSec) {
-                    setTimeout(() => {
-                        const el = document.getElementById(targetSec);
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 60);
-                } else {
-                    const contentEl = document.getElementById('kb-view-content');
-                    if (contentEl) contentEl.scrollTop = 0;
-                }
+                const contentEl = document.getElementById('kb-view-content');
+                if (contentEl) contentEl.scrollTop = 0;
             });
         });
     }
