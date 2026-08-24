@@ -508,13 +508,18 @@ app.post('/api/call-assignments', requireAdminRole, async (req, res) => {
     res.json({ success: true });
 });
 
-// Live Voice Call Signaling (WebRTC Signaling & Status)
+// Live Voice Call Signaling (WebRTC Signaling Queue)
 app.post('/api/call-signal', async (req, res) => {
     const db = await readDb();
     db.callSignals = db.callSignals || {};
     const { toUserId, fromUserId, fromUserName, type, sdp, candidate, campaign, phone } = req.body;
     if (!toUserId) return res.status(400).json({ error: 'toUserId required' });
-    db.callSignals[toUserId] = {
+    
+    if (!Array.isArray(db.callSignals[toUserId])) {
+        db.callSignals[toUserId] = [];
+    }
+    
+    db.callSignals[toUserId].push({
         toUserId,
         fromUserId,
         fromUserName,
@@ -524,7 +529,8 @@ app.post('/api/call-signal', async (req, res) => {
         campaign,
         phone,
         timestamp: Date.now()
-    };
+    });
+    
     await writeDb(db);
     res.json({ success: true });
 });
@@ -533,15 +539,22 @@ app.get('/api/call-signal', async (req, res) => {
     const db = await readDb();
     const userId = req.query.userId;
     if (!userId || !db.callSignals || !db.callSignals[userId]) {
-        return res.json({ signal: null });
+        return res.json({ signals: [], signal: null });
     }
-    const signal = db.callSignals[userId];
-    if (Date.now() - signal.timestamp > 30000) {
-        delete db.callSignals[userId];
-        await writeDb(db);
-        return res.json({ signal: null });
-    }
-    res.json({ signal });
+    
+    let rawSignals = db.callSignals[userId];
+    let signalsArray = Array.isArray(rawSignals) ? rawSignals : [rawSignals];
+    
+    const now = Date.now();
+    signalsArray = signalsArray.filter(s => s && (now - s.timestamp <= 30000));
+    
+    delete db.callSignals[userId];
+    await writeDb(db);
+    
+    res.json({
+        signals: signalsArray,
+        signal: signalsArray.length > 0 ? signalsArray[0] : null
+    });
 });
 
 app.delete('/api/call-signal', async (req, res) => {

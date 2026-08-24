@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v22_webrtc_voice_calls';
+    const STOCKS_DISP_VERSION = 'v23_fix_webrtc_audio_exchange';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for WebRTC Voice Calls update!");
+        console.log("Purged legacy localStorage cache for Fix WebRTC Audio Exchange update!");
     }
 
     // Global Dispositions Catalog
@@ -6035,29 +6035,43 @@ document.addEventListener('DOMContentLoaded', () => {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun.services.mozilla.com' }
         ]
     };
 
     function ensureRemoteAudioElement() {
         if (!remoteAudioEl) {
-            remoteAudioEl = document.createElement('audio');
-            remoteAudioEl.id = 'webrtc-remote-audio';
-            remoteAudioEl.autoplay = true;
-            remoteAudioEl.style.display = 'none';
-            document.body.appendChild(remoteAudioEl);
+            remoteAudioEl = document.getElementById('webrtc-remote-audio');
+            if (!remoteAudioEl) {
+                remoteAudioEl = document.createElement('audio');
+                remoteAudioEl.id = 'webrtc-remote-audio';
+                remoteAudioEl.autoplay = true;
+                remoteAudioEl.playsInline = true;
+                remoteAudioEl.controls = false;
+                remoteAudioEl.style.display = 'none';
+                document.body.appendChild(remoteAudioEl);
+            }
         }
         return remoteAudioEl;
     }
 
     async function startLocalAudioStream() {
         try {
-            if (!localStream) {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            if (!localStream || localStream.getAudioTracks().length === 0 || !localStream.active) {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
             }
             return localStream;
         } catch (err) {
             console.warn("Microphone access not granted or unavailable:", err);
+            showToast("⚠️ يرجى تفعيل إذن المايكروفون بالمتصفح لإجراء المكالمة الصوتية", "warning");
             return null;
         }
     }
@@ -6071,6 +6085,29 @@ document.addEventListener('DOMContentLoaded', () => {
             try { peerConn.close(); } catch(e){}
             peerConn = null;
         }
+        if (remoteAudioEl) {
+            remoteAudioEl.srcObject = null;
+        }
+    }
+
+    function waitForIceGathering(pc, maxWaitMs = 600) {
+        return new Promise((resolve) => {
+            if (pc.iceGatheringState === 'complete') {
+                resolve();
+                return;
+            }
+            const check = () => {
+                if (pc.iceGatheringState === 'complete') {
+                    pc.removeEventListener('icegatheringstatechange', check);
+                    resolve();
+                }
+            };
+            pc.addEventListener('icegatheringstatechange', check);
+            setTimeout(() => {
+                pc.removeEventListener('icegatheringstatechange', check);
+                resolve();
+            }, maxWaitMs);
+        });
     }
 
     async function initWebRTCOffer(targetUserId, currentUserId) {
@@ -6081,13 +6118,18 @@ document.addEventListener('DOMContentLoaded', () => {
         peerConn = new RTCPeerConnection(rtcConfig);
 
         if (stream) {
-            stream.getTracks().forEach(track => peerConn.addTrack(track, stream));
+            stream.getAudioTracks().forEach(track => peerConn.addTrack(track, stream));
         }
 
         peerConn.ontrack = (event) => {
+            console.log("WebRTC ontrack received remote audio stream:", event);
             if (event.streams && event.streams[0]) {
                 audio.srcObject = event.streams[0];
+            } else if (event.track) {
+                const inbound = new MediaStream([event.track]);
+                audio.srcObject = inbound;
             }
+            audio.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
         };
 
         peerConn.onicecandidate = (event) => {
@@ -6101,10 +6143,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const offer = await peerConn.createOffer();
+        const offer = await peerConn.createOffer({ offerToReceiveAudio: true });
         await peerConn.setLocalDescription(offer);
 
-        return offer;
+        await waitForIceGathering(peerConn, 600);
+
+        return peerConn.localDescription;
     }
 
     async function handleWebRTCOffer(offerSdp, fromUserId, currentUserId) {
@@ -6115,13 +6159,18 @@ document.addEventListener('DOMContentLoaded', () => {
         peerConn = new RTCPeerConnection(rtcConfig);
 
         if (stream) {
-            stream.getTracks().forEach(track => peerConn.addTrack(track, stream));
+            stream.getAudioTracks().forEach(track => peerConn.addTrack(track, stream));
         }
 
         peerConn.ontrack = (event) => {
+            console.log("WebRTC ontrack received remote audio stream on answerer:", event);
             if (event.streams && event.streams[0]) {
                 audio.srcObject = event.streams[0];
+            } else if (event.track) {
+                const inbound = new MediaStream([event.track]);
+                audio.srcObject = inbound;
             }
+            audio.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
         };
 
         peerConn.onicecandidate = (event) => {
@@ -6139,12 +6188,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const answer = await peerConn.createAnswer();
         await peerConn.setLocalDescription(answer);
 
-        return answer;
+        await waitForIceGathering(peerConn, 600);
+
+        return peerConn.localDescription;
     }
 
     async function handleWebRTCAnswer(answerSdp) {
         if (peerConn && peerConn.signalingState !== 'closed') {
             await peerConn.setRemoteDescription(new RTCSessionDescription(answerSdp));
+            const audio = ensureRemoteAudioElement();
+            audio.play().catch(() => {});
         }
     }
 
@@ -6841,12 +6894,10 @@ document.addEventListener('DOMContentLoaded', () => {
             callSignalPollInterval = setInterval(async () => {
                 try {
                     const res = await apiCall(`/api/call-signal?userId=${user.id}`, 'GET');
-                    if (res && res.signal) {
-                        const sig = res.signal;
+                    const signals = (res && res.signals && Array.isArray(res.signals)) ? res.signals : (res && res.signal ? [res.signal] : []);
+                    for (const sig of signals) {
+                        if (!sig) continue;
                         if (sig.type === 'call_offer' && currentCallState === 'idle') {
-                            // Acknowledge/clear signal
-                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
-                            
                             pendingOfferSdp = sig.sdp;
                             const liveIncoming = {
                                 id: 'live-admin-incoming',
@@ -6866,18 +6917,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             triggerIncomingCall(liveIncoming);
                         } else if (sig.type === 'call_answered') {
-                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
                             if (sig.sdp) {
                                 await handleWebRTCAnswer(sig.sdp).catch(console.warn);
                             }
                             showToast("🟢 تم الرد وبدء المحادثة الصوتية المباشرة!", "success");
                         } else if (sig.type === 'ice_candidate') {
-                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
                             if (sig.candidate) {
                                 await handleRemoteIceCandidate(sig.candidate).catch(console.warn);
                             }
                         } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
-                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
                             stopLocalAudioStream();
                             if (currentCallState === 'ringing') {
                                 stopRingtone();

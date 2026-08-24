@@ -541,7 +541,12 @@ exports.handler = async (event, context) => {
         if (event.httpMethod === 'POST') {
             const { toUserId, fromUserId, fromUserName, type, sdp, candidate, campaign, phone } = bodyData || {};
             if (!toUserId) return { statusCode: 400, headers, body: JSON.stringify({ error: 'toUserId required' }) };
-            db.callSignals[toUserId] = {
+            
+            if (!Array.isArray(db.callSignals[toUserId])) {
+                db.callSignals[toUserId] = [];
+            }
+
+            db.callSignals[toUserId].push({
                 toUserId,
                 fromUserId,
                 fromUserName,
@@ -551,22 +556,34 @@ exports.handler = async (event, context) => {
                 campaign,
                 phone,
                 timestamp: Date.now()
-            };
+            });
+
             await saveDb(db);
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
         }
         if (event.httpMethod === 'GET') {
             const userId = event.queryStringParameters?.userId;
             if (!userId || !db.callSignals[userId]) {
-                return { statusCode: 200, headers, body: JSON.stringify({ signal: null }) };
+                return { statusCode: 200, headers, body: JSON.stringify({ signals: [], signal: null }) };
             }
-            const signal = db.callSignals[userId];
-            if (Date.now() - signal.timestamp > 30000) {
-                delete db.callSignals[userId];
-                await saveDb(db);
-                return { statusCode: 200, headers, body: JSON.stringify({ signal: null }) };
-            }
-            return { statusCode: 200, headers, body: JSON.stringify({ signal }) };
+            
+            let rawSignals = db.callSignals[userId];
+            let signalsArray = Array.isArray(rawSignals) ? rawSignals : [rawSignals];
+
+            const now = Date.now();
+            signalsArray = signalsArray.filter(s => s && (now - s.timestamp <= 30000));
+
+            delete db.callSignals[userId];
+            await saveDb(db);
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    signals: signalsArray,
+                    signal: signalsArray.length > 0 ? signalsArray[0] : null
+                })
+            };
         }
         if (event.httpMethod === 'DELETE') {
             const userId = event.queryStringParameters?.userId;
