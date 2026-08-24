@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v20_admin_calling_ui';
+    const STOCKS_DISP_VERSION = 'v21_fix_call_execution';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Admin Calling UI update!");
+        console.log("Purged legacy localStorage cache for Fix Call Execution update!");
     }
 
     // Global Dispositions Catalog
@@ -6465,7 +6465,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const targetEmpName = sel.getAttribute('data-name') || 'الموظف';
                     const targetEmpPhone = sel.getAttribute('data-phone') || phoneInput?.value || '07723065187';
 
-                    showToastNotification(`📞 جاري الاتصال المباشر بالموظف: ${targetEmpName}...`, 'info');
+                    showToast(`📞 جاري الاتصال المباشر بالموظف: ${targetEmpName}...`, 'info');
 
                     // Send Call Offer Signal to target employee
                     await apiCall('/api/call-signal', 'POST', {
@@ -6590,12 +6590,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnEnd = document.getElementById('btn-call-end');
         if (btnEnd) {
             btnEnd.onclick = async () => {
-                if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
-                    await apiCall('/api/call-signal', 'POST', {
-                        toUserId: activeCallScenario.fromUserId,
-                        fromUserId: user.id,
-                        type: 'call_ended'
-                    }).catch(console.error);
+                if (activeCallScenario && activeCallScenario.isLiveCall) {
+                    const targetId = activeCallScenario.targetUserId || activeCallScenario.fromUserId;
+                    if (targetId) {
+                        await apiCall('/api/call-signal', 'POST', {
+                            toUserId: targetId,
+                            fromUserId: user.id,
+                            type: 'call_ended'
+                        }).catch(console.error);
+                    }
                 }
                 endActiveCall();
             };
@@ -6607,7 +6610,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnCopyPhone.onclick = () => {
                 const phone = document.getElementById('active-call-phone-display')?.textContent || '';
                 if (navigator.clipboard) navigator.clipboard.writeText(phone);
-                showToastNotification('✅ تم نسخ رقم الهاتف: ' + phone, 'success');
+                showToast('✅ تم نسخ رقم الهاتف: ' + phone, 'success');
             };
         }
 
@@ -6644,7 +6647,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     if (dispOverlay) dispOverlay.classList.add('hidden');
                     switchAmeyoPhoneView('idle');
-                    showToastNotification('✅ تم إنهاء وتصنيف المكالمة بنجاح، والعودة للوضع المتاح Available', 'success');
+                    showToast('✅ تم إنهاء وتصنيف المكالمة بنجاح، والعودة للوضع المتاح Available', 'success');
                 }, 1400);
             };
         }
@@ -6673,8 +6676,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Live Call Background Signaling Polling for Non-Admin Employees
-        if (!isAdmin && user.id) {
+        // Live Call Background Signaling Polling
+        if (user.id) {
             if (callSignalPollInterval) clearInterval(callSignalPollInterval);
             callSignalPollInterval = setInterval(async () => {
                 try {
@@ -6689,22 +6692,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 id: 'live-admin-incoming',
                                 type: sig.campaign === 'Zain Cash' ? 'inbound' : 'outbound',
                                 customerName: `${sig.fromUserName || 'مشرف التدريب'} (Admin)`,
-                                customerPhone: sig.phone || '07700000000',
+                                customerPhone: sig.phone || '07723065187',
                                 campaign: sig.campaign || 'Zain Cash',
                                 queue: 'Live_Training_Call',
                                 heading: `📞 مكالمة تدريبية مباشرة واردة من المشرف: ${sig.fromUserName}`,
                                 voiceText: `مرحباً، أنا المشرف وأقوم بإجراء اتصال تدريبي مباشر معك.`,
                                 balance: '350,000 د.ع',
+                                walletType: 'دائمية موثقة (Full KYC)',
                                 status: 'نشطة (Active)',
                                 isLiveCall: true,
                                 fromUserId: sig.fromUserId
                             };
-
-                            // Switch to Call Simulator tab if not already on it
-                            const callTab = document.getElementById('tab-call-simulator');
-                            if (callTab && callTab.classList.contains('hidden')) {
-                                switchTab('tab-call-simulator');
-                            }
 
                             triggerIncomingCall(liveIncoming);
                         } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
@@ -6718,7 +6716,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 } catch (e) {}
-            }, 1800);
+            }, 1200);
         }
     };
 
