@@ -1833,16 +1833,25 @@ ${articlesContext}
             }
 
             if (saveBtn) {
-                saveBtn.addEventListener('click', () => {
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     if (currentDisp && currentSubDisp) {
                         aiDisposedChats[i] = true;
+                        aiUserDispositions[i] = { disp: currentDisp, subDisp: currentSubDisp };
                         
-                        dispPanel.classList.add('hidden');
+                        if (dispPanel) dispPanel.classList.add('hidden');
                         
                         const disposedOverlay = document.getElementById(`ai-disposed-overlay-${i}`);
                         if (disposedOverlay) {
                             disposedOverlay.classList.remove('hidden');
                         }
+                        
+                        const aiInp = document.getElementById(`ai-chat-input-${i}`);
+                        if (aiInp) {
+                            aiInp.disabled = true;
+                            aiInp.placeholder = 'Chat resolved and disposed.';
+                        }
+                        
                         showAIToast(`Chat ${i} disposed successfully.`, 'success');
                     }
                 });

@@ -801,6 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let multiChatAgent = null;
     let simulatorInitialized = false;
     let disposedChats = { 1: false, 2: false, 3: false };
+    let userDispositions = {};
 
     // Toast helper for app.js
     function showToast(message, type = 'success') {
@@ -1440,16 +1441,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (saveBtn) {
-                saveBtn.addEventListener('click', () => {
+                saveBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     if (currentDisp && currentSubDisp) {
                         disposedChats[i] = true;
                         userDispositions[i] = { disp: currentDisp, subDisp: currentSubDisp };
-                        dispPanel.classList.add('hidden');
+                        
+                        if (dispPanel) dispPanel.classList.add('hidden');
                         
                         const disposedOverlay = document.getElementById(`disposed-overlay-${i}`);
                         if (disposedOverlay) {
                             disposedOverlay.classList.remove('hidden');
                         }
+                        
+                        const chatInp = document.getElementById(`chat-input-${i}`);
+                        if (chatInp) {
+                            chatInp.disabled = true;
+                            chatInp.placeholder = 'Chat resolved and disposed.';
+                        }
+                        const optBox = document.getElementById(`simulator-options-${i}`);
+                        if (optBox) {
+                            optBox.innerHTML = '';
+                        }
+                        
                         showToast(`Chat ${i} disposed successfully.`, 'success');
                     }
                 });
