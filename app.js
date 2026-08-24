@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v18_candidate_call_idle_ui';
+    const STOCKS_DISP_VERSION = 'v19_fix_call_test_routing';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Candidate Call Idle UI update!");
+        console.log("Purged legacy localStorage cache for Fix Call Test Routing update!");
     }
 
     // Global Dispositions Catalog
@@ -478,25 +478,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function switchTab(tabId) {
         if (currentUser && currentUser.role !== 'Admin') {
-            if (isTestAssigned || isAiTestAssigned) {
+            if (isCallTestAssigned) {
                 if (!window.isTestSessionActive) {
-                    // Slides mode: must stay on slides
                     if (tabId !== 'tab-slides') {
                         showToast('⚠️ يرجى قراءة السلايدات أولاً ثم بدء الاختبار!', 'error');
                         return;
                     }
                 } else {
-                    // Active test mode: must stay on test tab
-                    if (isTestAssigned && !isAiTestAssigned && tabId !== 'tab-simulator') {
-                        showToast('⚠️ يرجى إكمال اختبار محاكي الدردشة أولاً!', 'error');
+                    if (tabId !== 'tab-call-simulator') {
+                        showToast('⚠️ يرجى التواجد في محاكي المكالمات لإكمال الاختبار الصوتي!', 'error');
                         return;
                     }
-                    if (isAiTestAssigned && !isTestAssigned && tabId !== 'tab-ai-agent') {
+                }
+            } else if (isAiTestAssigned) {
+                if (!window.isTestSessionActive) {
+                    if (tabId !== 'tab-slides') {
+                        showToast('⚠️ يرجى قراءة السلايدات أولاً ثم بدء الاختبار!', 'error');
+                        return;
+                    }
+                } else {
+                    if (tabId !== 'tab-ai-agent') {
                         showToast('⚠️ يرجى إكمال اختبار الأيجنت الذكي أولاً!', 'error');
                         return;
                     }
-                    if (isTestAssigned && isAiTestAssigned && tabId !== 'tab-simulator' && tabId !== 'tab-ai-agent') {
-                        showToast('⚠️ يرجى إكمال الاختبارات النشطة أولاً!', 'error');
+                }
+            } else if (isTestAssigned) {
+                if (!window.isTestSessionActive) {
+                    if (tabId !== 'tab-slides') {
+                        showToast('⚠️ يرجى قراءة السلايدات أولاً ثم بدء الاختبار!', 'error');
+                        return;
+                    }
+                } else {
+                    if (tabId !== 'tab-simulator') {
+                        showToast('⚠️ يرجى إكمال اختبار محاكي الدردشة أولاً!', 'error');
                         return;
                     }
                 }
@@ -3593,7 +3607,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!timerBanner || !timerDisplay) return;
 
         if (timerTitle) {
-            timerTitle.textContent = testType === 'ai-agent' ? "اختبار الأيجنت الذكي المباشر" : "اختبار محاكي خدمة الزبائن";
+            timerTitle.textContent = testType === 'ai-agent' 
+                ? "اختبار الأيجنت الذكي المباشر" 
+                : (testType === 'call-simulator' ? "اختبار محاكي المكالمات الهاتفية (Call Center)" : "اختبار محاكي خدمة الزبائن");
         }
 
         timerBanner.classList.remove('hidden');
