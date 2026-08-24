@@ -482,39 +482,53 @@
                     <div class="ameyo-workstation-body">
                         <!-- Left/Center: Ameyo CRM 360 Workspace -->
                         <div class="ameyo-crm-viewport">
-                            <!-- Live Calling Guidance Banner -->
-                            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; font-size:0.88rem; color:#166534; font-family:var(--font-ar); direction:rtl; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
-                                <i class="fa-solid fa-headset" style="font-size:1.4rem; color:#16a34a; flex-shrink:0;"></i>
-                                <div>
-                                    <div style="font-weight:800; font-size:0.95rem; margin-bottom:2px; color:#14532d;">🎙️ آلية اختبار المكالمات الصوتية المباشرة (Voice Call Test):</div>
-                                    <div><strong>1)</strong> اختر اسم الموظف المطلوب اختباره من قائمة <strong>(Select Agent)</strong> في هاتف Ameyo على اليمين ➔ <strong>2)</strong> اضغط <strong>[ Call 🟢 ]</strong> ليرن متصفح الموظف فوراً وتبدأ المكالمة الصوتية الحية معه ➔ <strong>3)</strong> عند انتهاء المكالمة اضغط <strong>[ End Call 🔴 ]</strong> ليظهر التصنيف والتقييم.</div>
+                            <!-- Admin Only: Live Calling Guidance Banner & Quick Launcher -->
+                            <div id="admin-voice-scenario-launcher" class="hidden">
+                                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; font-size:0.88rem; color:#166534; font-family:var(--font-ar); direction:rtl; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                                    <i class="fa-solid fa-headset" style="font-size:1.4rem; color:#16a34a; flex-shrink:0;"></i>
+                                    <div>
+                                        <div style="font-weight:800; font-size:0.95rem; margin-bottom:2px; color:#14532d;">🎙️ لوحة تحكم المشرف (Supervisor / Admin Live Calling):</div>
+                                        <div><strong>1)</strong> اختر اسم الموظف من قائمة <strong>(Target Agent)</strong> على اليمين ➔ <strong>2)</strong> اضغط <strong>[ Call 🟢 ]</strong> ليرن هاتف الموظف فوراً وتبدأ المكالمة التدريبية المباشرة معه ➔ <strong>3)</strong> عند انتهاء المكالمة اضغط <strong>[ End Call 🔴 ]</strong> ليظهر التصنيف.</div>
+                                    </div>
+                                </div>
+
+                                <div class="ameyo-scenario-launcher-bar">
+                                    <div class="launcher-header">
+                                        <i class="fa-solid fa-bolt-lightning text-amber"></i>
+                                        <span>سيناريوهات التدريب الصوتي (Voice Scenarios):</span>
+                                    </div>
+                                    <div class="launcher-buttons">
+                                        <button class="btn btn-launcher" id="btn-trigger-inbound-1" title="مكالمة واردة: استفسار عن تداول الأسهم">
+                                            <i class="fa-solid fa-arrow-down-left"></i> واردة 1: تداول الأسهم (Inbound)
+                                        </button>
+                                        <button class="btn btn-launcher" id="btn-trigger-inbound-2" title="مكالمة واردة: مشكلة محفظة متوقفة CI">
+                                            <i class="fa-solid fa-arrow-down-left"></i> واردة 2: محفظة متوقفة CI
+                                        </button>
+                                        <button class="btn btn-launcher" id="btn-trigger-inbound-3" title="مكالمة واردة: رمز سري وويسترن يونيون">
+                                            <i class="fa-solid fa-arrow-down-left"></i> واردة 3: ويسترن يونيون
+                                        </button>
+                                        <button class="btn btn-launcher outbound" id="btn-trigger-outbound-sim" title="مكالمة صادرة: متابعة استفسار الزبون">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i> مكالمة صادرة (Outbound)
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Quick Simulation Scenario Launcher Bar -->
-                            <div class="ameyo-scenario-launcher-bar">
-                                <div class="launcher-header">
-                                    <i class="fa-solid fa-bolt-lightning text-amber"></i>
-                                    <span>سيناريوهات التدريب الصوتي المتاحة (Voice Scenarios):</span>
+                            <!-- Candidate Idle Waiting Screen (Shows while waiting for call) -->
+                            <div class="crm-idle-waiting-state" id="crm-idle-waiting-state" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:48px 24px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:420px; box-shadow:0 4px 16px rgba(0,0,0,0.03); font-family:var(--font-ar); direction:rtl;">
+                                <div style="width:84px; height:84px; border-radius:50%; background:#eff6ff; border:2px solid #bfdbfe; color:#0284c7; display:flex; align-items:center; justify-content:center; font-size:2.2rem; margin-bottom:20px; box-shadow:0 0 0 10px rgba(2,132,199,0.08);">
+                                    <i class="fa-solid fa-headset fa-beat-fade"></i>
                                 </div>
-                                <div class="launcher-buttons">
-                                    <button class="btn btn-launcher" id="btn-trigger-inbound-1" title="مكالمة واردة: استفسار عن تداول الأسهم">
-                                        <i class="fa-solid fa-arrow-down-left"></i> واردة 1: تداول الأسهم (Inbound)
-                                    </button>
-                                    <button class="btn btn-launcher" id="btn-trigger-inbound-2" title="مكالمة واردة: مشكلة محفظة متوقفة CI">
-                                        <i class="fa-solid fa-arrow-down-left"></i> واردة 2: محفظة متوقفة CI
-                                    </button>
-                                    <button class="btn btn-launcher" id="btn-trigger-inbound-3" title="مكالمة واردة: رمز سري وويسترن يونيون">
-                                        <i class="fa-solid fa-arrow-down-left"></i> واردة 3: ويسترن يونيون
-                                    </button>
-                                    <button class="btn btn-launcher outbound" id="btn-trigger-outbound-sim" title="مكالمة صادرة: متابعة استفسار الزبون">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> مكالمة صادرة (Outbound)
-                                    </button>
+                                <h3 style="font-size:1.3rem; font-weight:800; color:#1e293b; margin:0 0 8px 0;">أنت الآن في وضع الاستعداد (Ready / Available)</h3>
+                                <p style="font-size:0.95rem; color:#64748b; max-width:520px; line-height:1.6; margin:0 0 24px 0;">هاتف Ameyo في وضع الاستعداد بانتظار اتصال المشرف.. ستظهر بيانات المشترك، تفاصيل حسابه، وآخر الحركات المالية هنا فور استقبال المكالمة.</p>
+                                <div style="display:inline-flex; align-items:center; gap:8px; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 18px; border-radius:20px; font-size:0.85rem; font-weight:700; color:#166534;">
+                                    <span style="width:10px; height:10px; border-radius:50%; background:#22c55e; display:inline-block; box-shadow:0 0 8px #22c55e;"></span>
+                                    متصل بخادم الاتصالات وفي انتظار المكالمة
                                 </div>
                             </div>
 
-                            <!-- Customer 360 Details Card (Shows during call) -->
-                            <div class="ameyo-crm-cards-grid">
+                            <!-- Customer 360 Details Card (Shows ONLY during call) -->
+                            <div class="ameyo-crm-cards-grid hidden" id="ameyo-crm-cards-grid">
                                 <!-- Card 1: Customer Profile -->
                                 <div class="crm-card">
                                     <div class="crm-card-header">
@@ -524,9 +538,9 @@
                                     <div class="crm-card-body" id="crm-customer-details">
                                         <div class="crm-field-row"><span class="crm-label">اسم المشترك:</span> <span class="crm-val" id="crm-cust-name">أحمد محمد عبد الله</span></div>
                                         <div class="crm-field-row"><span class="crm-label">رقم الهاتف / المحفظة:</span> <span class="crm-val" id="crm-cust-phone">07723065187</span></div>
-                                        <div class="crm-field-row"><span class="crm-label">نوع المحفظة:</span> <span class="crm-badge success">دائمية موثقة (Full KYC)</span></div>
+                                        <div class="crm-field-row"><span class="crm-label">نوع المحفظة:</span> <span class="crm-badge success" id="crm-cust-wallet-type">دائمية موثقة (Full KYC)</span></div>
                                         <div class="crm-field-row"><span class="crm-label">حالة المحفظة:</span> <span class="crm-badge active" id="crm-cust-status">نشطة (Active)</span></div>
-                                        <div class="crm-field-row"><span class="crm-label">الرصيد المتاح:</span> <span class="crm-val highlight">350,000 د.ع</span></div>
+                                        <div class="crm-field-row"><span class="crm-label">الرصيد المتاح:</span> <span class="crm-val highlight" id="crm-cust-balance">350,000 د.ع</span></div>
                                         <div class="crm-field-row"><span class="crm-label">البطاقات المرتبطة:</span> <span class="crm-val">MasterCard Platinum (****4491)</span></div>
                                     </div>
                                 </div>
@@ -597,8 +611,8 @@
                                         </select>
                                     </div>
 
-                                    <!-- Employee / Target Customer Selector -->
-                                    <div class="widget-form-group" style="margin-bottom: 8px;">
+                                    <!-- Employee / Target Customer Selector (Admin Only) -->
+                                    <div class="widget-form-group hidden" id="widget-employee-target-wrap" style="margin-bottom: 8px;">
                                         <label class="widget-label" style="display:flex; justify-content:space-between; align-items:center;">
                                             <span>Target Agent / Customer*</span>
                                             <span style="font-size:0.68rem; color:#0284c7; font-weight:700;"><i class="fa-solid fa-users"></i> الموظفون</span>
@@ -1985,11 +1999,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=3.7"></script>
-    <script src="scenarios.js?v=3.7"></script>
+    <script src="slides.js?v=3.8"></script>
+    <script src="scenarios.js?v=3.8"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=3.7"></script>
-    <script src="app.js?v=3.7"></script>
-    <script src="ai-agent.js?v=3.7"></script>
+    <script src="kb-data.js?v=3.8"></script>
+    <script src="app.js?v=3.8"></script>
+    <script src="ai-agent.js?v=3.8"></script>
 </body>
 </html>

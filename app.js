@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v17_manage_call_scenarios';
+    const STOCKS_DISP_VERSION = 'v18_candidate_call_idle_ui';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Manage Call Scenarios update!");
+        console.log("Purged legacy localStorage cache for Candidate Call Idle UI update!");
     }
 
     // Global Dispositions Catalog
@@ -829,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const enterTestBtn = document.getElementById('btn-enter-assigned-test');
         if (enterTestBtn) {
-            if (currentSlide === totalSlides && (window.isTestAssigned || window.isAiTestAssigned)) {
+            if (currentSlide === totalSlides && (window.isTestAssigned || window.isAiTestAssigned || window.isCallTestAssigned)) {
                 enterTestBtn.classList.remove('hidden');
             } else {
                 enterTestBtn.classList.add('hidden');
@@ -6016,20 +6016,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         currentCallState = viewName;
+
+        const user = window.currentUser || JSON.parse(localStorage.getItem('zain_cash_user') || '{}');
+        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin';
+        const idleWaiting = document.getElementById('crm-idle-waiting-state');
+        const crmCards = document.getElementById('ameyo-crm-cards-grid');
+        const liveWave = document.getElementById('ameyo-live-transcript-box');
+
+        if (viewName === 'idle') {
+            if (!isAdmin) {
+                if (idleWaiting) idleWaiting.classList.remove('hidden');
+                if (crmCards) crmCards.classList.add('hidden');
+                if (liveWave) liveWave.classList.add('hidden');
+            }
+        } else if (viewName === 'ringing' || viewName === 'active') {
+            if (idleWaiting) idleWaiting.classList.add('hidden');
+            if (crmCards) crmCards.classList.remove('hidden');
+        }
     }
 
     function updateCrmCustomerProfile(sc) {
         if (!sc) return;
+        const idleWaiting = document.getElementById('crm-idle-waiting-state');
+        const crmCards = document.getElementById('ameyo-crm-cards-grid');
+        if (idleWaiting) idleWaiting.classList.add('hidden');
+        if (crmCards) crmCards.classList.remove('hidden');
+
         const nameEl = document.getElementById('crm-cust-name');
         const phoneEl = document.getElementById('crm-cust-phone');
+        const walletTypeEl = document.getElementById('crm-cust-wallet-type');
         const statusEl = document.getElementById('crm-cust-status');
+        const balanceEl = document.getElementById('crm-cust-balance');
         const headingEl = document.getElementById('transcript-customer-heading');
         const textEl = document.getElementById('transcript-customer-text');
         const liveWave = document.getElementById('ameyo-live-transcript-box');
 
-        if (nameEl) nameEl.textContent = sc.customerName;
-        if (phoneEl) phoneEl.textContent = sc.customerPhone;
+        if (nameEl) nameEl.textContent = sc.customerName || 'أحمد محمد عبد الله';
+        if (phoneEl) phoneEl.textContent = sc.customerPhone || '07723065187';
+        if (walletTypeEl) walletTypeEl.textContent = sc.walletType || 'دائمية موثقة (Full KYC)';
         if (statusEl) statusEl.textContent = sc.status || 'نشطة (Active)';
+        if (balanceEl) balanceEl.textContent = sc.balance || '350,000 د.ع';
         if (headingEl) headingEl.textContent = sc.heading || 'محادثة الزبون الصوتية الحية:';
         if (textEl) textEl.textContent = `"${sc.voiceText || 'مرحبا، عندي استفسار عن خدمات زين كاش'}"`;
         if (liveWave) liveWave.classList.remove('hidden');
@@ -6253,6 +6279,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin';
+
+        const adminVoiceBar = document.getElementById('admin-voice-scenario-launcher');
+        const adminTargetWrap = document.getElementById('widget-employee-target-wrap');
+        const idleWaitingState = document.getElementById('crm-idle-waiting-state');
+        const crmCardsGrid = document.getElementById('ameyo-crm-cards-grid');
+        const liveWaveBox = document.getElementById('ameyo-live-transcript-box');
+
+        if (isAdmin) {
+            if (adminVoiceBar) adminVoiceBar.classList.remove('hidden');
+            if (adminTargetWrap) adminTargetWrap.classList.remove('hidden');
+            if (idleWaitingState) idleWaitingState.classList.add('hidden');
+            if (crmCardsGrid) crmCardsGrid.classList.remove('hidden');
+        } else {
+            if (adminVoiceBar) adminVoiceBar.classList.add('hidden');
+            if (adminTargetWrap) adminTargetWrap.classList.add('hidden');
+            if (idleWaitingState) idleWaitingState.classList.remove('hidden');
+            if (crmCardsGrid) crmCardsGrid.classList.add('hidden');
+            if (liveWaveBox) liveWaveBox.classList.add('hidden');
+        }
 
         // Campaign Change Listener
         const campaignSelect = document.getElementById('widget-campaign-select');
