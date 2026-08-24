@@ -311,9 +311,77 @@ app.get('/api/ai-scenarios', async (req, res) => {
     res.json(db.aiScenarios || []);
 });
 
-app.post('/api/ai-scenarios', requireAdminRole, async (req, res) => {
+const defaultCallScenarios = [
+    {
+        id: 'inbound-1',
+        type: 'inbound',
+        customerName: 'أحمد محمد عبد الله',
+        customerPhone: '07723065187',
+        campaign: 'Zain Cash',
+        queue: 'CustomerService_Ar',
+        heading: 'مكالمة واردة: استفسار عن تداول الأسهم الأمريكية (US Stocks)',
+        voiceText: 'السلام عليكم أخي، ردت استفسر عن تداول الأسهم بالتطبيق، كاعد يطلعلي خطأ وما يقبل يسوي أمر الشراء، ممكن تساعدني وتوضحلي شنو المتطلبات وعقد W-8BEN؟',
+        correctDisp: 'Inquiry',
+        correctSubDisp: 'Application Usage',
+        balance: '350,000 د.ع',
+        walletType: 'دائمية موثقة (Full KYC)',
+        status: 'نشطة (Active)'
+    },
+    {
+        id: 'inbound-2',
+        type: 'inbound',
+        customerName: 'سارة فاضل عباس',
+        customerPhone: '07802345678',
+        campaign: 'Zain Cash',
+        queue: 'CustomerService_Ar',
+        heading: 'مكالمة واردة: محفظة متوقفة ورسالة CI (Inactive Wallet)',
+        voiceText: 'مرحبا عيني، محفظتي انقفلت فجأة ومكتوب Additional Customer Information (CI) ومكاعد اكدر احول فلوس، شسوي حتى تفتح؟',
+        correctDisp: 'Inquiry',
+        correctSubDisp: 'Wallet Account Status',
+        balance: '120,000 د.ع',
+        walletType: 'دائمية (CI Flagged)',
+        status: 'متوقفة مؤقتاً (Inactive / CI)'
+    },
+    {
+        id: 'inbound-3',
+        type: 'inbound',
+        customerName: 'حيدر جاسم كاظم',
+        customerPhone: '07719876543',
+        campaign: 'Zain Cash',
+        queue: 'CustomerService_Ar',
+        heading: 'مكالمة واردة: حوالة ويسترن يونيون معلقة (WU Name Amendment)',
+        voiceText: 'هلو أخي، استلمت حوالة ويسترن يونيون على المحفظة ومكتوب اسمي بي غلط بحرف واحد ومكاعد تنزل، شلون اصلح الاسم؟',
+        correctDisp: 'Request',
+        correctSubDisp: 'Western Union',
+        balance: '500.00 $',
+        walletType: 'دائمية موثقة (Full KYC)',
+        status: 'نشطة (Active)'
+    },
+    {
+        id: 'outbound-1',
+        type: 'outbound',
+        customerName: 'علي مهدي صالح',
+        customerPhone: '07727900402',
+        campaign: 'Test Campaign',
+        queue: 'Outbound_Campaign',
+        heading: 'مكالمة صادرة: متابعة استرجاع رصيد أو استبيان جودة',
+        voiceText: 'أهلاً بك، أنا علي.. بخصوص الشكوى الي رفعتها قبل يومين مال استرجاع رصيد البطاقة، صار تحديث؟',
+        correctDisp: 'Outbound Calls',
+        correctSubDisp: 'Customer Callback',
+        balance: '75,000 د.ع',
+        walletType: 'دائمية موثقة',
+        status: 'نشطة (Active)'
+    }
+];
+
+app.get('/api/call-scenarios', async (req, res) => {
     const db = await readDb();
-    db.aiScenarios = req.body;
+    res.json(db.callScenarios || defaultCallScenarios);
+});
+
+app.post('/api/call-scenarios', requireAdminRole, async (req, res) => {
+    const db = await readDb();
+    db.callScenarios = req.body;
     await writeDb(db);
     res.json({ success: true });
 });
@@ -424,6 +492,18 @@ app.post('/api/call-assignments', requireAdminRole, async (req, res) => {
     db.callAssignmentsMeta = {
         assignedAt: Date.now()
     };
+    db.testSessions = db.testSessions || {};
+    const targetUserIds = req.body || [];
+    if (targetUserIds.includes('all')) {
+        Object.keys(db.testSessions).forEach(key => {
+            if (key.endsWith('_call-simulator')) delete db.testSessions[key];
+        });
+    } else {
+        targetUserIds.forEach(uId => {
+            const key = `${uId}_call-simulator`;
+            if (db.testSessions[key]) delete db.testSessions[key];
+        });
+    }
     await writeDb(db);
     res.json({ success: true });
 });

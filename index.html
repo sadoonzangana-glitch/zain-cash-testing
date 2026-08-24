@@ -825,6 +825,9 @@
                         <button class="admin-tab-btn" data-tab="tab-ai-scenarios">
                             <i class="fa-solid fa-brain"></i> Manage AI Scenarios
                         </button>
+                        <button class="admin-tab-btn" data-tab="tab-call-scenarios">
+                            <i class="fa-solid fa-headset"></i> Manage Call Scenarios
+                        </button>
                         <button class="admin-tab-btn" data-tab="tab-assignments">
                             <i class="fa-solid fa-clipboard-list"></i> Assign Tests
                         </button>
@@ -1179,6 +1182,108 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </main>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Call Scenarios Manager (Manage Call Scenarios) -->
+                    <div class="admin-tab-content" id="tab-call-scenarios">
+                        <div class="admin-modal-body">
+                            <!-- Sidebar: Call Scenarios List -->
+                            <aside class="admin-sidebar">
+                                <div class="sidebar-header">
+                                    <h3>سيناريوهات المكالمات</h3>
+                                    <button class="btn-add-scenario" id="add-new-call-scenario-btn">
+                                        <i class="fa-solid fa-plus"></i> إضافة جديد
+                                    </button>
+                                </div>
+                                <ul class="admin-scenarios-list" id="admin-call-scenarios-list-ul">
+                                    <!-- Loaded dynamically -->
+                                </ul>
+                            </aside>
+
+                            <!-- Main Editor: Scenario Details -->
+                            <main class="admin-main-editor" style="display: flex; gap: 20px; overflow-y: auto;">
+                                <div class="split-left-editor" style="flex: 1;">
+                                    <form id="admin-call-scenario-form" onsubmit="return false;">
+                                        <div class="form-group">
+                                            <label for="call-scenario-heading">عنوان السيناريو (Scenario Heading)*</label>
+                                            <input type="text" id="call-scenario-heading" required placeholder="مثال: مكالمة واردة: استفسار عن تداول الأسهم">
+                                        </div>
+
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                            <div class="form-group">
+                                                <label for="call-scenario-type">نوع الاتصال (Call Type)*</label>
+                                                <select id="call-scenario-type" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 10px; font-weight: 700;">
+                                                    <option value="inbound" selected>مكالمة واردة (Inbound)</option>
+                                                    <option value="outbound">مكالمة صادرة (Outbound)</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="call-scenario-campaign">الحملة (Campaign)*</label>
+                                                <select id="call-scenario-campaign" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 10px; font-weight: 700;">
+                                                    <option value="Zain Cash" selected>Zain Cash</option>
+                                                    <option value="Asiacell_Outbound">Asiacell_Outbound</option>
+                                                    <option value="Test Campaign">Test Campaign</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                            <div class="form-group">
+                                                <label for="call-scenario-cust-name">اسم المشترك (Customer Name)*</label>
+                                                <input type="text" id="call-scenario-cust-name" required placeholder="مثال: أحمد محمد عبد الله">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="call-scenario-cust-phone">رقم الهاتف / المحفظة*</label>
+                                                <input type="text" id="call-scenario-cust-phone" required placeholder="07723065187">
+                                            </div>
+                                        </div>
+
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                                            <div class="form-group">
+                                                <label for="call-scenario-balance">الرصيد المتاح</label>
+                                                <input type="text" id="call-scenario-balance" value="350,000 د.ع">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="call-scenario-wallet-type">نوع المحفظة</label>
+                                                <input type="text" id="call-scenario-wallet-type" value="دائمية موثقة (Full KYC)">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="call-scenario-status">حالة المحفظة</label>
+                                                <input type="text" id="call-scenario-status" value="نشطة (Active)">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="call-scenario-voice-text">نص رسالة / محادثة المشترك الصوتية الأولى (Customer Voice Opening)*</label>
+                                            <textarea id="call-scenario-voice-text" rows="3" required placeholder="اكتب ما يقوله الزبون عند الرد على المكالمة..."></textarea>
+                                        </div>
+
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                            <div class="form-group">
+                                                <label for="call-scenario-correct-disp">التصنيف الرئيسي المتوقع (Correct Disposition)*</label>
+                                                <select id="call-scenario-correct-disp" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 10px; font-weight: 700;"></select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="call-scenario-correct-sub-disp">التصنيف الفرعي المتوقع (Correct Sub-Disposition)*</label>
+                                                <select id="call-scenario-correct-sub-disp" style="width: 100%; height: 38px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 0 10px; font-weight: 700;"></select>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-actions" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                            <button type="submit" class="btn btn-primary" id="btn-save-call-scenario">
+                                                <i class="fa-solid fa-save"></i> حفظ السيناريو
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" id="btn-test-call-scenario" style="background:#0284c7; color:#fff;">
+                                                <i class="fa-solid fa-play"></i> تجربة فورية في المحاكي
+                                            </button>
+                                            <button type="button" class="btn btn-danger" id="btn-delete-call-scenario" style="display: none;">
+                                                <i class="fa-solid fa-trash"></i> حذف
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </main>
                         </div>
@@ -1880,11 +1985,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=3.6"></script>
-    <script src="scenarios.js?v=3.6"></script>
+    <script src="slides.js?v=3.7"></script>
+    <script src="scenarios.js?v=3.7"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=3.6"></script>
-    <script src="app.js?v=3.6"></script>
-    <script src="ai-agent.js?v=3.6"></script>
+    <script src="kb-data.js?v=3.7"></script>
+    <script src="app.js?v=3.7"></script>
+    <script src="ai-agent.js?v=3.7"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v16_ameyo_live_calling_v2';
+    const STOCKS_DISP_VERSION = 'v17_manage_call_scenarios';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Ameyo Live Calling v2 update!");
+        console.log("Purged legacy localStorage cache for Manage Call Scenarios update!");
     }
 
     // Global Dispositions Catalog
@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (enterTestBtn) {
         enterTestBtn.addEventListener('click', async () => {
             if (!currentUser) return;
-            const activeTestType = window.isTestAssigned ? 'simulator' : 'ai-agent';
+            const activeTestType = window.isCallTestAssigned ? 'call-simulator' : (window.isAiTestAssigned ? 'ai-agent' : 'simulator');
             try {
                 // Post to start the session, setting the startTime to now
                 await apiCall('/api/test-session/start', 'POST', {
@@ -2907,6 +2907,242 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el) { el.addEventListener('input', updateAILivePreview); el.addEventListener('change', updateAILivePreview); }
     });
 
+    // ==========================================
+    // CALL SCENARIOS MANAGEMENT (Manage Call Scenarios)
+    // ==========================================
+    let callScenariosList = [];
+    let selectedCallScenarioIndex = null;
+
+    async function loadCallScenariosFromStorage() {
+        try {
+            const fetched = await apiCall('/api/call-scenarios', 'GET');
+            if (fetched && fetched.length > 0) {
+                callScenariosList = fetched;
+            } else {
+                callScenariosList = (typeof CALL_SCENARIOS !== 'undefined') ? [...CALL_SCENARIOS] : [];
+            }
+        } catch(e) {
+            console.error('Failed to load call scenarios from server', e);
+            callScenariosList = (typeof CALL_SCENARIOS !== 'undefined') ? [...CALL_SCENARIOS] : [];
+        }
+    }
+    window.loadCallScenariosFromStorage = loadCallScenariosFromStorage;
+
+    function renderAdminCallScenariosList() {
+        const ul = document.getElementById('admin-call-scenarios-list-ul');
+        if (!ul) return;
+        ul.innerHTML = '';
+        if (callScenariosList.length === 0) {
+            ul.innerHTML = '<li style="padding:12px; color:#94a3b8; font-size:0.82rem;">لا توجد سيناريوهات مكالمات. اضغط إضافة جديد.</li>';
+            return;
+        }
+        callScenariosList.forEach((sc, idx) => {
+            const li = document.createElement('li');
+            if (idx === selectedCallScenarioIndex) li.className = 'active';
+            li.innerHTML = `
+                <span class="li-title" style="font-weight:700;">${sc.type === 'outbound' ? '📤' : '📥'} ${escapeHtml(sc.heading || sc.customerName || 'سيناريو')}</span>
+                <span class="li-desc" style="font-size:0.75rem; color:#64748b;">${escapeHtml(sc.customerName || '')} • ${sc.campaign || 'Zain Cash'}</span>
+            `;
+            li.addEventListener('click', () => selectCallScenario(idx));
+            ul.appendChild(li);
+        });
+    }
+
+    function populateCallDispositions(type, targetMainId, targetSubId) {
+        const mainSelect = document.getElementById(targetMainId);
+        const subSelect = document.getElementById(targetSubId);
+        if (!mainSelect || !subSelect) return;
+
+        mainSelect.innerHTML = '';
+        subSelect.innerHTML = '';
+
+        if (type === 'outbound') {
+            mainSelect.innerHTML = `<option value="Outbound Calls">Outbound Calls</option>`;
+            const outSubOptions = [
+                "Informations Required",
+                "Customer Requested Call",
+                "Clarifications Call",
+                "Customer Callback",
+                "Survey Call",
+                "Manager Call",
+                "Technical Assistance Follow-up"
+            ];
+            subSelect.innerHTML = outSubOptions.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+        } else {
+            // Inbound Dispositions
+            Object.keys(GLOBAL_DISPOSITIONS_CATALOG).forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                mainSelect.appendChild(opt);
+            });
+
+            const updateSubs = () => {
+                const cat = mainSelect.value;
+                subSelect.innerHTML = '';
+                const subs = GLOBAL_DISPOSITIONS_CATALOG[cat] || [];
+                subs.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    subSelect.appendChild(opt);
+                });
+            };
+
+            mainSelect.onchange = updateSubs;
+            updateSubs();
+        }
+    }
+
+    function selectCallScenario(idx) {
+        selectedCallScenarioIndex = idx;
+        const ul = document.getElementById('admin-call-scenarios-list-ul');
+        if (ul) {
+            ul.querySelectorAll('li').forEach((li, i) => {
+                li.classList.toggle('active', i === idx);
+            });
+        }
+
+        const deleteBtn = document.getElementById('btn-delete-call-scenario');
+
+        if (idx === null || idx === undefined || !callScenariosList[idx]) {
+            if (deleteBtn) deleteBtn.style.display = 'none';
+            return;
+        }
+
+        const sc = callScenariosList[idx];
+        if (deleteBtn) deleteBtn.style.display = 'inline-block';
+
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        setVal('call-scenario-heading', sc.heading);
+        setVal('call-scenario-type', sc.type || 'inbound');
+        setVal('call-scenario-campaign', sc.campaign || 'Zain Cash');
+        setVal('call-scenario-cust-name', sc.customerName);
+        setVal('call-scenario-cust-phone', sc.customerPhone);
+        setVal('call-scenario-balance', sc.balance);
+        setVal('call-scenario-wallet-type', sc.walletType);
+        setVal('call-scenario-status', sc.status);
+        setVal('call-scenario-voice-text', sc.voiceText);
+
+        populateCallDispositions(sc.type || 'inbound', 'call-scenario-correct-disp', 'call-scenario-correct-sub-disp');
+
+        setTimeout(() => {
+            setVal('call-scenario-correct-disp', sc.correctDisp);
+            setVal('call-scenario-correct-sub-disp', sc.correctSubDisp);
+        }, 60);
+    }
+
+    // Call Type change updates campaign and dispositions dropdown
+    const callScenarioTypeSelect = document.getElementById('call-scenario-type');
+    if (callScenarioTypeSelect) {
+        callScenarioTypeSelect.addEventListener('change', (e) => {
+            const t = e.target.value;
+            const campSelect = document.getElementById('call-scenario-campaign');
+            if (campSelect) {
+                if (t === 'outbound') campSelect.value = 'Test Campaign';
+                else campSelect.value = 'Zain Cash';
+            }
+            populateCallDispositions(t, 'call-scenario-correct-disp', 'call-scenario-correct-sub-disp');
+        });
+    }
+
+    // Add New Call Scenario
+    const addNewCallScenarioBtn = document.getElementById('add-new-call-scenario-btn');
+    if (addNewCallScenarioBtn) {
+        addNewCallScenarioBtn.addEventListener('click', () => {
+            const newSc = {
+                id: 'custom-call-' + Date.now(),
+                type: 'inbound',
+                campaign: 'Zain Cash',
+                queue: 'CustomerService_Ar',
+                heading: 'سيناريو مكالمة واردة جديدة',
+                customerName: 'زبون تجريبي',
+                customerPhone: '07720000000',
+                balance: '250,000 د.ع',
+                walletType: 'دائمية موثقة (Full KYC)',
+                status: 'نشطة (Active)',
+                voiceText: 'مرحبا أخي، عندي استفسار...',
+                correctDisp: 'Inquiry',
+                correctSubDisp: 'Application Usage'
+            };
+            callScenariosList.push(newSc);
+            renderAdminCallScenariosList();
+            selectCallScenario(callScenariosList.length - 1);
+        });
+    }
+
+    // Save Call Scenario
+    const saveCallScenarioBtn = document.getElementById('btn-save-call-scenario');
+    if (saveCallScenarioBtn) {
+        saveCallScenarioBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (selectedCallScenarioIndex === null || !callScenariosList[selectedCallScenarioIndex]) return;
+            const sc = callScenariosList[selectedCallScenarioIndex];
+            
+            sc.heading = document.getElementById('call-scenario-heading')?.value || sc.heading;
+            sc.type = document.getElementById('call-scenario-type')?.value || sc.type;
+            sc.campaign = document.getElementById('call-scenario-campaign')?.value || sc.campaign;
+            sc.customerName = document.getElementById('call-scenario-cust-name')?.value || sc.customerName;
+            sc.customerPhone = document.getElementById('call-scenario-cust-phone')?.value || sc.customerPhone;
+            sc.balance = document.getElementById('call-scenario-balance')?.value || sc.balance;
+            sc.walletType = document.getElementById('call-scenario-wallet-type')?.value || sc.walletType;
+            sc.status = document.getElementById('call-scenario-status')?.value || sc.status;
+            sc.voiceText = document.getElementById('call-scenario-voice-text')?.value || sc.voiceText;
+            sc.correctDisp = document.getElementById('call-scenario-correct-disp')?.value || '';
+            sc.correctSubDisp = document.getElementById('call-scenario-correct-sub-disp')?.value || '';
+
+            try {
+                await apiCall('/api/call-scenarios', 'POST', callScenariosList);
+                renderAdminCallScenariosList();
+                selectCallScenario(selectedCallScenarioIndex);
+                showToast('تم حفظ سيناريو المكالمة الصوتية بنجاح ✅', 'success');
+            } catch(err) {
+                console.error('Failed to save call scenario', err);
+                showToast('فشل حفظ السيناريو. تحقق من الاتصال.', 'error');
+            }
+        });
+    }
+
+    // Test in Simulator (تجربة في المحاكي)
+    const testCallScenarioBtn = document.getElementById('btn-test-call-scenario');
+    if (testCallScenarioBtn) {
+        testCallScenarioBtn.addEventListener('click', () => {
+            if (selectedCallScenarioIndex === null || !callScenariosList[selectedCallScenarioIndex]) {
+                showToast('يرجى اختيار أو حفظ سيناريو أولاً لتجربته!', 'warning');
+                return;
+            }
+            const sc = callScenariosList[selectedCallScenarioIndex];
+            showToast(`🚀 جاري تشغيل السيناريو (${sc.heading || sc.customerName}) في محاكي المكالمات...`, 'info');
+            switchTab('tab-call-simulator');
+            if (window.initAmeyoCallSimulator) window.initAmeyoCallSimulator();
+            setTimeout(() => {
+                if (sc.type === 'outbound') {
+                    if (window.triggerOutboundCall) window.triggerOutboundCall(sc);
+                } else {
+                    if (window.triggerIncomingCall) window.triggerIncomingCall(sc);
+                }
+            }, 350);
+        });
+    }
+
+    // Delete Call Scenario
+    const deleteCallScenarioBtn = document.getElementById('btn-delete-call-scenario');
+    if (deleteCallScenarioBtn) {
+        deleteCallScenarioBtn.addEventListener('click', async () => {
+            if (selectedCallScenarioIndex === null) return;
+            if (!confirm('هل أنت متأكد من حذف سيناريو المكالمة هذا؟')) return;
+            callScenariosList.splice(selectedCallScenarioIndex, 1);
+            try {
+                await apiCall('/api/call-scenarios', 'POST', callScenariosList);
+            } catch(err) {
+                console.error('Failed to delete call scenario', err);
+            }
+            selectedCallScenarioIndex = null;
+            renderAdminCallScenariosList();
+            selectCallScenario(null);
+            showToast('تم حذف سيناريو المكالمة بنجاح.', 'success');
+        });
+    }
 
     // ==========================================
     // USER SESSION MANAGEMENT & LOGIN FLOW
@@ -3122,6 +3358,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navBtnTC) navBtnTC.style.display = 'none';
         if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
         if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+        const navBtnCallSimHidden = document.getElementById('nav-btn-call-simulator-hidden');
+        if (navBtnCallSimHidden) navBtnCallSimHidden.style.display = 'none';
         if (navBtnKb) navBtnKb.style.display = '';
         if (banner) banner.classList.add('hidden');
         if (assignmentTimerInterval) {
@@ -3132,8 +3370,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentUser.role === 'Admin') {
             isTestAssigned = false;
             isAiTestAssigned = false;
+            isCallTestAssigned = false;
             window.isTestAssigned = false;
             window.isAiTestAssigned = false;
+            window.isCallTestAssigned = false;
             
             if (navBtnKb) navBtnKb.style.display = '';
             if (navBtnTC) navBtnTC.style.display = '';
@@ -3146,77 +3386,84 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            const [assignments, aiAssignments] = await Promise.all([
-                apiCall('/api/assignments', 'GET'),
-                apiCall('/api/ai-assignments', 'GET')
+            const [assignments, aiAssignments, callAssignments] = await Promise.all([
+                apiCall('/api/assignments', 'GET').catch(() => []),
+                apiCall('/api/ai-assignments', 'GET').catch(() => []),
+                apiCall('/api/call-assignments', 'GET').catch(() => [])
             ]);
             
-            const metaRes = await apiCall('/api/assignments/meta', 'GET').catch(() => ({ assignmentsMeta: { assignedAt: 0 }, aiAssignmentsMeta: { assignedAt: 0 } }));
+            const metaRes = await apiCall('/api/assignments/meta', 'GET').catch(() => ({ 
+                assignmentsMeta: { assignedAt: 0 }, 
+                aiAssignmentsMeta: { assignedAt: 0 },
+                callAssignmentsMeta: { assignedAt: 0 }
+            }));
             
             let rawIsTest = assignments.includes(currentUser.id) || assignments.includes('all');
             let rawIsAiTest = aiAssignments.includes(currentUser.id) || aiAssignments.includes('all');
+            let rawIsCallTest = callAssignments.includes(currentUser.id) || callAssignments.includes('all');
 
             const now = Date.now();
             const assignTime = metaRes.assignmentsMeta?.assignedAt;
             const aiAssignTime = metaRes.aiAssignmentsMeta?.assignedAt;
+            const callAssignTime = metaRes.callAssignmentsMeta?.assignedAt;
 
             // Validity of 24 hours from assignment (fallback to valid if assignedAt is missing/0)
             isTestAssigned = rawIsTest && (!assignTime || (now - assignTime <= 24 * 60 * 60 * 1000));
             isAiTestAssigned = rawIsAiTest && (!aiAssignTime || (now - aiAssignTime <= 24 * 60 * 60 * 1000));
+            isCallTestAssigned = rawIsCallTest && (!callAssignTime || (now - callAssignTime <= 24 * 60 * 60 * 1000));
             
             window.isTestAssigned = isTestAssigned;
             window.isAiTestAssigned = isAiTestAssigned;
+            window.isCallTestAssigned = isCallTestAssigned;
             
-            if (isTestAssigned || isAiTestAssigned) {
-                const activeTestType = isTestAssigned ? 'simulator' : 'ai-agent';
+            if (isTestAssigned || isAiTestAssigned || isCallTestAssigned) {
+                // Priority: Call Simulator > AI Agent > Chat Simulator
+                const activeTestType = isCallTestAssigned ? 'call-simulator' : (isAiTestAssigned ? 'ai-agent' : 'simulator');
                 
                 // Get the session state
                 const sessionRes = await apiCall(`/api/test-session?userId=${currentUser.id}&testType=${activeTestType}`, 'GET');
                 
                 if (sessionRes && (sessionRes.status === 'completed' || sessionRes.status === 'expired')) {
                     window.isTestSessionActive = false;
-                    // Check if it's been less than 1 hour since completion/expiration
                     const completedTime = sessionRes.completedAt ? new Date(sessionRes.completedAt).getTime() : 0;
                     const elapsedSinceCompleted = now - completedTime;
 
                     if (elapsedSinceCompleted < 60 * 60 * 1000) {
-                        // Less than 1 hour: Show results overlay / lock screen so they can ONLY view their results
                         if (banner) banner.classList.remove('hidden');
                         if (bannerText) bannerText.textContent = "تم إكمال الاختبار. يمكنك الاطلاع على النتيجة والشهادة فقط لمدة ساعة بعد الإكمال.";
                         
-                        // Hide main navigation buttons
                         if (navBtnKb) navBtnKb.style.display = 'none';
                         if (navBtnTC) navBtnTC.style.display = 'none';
                         if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
                         if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                        if (navBtnCallSimHidden) navBtnCallSimHidden.style.display = 'none';
                         backBtns.forEach(btn => btn.style.display = 'none');
                         
-                        // Show the results overlay corresponding to the active test
                         if (activeTestType === 'simulator') {
                             const simOverlay = document.getElementById('results-overlay');
                             if (simOverlay) simOverlay.classList.remove('hidden');
                             switchTab('tab-simulator');
-                        } else {
+                        } else if (activeTestType === 'ai-agent') {
                             const aiOverlay = document.getElementById('ai-results-overlay');
                             if (aiOverlay) aiOverlay.classList.remove('hidden');
                             switchTab('tab-ai-agent');
+                        } else {
+                            switchTab('tab-call-simulator');
+                            if (window.initAmeyoCallSimulator) window.initAmeyoCallSimulator();
                         }
                         
-                        // Hide the blocking overlay so they can see the results overlay
                         const lockOverlay = document.getElementById('test-locked-overlay');
                         if (lockOverlay) lockOverlay.classList.add('hidden');
-                        
                         return;
                     } else {
-                        // More than 1 hour: Hide everything, revert to KB only!
                         if (banner) banner.classList.add('hidden');
                         if (navBtnKb) navBtnKb.style.display = '';
                         if (navBtnTC) navBtnTC.style.display = 'none';
                         if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
                         if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                        if (navBtnCallSimHidden) navBtnCallSimHidden.style.display = 'none';
                         backBtns.forEach(btn => btn.style.display = 'none');
                         
-                        // Hide results overlays
                         const simOverlay = document.getElementById('results-overlay');
                         if (simOverlay) simOverlay.classList.add('hidden');
                         const aiOverlay = document.getElementById('ai-results-overlay');
@@ -3231,7 +3478,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (sessionRes && sessionRes.status === 'active') {
                     window.isTestSessionActive = true;
-                    // Active test session: lock to test screen and start timer
                     if (banner) banner.classList.remove('hidden');
                     backBtns.forEach(btn => btn.style.display = 'none');
                     if (navBtnKb) navBtnKb.style.display = 'none';
@@ -3241,12 +3487,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي الدردشة! يرجى إكمال الحالات قبل نهاية الوقت.";
                         if (navBtnSimHidden) { navBtnSimHidden.style.display = ''; navBtnSimHidden.textContent = 'اختبار المحاكي النشط'; }
                         if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                        if (navBtnCallSimHidden) navBtnCallSimHidden.style.display = 'none';
                         switchTab('tab-simulator');
-                    } else {
+                    } else if (activeTestType === 'ai-agent') {
                         if (bannerText) bannerText.textContent = "لديك اختبار نشط في الأيجنت الذكي! يرجى إكمال التقييم وتصنيف التذكرة.";
                         if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
                         if (navBtnAIHidden) { navBtnAIHidden.style.display = ''; navBtnAIHidden.textContent = 'اختبار الأيجنت النشط'; }
+                        if (navBtnCallSimHidden) navBtnCallSimHidden.style.display = 'none';
                         switchTab('tab-ai-agent');
+                    } else {
+                        if (bannerText) bannerText.textContent = "لديك اختبار نشط في محاكي المكالمات (Call Center)! يرجى التواجد في وضع الاستعداد واستقبال مكالمة الاختبار وتصنيفها.";
+                        if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
+                        if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                        if (navBtnCallSimHidden) { navBtnCallSimHidden.style.display = ''; navBtnCallSimHidden.textContent = 'اختبار الكول النشط'; }
+                        switchTab('tab-call-simulator');
+                        if (window.initAmeyoCallSimulator) window.initAmeyoCallSimulator();
                     }
 
                     if (typeof startTestTimer === 'function') {
@@ -3264,6 +3519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (navBtnTC) navBtnTC.style.display = 'none';
                 if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
                 if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                if (navBtnCallSimHidden) navBtnCallSimHidden.style.display = 'none';
                 
                 // Show hidden slides tab
                 const navBtnSlides = document.getElementById('nav-btn-slides-hidden');
@@ -3272,9 +3528,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 switchTab('tab-slides');
 
                 // Start the 24-hour warning countdown ticking clock
-                const activeAssignedAt = isTestAssigned 
-                    ? (metaRes.assignmentsMeta?.assignedAt || Date.now())
-                    : (metaRes.aiAssignmentsMeta?.assignedAt || Date.now());
+                const activeAssignedAt = isCallTestAssigned
+                    ? (metaRes.callAssignmentsMeta?.assignedAt || Date.now())
+                    : (isAiTestAssigned 
+                        ? (metaRes.aiAssignmentsMeta?.assignedAt || Date.now())
+                        : (metaRes.assignmentsMeta?.assignedAt || Date.now()));
                 startAssignmentTimer(activeAssignedAt);
             } else {
                 // Revert to showing Knowledge Base only (hide Training Center button for non-admins)
@@ -3283,6 +3541,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (navBtnTC) navBtnTC.style.display = 'none';
                 if (navBtnSimHidden) navBtnSimHidden.style.display = 'none';
                 if (navBtnAIHidden) navBtnAIHidden.style.display = 'none';
+                if (navBtnCallSimHidden) navBtnCallSimHidden.style.display = 'none';
                 backBtns.forEach(btn => btn.style.display = '');
                 
                 const lockOverlay = document.getElementById('test-locked-overlay');
@@ -3292,8 +3551,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Failed to check assignments", e);
             isTestAssigned = false;
             isAiTestAssigned = false;
+            isCallTestAssigned = false;
             window.isTestAssigned = false;
             window.isAiTestAssigned = false;
+            window.isCallTestAssigned = false;
         }
     }
 
@@ -3497,6 +3758,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadAiScenariosFromStorage().then(() => {
                     renderAdminAiScenariosList();
                     selectAiScenario(null);
+                });
+            } else if (targetTab === 'tab-call-scenarios') {
+                stopResultsPolling();
+                loadCallScenariosFromStorage().then(() => {
+                    renderAdminCallScenariosList();
+                    if (callScenariosList.length > 0) selectCallScenario(0);
+                    else selectCallScenario(null);
                 });
             } else if (targetTab === 'tab-edit-slides') {
                 stopResultsPolling();
@@ -6007,13 +6275,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Always Populate Target Employee / Customer Dropdown
         if (employeeTargetSelect) {
             try {
-                const [usersList, callAssignments] = await Promise.all([
+                const [usersList, callAssignments, serverScenarios] = await Promise.all([
                     apiCall('/api/users', 'GET').catch(() => []),
-                    apiCall('/api/call-assignments', 'GET').catch(() => [])
+                    apiCall('/api/call-assignments', 'GET').catch(() => []),
+                    apiCall('/api/call-scenarios', 'GET').catch(() => CALL_SCENARIOS)
                 ]);
 
                 const nonAdmins = usersList.filter(u => u.role !== 'Admin');
                 const isAllAssigned = callAssignments.includes('all');
+                const availableScenarios = (serverScenarios && serverScenarios.length > 0) ? serverScenarios : CALL_SCENARIOS;
 
                 let opts = `<option value="">-- اختر الموظف أو الزبون المستهدف --</option>`;
 
@@ -6029,13 +6299,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     opts += `</optgroup>`;
                 }
 
-                // Built-in Training Scenarios Optgroup
-                opts += `<optgroup label="📋 سيناريوهات تدريبية مسجلة مسبقاً (Scenarios)">
-                    <option value="sc_inbound-1" data-type="scenario" data-sc-id="inbound-1" data-name="أحمد محمد عبد الله" data-phone="07723065187">👤 سيناريو 1: أحمد محمد - تداول الأسهم (07723065187)</option>
-                    <option value="sc_inbound-2" data-type="scenario" data-sc-id="inbound-2" data-name="سارة فاضل عباس" data-phone="07802345678">👤 سيناريو 2: سارة فاضل - محفظة متوقفة CI (07802345678)</option>
-                    <option value="sc_inbound-3" data-type="scenario" data-sc-id="inbound-3" data-name="حيدر جاسم كاظم" data-phone="07719876543">👤 سيناريو 3: حيدر جاسم - ويسترن يونيون (07719876543)</option>
-                    <option value="sc_outbound-1" data-type="scenario" data-sc-id="outbound-1" data-name="علي مهدي صالح" data-phone="07727900402">👤 سيناريو 4: علي مهدي - مكالمة صادرة (07727900402)</option>
-                </optgroup>`;
+                // Dynamic Training Scenarios Optgroup
+                if (availableScenarios.length > 0) {
+                    opts += `<optgroup label="📋 سيناريوهات التدريب الصوتي (Manage Call Scenarios)">`;
+                    availableScenarios.forEach((sc, i) => {
+                        opts += `<option value="sc_${sc.id}" data-type="scenario" data-sc-id="${sc.id}" data-name="${escapeHtml(sc.customerName || '')}" data-phone="${sc.customerPhone || '07723065187'}">
+                            ${sc.type === 'outbound' ? '📤' : '📥'} ${escapeHtml(sc.heading || sc.customerName || `سيناريو ${i+1}`)} (${sc.customerPhone || '07723065187'})
+                        </option>`;
+                    });
+                    opts += `</optgroup>`;
+                }
 
                 employeeTargetSelect.innerHTML = opts;
 
@@ -6052,7 +6325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (dtype === 'scenario') {
                         const scId = sel.getAttribute('data-sc-id');
-                        const sc = CALL_SCENARIOS.find(s => s.id === scId) || CALL_SCENARIOS[0];
+                        const sc = availableScenarios.find(s => String(s.id) === String(scId)) || availableScenarios[0];
                         activeCallScenario = sc;
                         updateCrmCustomerProfile(sc);
                     } else if (dtype === 'employee') {
