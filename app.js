@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v23_fix_webrtc_audio_exchange';
+    const STOCKS_DISP_VERSION = 'v24_webrtc_audio_fix_and_visualizer';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Fix WebRTC Audio Exchange update!");
+        console.log("Purged legacy localStorage cache for WebRTC Audio Fix and Visualizer update!");
     }
 
     // Global Dispositions Catalog
@@ -6030,13 +6030,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let peerConn = null;
     let remoteAudioEl = null;
     let pendingOfferSdp = null;
+    let pendingIceCandidates = [];
 
     const rtcConfig = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun.services.mozilla.com' }
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:stun.services.mozilla.com' },
+            { urls: 'stun:stun.counterpath.net:3478' }
         ]
     };
 
@@ -6053,6 +6057,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.appendChild(remoteAudioEl);
             }
         }
+        remoteAudioEl.muted = false;
+        remoteAudioEl.volume = 1.0;
         return remoteAudioEl;
     }
 
@@ -6088,9 +6094,106 @@ document.addEventListener('DOMContentLoaded', () => {
         if (remoteAudioEl) {
             remoteAudioEl.srcObject = null;
         }
+        if (visualizerAnimId) {
+            cancelAnimationFrame(visualizerAnimId);
+            visualizerAnimId = null;
+        }
+        pendingIceCandidates = [];
     }
 
-    function waitForIceGathering(pc, maxWaitMs = 600) {
+    let localAnalyser = null;
+    let remoteAnalyser = null;
+    let visualizerAnimId = null;
+
+    function startAudioVisualizers(locStream, remStream) {
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+
+            if (locStream && locStream.getAudioTracks().length > 0) {
+                try {
+                    const src = ctx.createMediaStreamSource(locStream);
+                    localAnalyser = ctx.createAnalyser();
+                    localAnalyser.fftSize = 64;
+                    src.connect(localAnalyser);
+                } catch(e){}
+            }
+
+            if (remStream && remStream.getAudioTracks().length > 0) {
+                try {
+                    const src = ctx.createMediaStreamSource(remStream);
+                    remoteAnalyser = ctx.createAnalyser();
+                    remoteAnalyser.fftSize = 64;
+                    src.connect(remoteAnalyser);
+                } catch(e){}
+            }
+
+            const badge = document.getElementById('webrtc-audio-status-badge');
+            const badgeText = document.getElementById('webrtc-audio-status-text');
+            const buffer = new Uint8Array(32);
+
+            function updateVisualizer() {
+                let localVol = 0;
+                let remoteVol = 0;
+
+                if (localAnalyser) {
+                    localAnalyser.getByteFrequencyData(buffer);
+                    let sum = 0;
+                    for (let i = 0; i < buffer.length; i++) sum += buffer[i];
+                    localVol = sum / buffer.length;
+                }
+
+                if (remoteAnalyser) {
+                    remoteAnalyser.getByteFrequencyData(buffer);
+                    let sum = 0;
+                    for (let i = 0; i < buffer.length; i++) sum += buffer[i];
+                    remoteVol = sum / buffer.length;
+                }
+
+                if (badge && badgeText) {
+                    if (remoteVol > 12) {
+                        badge.style.background = '#dcfce7';
+                        badge.style.borderColor = '#22c55e';
+                        badge.style.color = '#15803d';
+                        badgeText.textContent = '🔊 الطرف الآخر يتحدث...';
+                    } else if (localVol > 12) {
+                        badge.style.background = '#eff6ff';
+                        badge.style.borderColor = '#3b82f6';
+                        badge.style.color = '#1d4ed8';
+                        badgeText.textContent = '🎙️ صوتك يُنقل الآن...';
+                    } else {
+                        badge.style.background = '#f0fdf4';
+                        badge.style.borderColor = '#bbf7d0';
+                        badge.style.color = '#166534';
+                        badgeText.textContent = '🟢 WebRTC Audio Live';
+                    }
+                }
+
+                if (currentCallState === 'active') {
+                    visualizerAnimId = requestAnimationFrame(updateVisualizer);
+                }
+            }
+
+            if (visualizerAnimId) cancelAnimationFrame(visualizerAnimId);
+            updateVisualizer();
+        } catch(e) {
+            console.warn("Visualizer init error:", e);
+        }
+    }
+
+    async function applyPendingIceCandidates() {
+        if (!peerConn || !peerConn.remoteDescription) return;
+        while (pendingIceCandidates.length > 0) {
+            const cand = pendingIceCandidates.shift();
+            try {
+                await peerConn.addIceCandidate(new RTCIceCandidate(cand));
+            } catch(e) {
+                console.warn("Failed to apply queued ICE candidate:", e);
+            }
+        }
+    }
+
+    function waitForIceGathering(pc, maxWaitMs = 800) {
         return new Promise((resolve) => {
             if (pc.iceGatheringState === 'complete') {
                 resolve();
@@ -6112,7 +6215,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initWebRTCOffer(targetUserId, currentUserId) {
         stopLocalAudioStream();
+        pendingIceCandidates = [];
         const audio = ensureRemoteAudioElement();
+        audio.play().catch(() => {});
         const stream = await startLocalAudioStream();
         
         peerConn = new RTCPeerConnection(rtcConfig);
@@ -6123,13 +6228,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         peerConn.ontrack = (event) => {
             console.log("WebRTC ontrack received remote audio stream:", event);
+            const el = ensureRemoteAudioElement();
+            let remoteStream = null;
             if (event.streams && event.streams[0]) {
-                audio.srcObject = event.streams[0];
+                remoteStream = event.streams[0];
+                el.srcObject = remoteStream;
             } else if (event.track) {
-                const inbound = new MediaStream([event.track]);
-                audio.srcObject = inbound;
+                remoteStream = new MediaStream([event.track]);
+                el.srcObject = remoteStream;
             }
-            audio.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
+            el.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
+            startAudioVisualizers(localStream, remoteStream);
+        };
+
+        peerConn.onconnectionstatechange = () => {
+            console.log("WebRTC connectionState (Caller):", peerConn?.connectionState);
+            if (peerConn?.connectionState === 'connected') {
+                showToast("🎙️ تم اتصال الصوت المباشر بنجاح (Voice Connected)", "success");
+            }
         };
 
         peerConn.onicecandidate = (event) => {
@@ -6146,14 +6262,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const offer = await peerConn.createOffer({ offerToReceiveAudio: true });
         await peerConn.setLocalDescription(offer);
 
-        await waitForIceGathering(peerConn, 600);
+        await waitForIceGathering(peerConn, 800);
 
         return peerConn.localDescription;
     }
 
     async function handleWebRTCOffer(offerSdp, fromUserId, currentUserId) {
         stopLocalAudioStream();
+        pendingIceCandidates = [];
         const audio = ensureRemoteAudioElement();
+        audio.play().catch(() => {});
         const stream = await startLocalAudioStream();
 
         peerConn = new RTCPeerConnection(rtcConfig);
@@ -6164,13 +6282,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         peerConn.ontrack = (event) => {
             console.log("WebRTC ontrack received remote audio stream on answerer:", event);
+            const el = ensureRemoteAudioElement();
+            let remoteStream = null;
             if (event.streams && event.streams[0]) {
-                audio.srcObject = event.streams[0];
+                remoteStream = event.streams[0];
+                el.srcObject = remoteStream;
             } else if (event.track) {
-                const inbound = new MediaStream([event.track]);
-                audio.srcObject = inbound;
+                remoteStream = new MediaStream([event.track]);
+                el.srcObject = remoteStream;
             }
-            audio.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
+            el.play().catch(e => console.warn("Audio autoplay blocked, click will enable:", e));
+            startAudioVisualizers(localStream, remoteStream);
+        };
+
+        peerConn.onconnectionstatechange = () => {
+            console.log("WebRTC connectionState (Answerer):", peerConn?.connectionState);
+            if (peerConn?.connectionState === 'connected') {
+                showToast("🎙️ تم اتصال الصوت المباشر بنجاح (Voice Connected)", "success");
+            }
         };
 
         peerConn.onicecandidate = (event) => {
@@ -6185,10 +6314,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         await peerConn.setRemoteDescription(new RTCSessionDescription(offerSdp));
+        await applyPendingIceCandidates();
+
         const answer = await peerConn.createAnswer();
         await peerConn.setLocalDescription(answer);
 
-        await waitForIceGathering(peerConn, 600);
+        await waitForIceGathering(peerConn, 800);
 
         return peerConn.localDescription;
     }
@@ -6196,16 +6327,22 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleWebRTCAnswer(answerSdp) {
         if (peerConn && peerConn.signalingState !== 'closed') {
             await peerConn.setRemoteDescription(new RTCSessionDescription(answerSdp));
+            await applyPendingIceCandidates();
             const audio = ensureRemoteAudioElement();
             audio.play().catch(() => {});
         }
     }
 
     async function handleRemoteIceCandidate(candidate) {
-        if (peerConn && peerConn.signalingState !== 'closed') {
+        if (!candidate) return;
+        if (peerConn && peerConn.remoteDescription && peerConn.signalingState !== 'closed') {
             try {
                 await peerConn.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch(e){}
+            } catch(e){
+                console.warn("Failed to add direct ICE candidate:", e);
+            }
+        } else {
+            pendingIceCandidates.push(candidate);
         }
     }
 

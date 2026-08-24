@@ -424,9 +424,9 @@
                     </button>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">محاكي الهاتف والاتصال الصوتي (Ameyo Telephony)</span>
-                        <div class="ameyo-connection-badge" style="display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: #166534; font-weight: 700;">
+                        <div id="webrtc-audio-status-badge" class="ameyo-connection-badge" style="display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #166534; font-weight: 700; transition: all 0.3s ease;">
                             <span class="live-pulse-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
-                            <span>WebRTC Audio Ready</span>
+                            <span id="webrtc-audio-status-text">WebRTC Audio Ready</span>
                         </div>
                     </div>
                 </div>
@@ -1999,11 +1999,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=4.3"></script>
-    <script src="scenarios.js?v=4.3"></script>
+    <script src="slides.js?v=4.4"></script>
+    <script src="scenarios.js?v=4.4"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=4.3"></script>
-    <script src="app.js?v=4.3"></script>
-    <script src="ai-agent.js?v=4.3"></script>
+    <script src="kb-data.js?v=4.4"></script>
+    <script src="app.js?v=4.4"></script>
+    <script src="ai-agent.js?v=4.4"></script>
 </body>
 </html>
