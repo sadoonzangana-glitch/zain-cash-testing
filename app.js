@@ -1,15 +1,16 @@
 // Zain Cash Customer Care Training Application Logic (Amyo Style)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatic Cache-Busting for Admin KB Visual Rich Editor & Dispositions
-    const STOCKS_DISP_VERSION = 'v12_admin_kb_visual_editor';
+    // Automatic Cache-Busting for Master System Prompt Upgrade
+    const STOCKS_DISP_VERSION = 'v13_master_system_prompt_upgrade';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
         localStorage.removeItem('zain_cash_kb');
         localStorage.removeItem('zain_cash_ai_scenarios');
+        localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Admin KB Visual Editor update!");
+        console.log("Purged legacy localStorage cache for Master System Prompt update!");
     }
 
     // Global Dispositions Catalog
