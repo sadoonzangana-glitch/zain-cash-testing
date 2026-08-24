@@ -11,7 +11,7 @@
     <!-- FontAwesome for professional icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css?v=3.2">
+    <link rel="stylesheet" href="styles.css?v=3.3">
 </head>
 <body>
 
@@ -87,6 +87,7 @@
                 <button class="amy-nav-btn hidden" data-amy-tab="tab-slides" id="nav-btn-slides-hidden"></button>
                 <button class="amy-nav-btn hidden" data-amy-tab="tab-simulator" id="nav-btn-simulator-hidden"></button>
                 <button class="amy-nav-btn hidden" data-amy-tab="tab-ai-agent" id="nav-btn-ai-agent-hidden"></button>
+                <button class="amy-nav-btn hidden" data-amy-tab="tab-call-simulator" id="nav-btn-call-simulator-hidden"></button>
             </div>
             
             <div class="header-right-controls">
@@ -216,35 +217,45 @@
                         <p style="font-size: 0.95rem; color: #64748b;">اختر أحد مسارات التدريب والتقييم المتاحة لتطوير مهاراتك وقياس أدائك الحواري.</p>
                     </div>
                     
-                    <div class="tc-pathways-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                    <div class="tc-pathways-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                         <!-- Card 1: Interactive Slides -->
-                        <div class="tc-path-card" id="btn-start-slides" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
-                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 50%; background: #fff8e8; color: #ff9900; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #ffeeba;">
+                        <div class="tc-path-card" id="btn-start-slides" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
+                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #fff8e8; color: #ff9900; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #ffeeba;">
                                 <i class="fa-solid fa-graduation-cap"></i>
                             </div>
-                            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">التدريب التفاعلي (Slides)</h3>
-                            <p style="font-size: 0.8rem; color: #64748b; line-height: 1.5; margin-bottom: 20px; flex: 1;">تعلم القواعد الأساسية واللهجة العراقية لخدمة المشتركين من خلال جولات تفاعلية سريعة.</p>
-                            <span class="btn btn-primary" style="font-size: 0.8rem; font-weight: bold; width: 100%; padding: 8px 0;">ابدأ التعلم الآن</span>
+                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">التدريب التفاعلي (Slides)</h3>
+                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">تعلم القواعد الأساسية واللهجة العراقية لخدمة المشتركين من خلال جولات تفاعلية سريعة.</p>
+                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0;">ابدأ التعلم الآن</span>
                         </div>
 
                         <!-- Card 2: Multitask Simulator -->
-                        <div class="tc-path-card" id="btn-start-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
-                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 50%; background: #eff6ff; color: #1e40af; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #bfdbfe;">
+                        <div class="tc-path-card" id="btn-start-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
+                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #eff6ff; color: #1e40af; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #bfdbfe;">
                                 <i class="fa-solid fa-comments"></i>
                             </div>
-                            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">محاكي الدردشة (Chat Simulator)</h3>
-                            <p style="font-size: 0.8rem; color: #64748b; line-height: 1.5; margin-bottom: 20px; flex: 1;">تدرب على إدارة 3 محادثات خدمة عملاء متزامنة في نفس الوقت مع التقييم والتصنيف الفوري.</p>
-                            <span class="btn btn-primary" style="font-size: 0.8rem; font-weight: bold; width: 100%; padding: 8px 0;">ابدأ المحاكاة</span>
+                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">محاكي الدردشة (Chat)</h3>
+                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">تدرب على إدارة 3 محادثات خدمة عملاء متزامنة في نفس الوقت مع التقييم والتصنيف الفوري.</p>
+                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0;">ابدأ المحاكاة</span>
                         </div>
 
                         <!-- Card 3: AI Agent Coach -->
-                        <div class="tc-path-card" id="btn-start-ai-agent" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
-                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 50%; background: #f0fdf4; color: #166534; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #dcfce7;">
+                        <div class="tc-path-card" id="btn-start-ai-agent" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
+                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #f0fdf4; color: #166534; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #dcfce7;">
                                 <i class="fa-solid fa-robot"></i>
                             </div>
-                            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">مقيّم الذكاء الاصطناعي (AI Coach)</h3>
-                            <p style="font-size: 0.8rem; color: #64748b; line-height: 1.5; margin-bottom: 20px; flex: 1;">أجرِ محادثة حرة مع زبون ذكي وخذ تقييماً تفصيلياً صارماً لأدائك وتصنيفك للتذاكر.</p>
-                            <span class="btn btn-primary" style="font-size: 0.8rem; font-weight: bold; width: 100%; padding: 8px 0;">ابدأ التقييم الذكي</span>
+                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">مقيّم الذكاء الاصطناعي (AI)</h3>
+                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">أجرِ محادثة حرة مع زبون ذكي وخذ تقييماً تفصيلياً صارماً لأدائك وتصنيفك للتذاكر.</p>
+                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0;">ابدأ التقييم الذكي</span>
+                        </div>
+
+                        <!-- Card 4: Voice Call Simulator -->
+                        <div class="tc-path-card" id="btn-start-call-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
+                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #fdf2f8; color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #fbcfe8;">
+                                <i class="fa-solid fa-headset"></i>
+                            </div>
+                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">محاكي المكالمات (Call)</h3>
+                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">تدرب على استقبال وإجراء المكالمات الهاتفية بنظام Ameyo مع التحكم بالـ Hold والتصنيف المعتمد.</p>
+                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0; background: linear-gradient(135deg, #db2777 0%, #be185d 100%);">ابدأ تدريب المكالمات</span>
                         </div>
                     </div>
                 </div>
@@ -399,6 +410,388 @@
                             <i class="fa-solid fa-rotate-right"></i>
                             <span>Restart AI Training Path</span>
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3.5: Ameyo Voice Call Simulator Tab Panel -->
+            <div class="amy-tab-pane" id="tab-call-simulator">
+                <!-- Training Center Back Button Banner -->
+                <div class="tc-back-banner" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-ar); direction: rtl; text-align: right;">
+                    <button class="btn btn-secondary btn-back-to-tc" style="background: #64748b; color: #fff; border: none; font-size: 0.78rem; padding: 5px 12px; display: flex; align-items: center; gap: 6px; border-radius: 6px; cursor: pointer;">
+                        <i class="fa-solid fa-arrow-right" style="transform: rotate(180deg);"></i>
+                        <span>العودة لمركز التدريب والتقييم</span>
+                    </button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">محاكي الهاتف والاتصال الصوتي (Ameyo Telephony)</span>
+                        <div class="ameyo-connection-badge" style="display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: #166534; font-weight: 700;">
+                            <span class="live-pulse-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+                            <span>WebRTC Audio Ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ameyo Simulator Main Container -->
+                <div class="ameyo-workstation-container" id="ameyo-workstation-container">
+                    <!-- Top Ameyo Sub-header Bar -->
+                    <div class="ameyo-topbar">
+                        <div class="ameyo-topbar-left">
+                            <div class="ameyo-brand-item">
+                                <i class="fa-solid fa-comments text-primary"></i>
+                                <span class="ameyo-brand-title">ZainCash Ticket+3</span>
+                                <i class="fa-solid fa-caret-down"></i>
+                            </div>
+                            <div class="ameyo-top-icon-btn" title="App Drawer"><i class="fa-solid fa-table-cells"></i></div>
+                            <div class="ameyo-top-icon-btn" title="Notifications"><i class="fa-solid fa-bell"></i></div>
+                        </div>
+
+                        <div class="ameyo-topbar-right">
+                            <!-- Quick action icon buttons -->
+                            <div class="ameyo-top-icon-pill" title="Chat Module"><i class="fa-solid fa-comment-dots"></i></div>
+                            <div class="ameyo-top-icon-pill active" id="btn-toggle-telephony-panel" title="Toggle Telephony Widget">
+                                <i class="fa-solid fa-phone"></i>
+                                <i class="fa-solid fa-caret-down"></i>
+                            </div>
+
+                            <!-- Agent Status Dropdown -->
+                            <div class="ameyo-status-dropdown-wrapper">
+                                <div class="ameyo-status-badge available" id="ameyo-agent-status-toggle">
+                                    <span class="status-dot"></span>
+                                    <span id="ameyo-agent-status-label">Available</span>
+                                    <i class="fa-solid fa-caret-down"></i>
+                                </div>
+                                <div class="ameyo-status-menu hidden" id="ameyo-status-menu">
+                                    <div class="status-option active" data-status="Available"><span class="status-dot available"></span> Available</div>
+                                    <div class="status-option" data-status="Break"><span class="status-dot break"></span> Break (استراحة)</div>
+                                    <div class="status-option" data-status="Lunch"><span class="status-dot lunch"></span> Lunch (غداء)</div>
+                                    <div class="status-option" data-status="Meeting"><span class="status-dot meeting"></span> Meeting (اجتماع)</div>
+                                    <div class="status-option" data-status="ACW"><span class="status-dot acw"></span> Wrap-Up / ACW</div>
+                                    <div class="status-option" data-status="Offline"><span class="status-dot offline"></span> Offline</div>
+                                </div>
+                            </div>
+
+                            <!-- Agent Name Profile -->
+                            <div class="ameyo-agent-profile-pill">
+                                <span id="ameyo-agent-profile-name">Hussein Al-Iraqi (ZC000)</span>
+                                <i class="fa-solid fa-caret-down"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Workstation Body: Split CRM Screen & Floating Phone Widget -->
+                    <div class="ameyo-workstation-body">
+                        <!-- Left/Center: Ameyo CRM 360 Workspace -->
+                        <div class="ameyo-crm-viewport">
+                            <!-- Quick Simulation Scenario Launcher Bar -->
+                            <div class="ameyo-scenario-launcher-bar">
+                                <div class="launcher-header">
+                                    <i class="fa-solid fa-bolt-lightning text-amber"></i>
+                                    <span>سيناريوهات التدريب الصوتي المتاحة (Voice Scenarios):</span>
+                                </div>
+                                <div class="launcher-buttons">
+                                    <button class="btn btn-launcher" id="btn-trigger-inbound-1" title="مكالمة واردة: استفسار عن تداول الأسهم">
+                                        <i class="fa-solid fa-arrow-down-left"></i> واردة 1: تداول الأسهم (Inbound)
+                                    </button>
+                                    <button class="btn btn-launcher" id="btn-trigger-inbound-2" title="مكالمة واردة: مشكلة محفظة متوقفة CI">
+                                        <i class="fa-solid fa-arrow-down-left"></i> واردة 2: محفظة متوقفة CI
+                                    </button>
+                                    <button class="btn btn-launcher" id="btn-trigger-inbound-3" title="مكالمة واردة: رمز سري وويسترن يونيون">
+                                        <i class="fa-solid fa-arrow-down-left"></i> واردة 3: ويسترن يونيون
+                                    </button>
+                                    <button class="btn btn-launcher outbound" id="btn-trigger-outbound-sim" title="مكالمة صادرة: متابعة استفسار الزبون">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> مكالمة صادرة (Outbound)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Customer 360 Details Card (Shows during call) -->
+                            <div class="ameyo-crm-cards-grid">
+                                <!-- Card 1: Customer Profile -->
+                                <div class="crm-card">
+                                    <div class="crm-card-header">
+                                        <i class="fa-solid fa-user-check"></i>
+                                        <h4>بيانات المشترك (Customer 360)</h4>
+                                    </div>
+                                    <div class="crm-card-body" id="crm-customer-details">
+                                        <div class="crm-field-row"><span class="crm-label">اسم المشترك:</span> <span class="crm-val" id="crm-cust-name">أحمد محمد عبد الله</span></div>
+                                        <div class="crm-field-row"><span class="crm-label">رقم الهاتف / المحفظة:</span> <span class="crm-val" id="crm-cust-phone">07723065187</span></div>
+                                        <div class="crm-field-row"><span class="crm-label">نوع المحفظة:</span> <span class="crm-badge success">دائمية موثقة (Full KYC)</span></div>
+                                        <div class="crm-field-row"><span class="crm-label">حالة المحفظة:</span> <span class="crm-badge active" id="crm-cust-status">نشطة (Active)</span></div>
+                                        <div class="crm-field-row"><span class="crm-label">الرصيد المتاح:</span> <span class="crm-val highlight">350,000 د.ع</span></div>
+                                        <div class="crm-field-row"><span class="crm-label">البطاقات المرتبطة:</span> <span class="crm-val">MasterCard Platinum (****4491)</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Card 2: Recent Transactions -->
+                                <div class="crm-card">
+                                    <div class="crm-card-header">
+                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                        <h4>آخر الحركات والعمليات (Recent Activity)</h4>
+                                    </div>
+                                    <div class="crm-card-body">
+                                        <div class="crm-trx-list" id="crm-trx-list">
+                                            <div class="crm-trx-item">
+                                                <div class="trx-icon in"><i class="fa-solid fa-arrow-down"></i></div>
+                                                <div class="trx-info">
+                                                    <div class="trx-title">إيداع كاش (Cash-In) من وكيل بغداد</div>
+                                                    <div class="trx-meta">اليوم 10:15 ص • رقم العملية: #994821</div>
+                                                </div>
+                                                <div class="trx-amount positive">+150,000 د.ع</div>
+                                            </div>
+                                            <div class="crm-trx-item">
+                                                <div class="trx-icon out"><i class="fa-solid fa-arrow-up"></i></div>
+                                                <div class="trx-info">
+                                                    <div class="trx-title">شراء أسهم أمريكية (Alpaca Trading)</div>
+                                                    <div class="trx-meta">أمس 05:40 م • تم التنفيذ</div>
+                                                </div>
+                                                <div class="trx-amount negative">-50.00 $</div>
+                                            </div>
+                                            <div class="crm-trx-item">
+                                                <div class="trx-icon out"><i class="fa-solid fa-receipt"></i></div>
+                                                <div class="trx-info">
+                                                    <div class="trx-title">دفع فاتورة كهرباء حكومية</div>
+                                                    <div class="trx-meta">منذ يومين 02:20 م • ناجحة</div>
+                                                </div>
+                                                <div class="trx-amount negative">-25,000 د.ع</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Call Transcript & Audio Wave -->
+                            <div class="ameyo-live-transcript-box hidden" id="ameyo-live-transcript-box">
+                                <div class="transcript-header">
+                                    <div class="live-wave-indicator">
+                                        <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                                    </div>
+                                    <h4 id="transcript-customer-heading">محادثة الزبون الصوتية الحية:</h4>
+                                </div>
+                                <div class="transcript-content" id="transcript-customer-text">
+                                    "السلام عليكم أخي، ردت استفسر عن تداول الأسهم بالتطبيق، كاعد يطلعلي خطأ وما يقبل يسوي أمر الشراء، ممكن تساعدني؟"
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Pixel-Perfect Ameyo Floating Telephony Widget (Photos 1, 2, 3, 4) -->
+                        <div class="ameyo-phone-widget-container">
+                            <div class="ameyo-phone-widget" id="ameyo-phone-widget">
+                                
+                                <!-- ================= STATE 1: IDLE / OUTBOUND DIALER (الصورة 1) ================= -->
+                                <div class="phone-view" id="phone-view-idle">
+                                    <div class="widget-form-group">
+                                        <label class="widget-label">Campaign*</label>
+                                        <select class="widget-select" id="widget-campaign-select">
+                                            <option value="Zain Cash">Zain Cash</option>
+                                            <option value="Zain Cash_Outbound" selected>Zain Cash_Outbound</option>
+                                            <option value="Asiacell_Outbound">Asiacell_Outbound</option>
+                                            <option value="Korek_Outbound">Korek_Outbound</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="widget-search-row">
+                                        <div class="widget-search-input-wrap">
+                                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                            <input type="text" id="widget-customer-search-input" placeholder="Search for customer" autocomplete="off" value="07723065187">
+                                            <i class="fa-solid fa-caret-down drop-icon"></i>
+                                            <i class="fa-solid fa-table-cells keypad-icon" id="btn-toggle-dialpad" title="Dialpad"></i>
+                                        </div>
+                                    </div>
+
+                                    <div class="widget-buttons-row">
+                                        <button class="btn-widget-blue" id="btn-widget-view-customer">View</button>
+                                        <button class="btn-widget-green" id="btn-widget-make-call">Call</button>
+                                    </div>
+
+                                    <div class="widget-footer-status">
+                                        <span class="webrtc-dot"></span>
+                                        <span class="webrtc-text">Web RTC</span>
+                                        <i class="fa-solid fa-screwdriver-wrench webrtc-tool"></i>
+                                        <i class="fa-solid fa-signal webrtc-signal"></i>
+                                    </div>
+                                </div>
+
+                                <!-- ================= STATE 2: INCOMING RINGING CALL ================= -->
+                                <div class="phone-view hidden" id="phone-view-ringing">
+                                    <div class="ringing-header">
+                                        <div class="ringing-pulse-icon">
+                                            <i class="fa-solid fa-phone-volume fa-shake"></i>
+                                        </div>
+                                        <h4 class="ringing-title">Incoming Call (مكالمة واردة)</h4>
+                                        <div class="ringing-caller-number" id="ringing-caller-number">07723065187</div>
+                                        <div class="ringing-caller-name" id="ringing-caller-name">أحمد محمد عبد الله</div>
+                                        <div class="ringing-queue-badge">CustomerService_Ar</div>
+                                    </div>
+
+                                    <div class="ringing-actions-row">
+                                        <button class="btn-ringing-answer" id="btn-ringing-answer">
+                                            <i class="fa-solid fa-phone"></i> رد (Answer)
+                                        </button>
+                                        <button class="btn-ringing-reject" id="btn-ringing-reject">
+                                            <i class="fa-solid fa-phone-slash"></i> رفض (Reject)
+                                        </button>
+                                    </div>
+
+                                    <div class="widget-footer-status">
+                                        <span class="webrtc-dot"></span>
+                                        <span class="webrtc-text">Web RTC</span>
+                                        <i class="fa-solid fa-screwdriver-wrench webrtc-tool"></i>
+                                        <i class="fa-solid fa-signal webrtc-signal"></i>
+                                    </div>
+                                </div>
+
+                                <!-- ================= STATE 3: ACTIVE CONNECTED CALL (الصور 2 و 3) ================= -->
+                                <div class="phone-view hidden" id="phone-view-active">
+                                    <div class="active-call-header">
+                                        <div class="active-phone-number">
+                                            <i class="fa-solid fa-phone"></i>
+                                            <span id="active-call-phone-display">07723065187</span>
+                                            <i class="fa-regular fa-copy copy-btn" id="btn-copy-active-phone" title="Copy Number"></i>
+                                        </div>
+                                        <div class="active-call-status-label" id="active-call-status-indicator">Connected</div>
+                                    </div>
+
+                                    <div class="active-call-metadata-table">
+                                        <div class="meta-row"><span class="meta-lbl">Campaign:</span> <span class="meta-val" id="active-meta-campaign">Zain Cash</span></div>
+                                        <div class="meta-row"><span class="meta-lbl">Queue:</span> <span class="meta-val" id="active-meta-queue">CustomerService_Ar</span></div>
+                                        <div class="meta-row"><span class="meta-lbl">Call Type:</span> <span class="meta-val" id="active-meta-calltype">Inbound</span></div>
+                                        <div class="meta-row"><span class="meta-lbl">DID:</span> <span class="meta-val">6698</span></div>
+                                    </div>
+
+                                    <!-- Action Control Grid (Exact layout from photos 2 & 3) -->
+                                    <div class="active-call-controls-grid">
+                                        <!-- Hold button with live hold timer -->
+                                        <button class="control-btn" id="btn-call-hold" title="Hold / Resume">
+                                            <i class="fa-solid fa-pause"></i>
+                                            <span id="hold-timer-text">00:00</span>
+                                        </button>
+                                        <!-- Mute button -->
+                                        <button class="control-btn" id="btn-call-mute" title="Mute Microphone">
+                                            <i class="fa-solid fa-microphone-slash" id="mute-icon"></i>
+                                        </button>
+                                        <!-- Conference button -->
+                                        <button class="control-btn" id="btn-call-conference" title="Conference">
+                                            <i class="fa-solid fa-user-group"></i>
+                                        </button>
+                                        <!-- Transfer button -->
+                                        <button class="control-btn" id="btn-call-transfer" title="Transfer / Consult">
+                                            <i class="fa-solid fa-phone-arrow-up-right"></i>
+                                        </button>
+                                        <!-- Keypad button -->
+                                        <button class="control-btn" id="btn-call-keypad" title="Dialpad">
+                                            <i class="fa-solid fa-table-cells"></i>
+                                        </button>
+                                        <!-- Big Red End Call button with live call timer -->
+                                        <button class="control-btn-end" id="btn-call-end">
+                                            <span class="end-lbl">End Call</span>
+                                            <span class="end-timer" id="active-call-duration-timer">00:00:00</span>
+                                        </button>
+                                        <!-- Drop / Park call button -->
+                                        <button class="control-btn" id="btn-call-drop" title="Park Call">
+                                            <i class="fa-solid fa-phone-arrow-down-left"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Attached ticket note -->
+                                    <div class="widget-ticket-notice">
+                                        <div class="notice-top">
+                                            <i class="fa-solid fa-paperclip"></i>
+                                            <span>This call is not attached with any ticket</span>
+                                        </div>
+                                        <div class="notice-desc">
+                                            You can attach this call to an existing ticket or you can create a new ticket/lite ticket. Tickets attached with the call will appear here.
+                                        </div>
+                                        <div class="notice-create-link" id="btn-call-create-ticket">Create New <i class="fa-solid fa-chevron-up"></i></div>
+                                    </div>
+
+                                    <div class="widget-footer-status">
+                                        <span class="webrtc-dot"></span>
+                                        <span class="webrtc-text">Web RTC</span>
+                                        <i class="fa-solid fa-screwdriver-wrench webrtc-tool"></i>
+                                        <i class="fa-solid fa-signal webrtc-signal"></i>
+                                    </div>
+                                </div>
+
+                                <!-- ================= STATE 4: POST-CALL DISPOSITION SCREEN (الصورة 4) ================= -->
+                                <div class="phone-view hidden" id="phone-view-disposition">
+                                    <div class="disp-header-row">
+                                        <div class="disp-left-info">
+                                            <div class="disp-title">Disposition</div>
+                                            <div class="disp-timer" id="acw-wrapup-timer">00:00</div>
+                                        </div>
+                                        <div class="disp-right-customer">
+                                            <i class="fa-solid fa-phone"></i>
+                                            <span id="disp-customer-name-display">Ahmad Muhammad</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="widget-form-group">
+                                        <label class="widget-label">Disposition</label>
+                                        <select class="widget-select" id="call-disp-main-select">
+                                            <!-- Dynamically populated depending on Inbound vs Outbound -->
+                                        </select>
+                                    </div>
+
+                                    <div class="widget-form-group">
+                                        <label class="widget-label">Sub Disposition</label>
+                                        <select class="widget-select" id="call-disp-sub-select">
+                                            <option value="">Select a Sub Disposition</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Quick Dispositions Grid -->
+                                    <div class="quick-dispositions-container">
+                                        <label class="widget-label">Quick Dispositions</label>
+                                        <div class="quick-disp-grid" id="call-quick-disp-grid">
+                                            <!-- Populated dynamically based on Inbound/Outbound -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Save and Dispose Button -->
+                                    <button class="btn-save-and-dispose disabled" id="btn-save-and-dispose" disabled>
+                                        Save And Dispose
+                                    </button>
+
+                                    <!-- Attached ticket notice -->
+                                    <div class="widget-ticket-notice">
+                                        <div class="notice-top">
+                                            <i class="fa-solid fa-paperclip"></i>
+                                            <span>This call is not attached with any ticket</span>
+                                        </div>
+                                        <div class="notice-desc">
+                                            You can attach this call to an existing ticket or you can create a new ticket/lite ticket. Tickets attached with the call will appear here.
+                                        </div>
+                                        <div class="notice-create-link">Create New <i class="fa-solid fa-chevron-up"></i></div>
+                                    </div>
+
+                                    <div class="widget-footer-status">
+                                        <span class="webrtc-dot"></span>
+                                        <span class="webrtc-text">Web RTC</span>
+                                        <i class="fa-solid fa-screwdriver-wrench webrtc-tool"></i>
+                                        <i class="fa-solid fa-signal webrtc-signal"></i>
+                                    </div>
+
+                                    <!-- Success Disposed Overlay -->
+                                    <div class="disp-success-overlay hidden" id="disp-success-overlay">
+                                        <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                        <div class="success-text">Saved & Disposed Successfully</div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Right Vertical Icon Strip matching Ameyo (Photos 1, 2, 3, 4) -->
+                            <div class="ameyo-vertical-side-strip">
+                                <div class="side-strip-btn active" title="Telephony"><i class="fa-solid fa-phone"></i></div>
+                                <div class="side-strip-btn" title="Pause / Break"><i class="fa-solid fa-pause"></i></div>
+                                <div class="side-strip-btn" title="Mute"><i class="fa-solid fa-microphone-slash"></i></div>
+                                <div class="side-strip-btn end-btn" title="Disconnect"><i class="fa-solid fa-phone-slash"></i></div>
+                                <div class="side-strip-btn menu-btn" title="Menu"><i class="fa-solid fa-bars"></i></div>
+                                <div class="side-strip-bookmark" title="Bookmark 1"><i class="fa-solid fa-bookmark"></i></div>
+                                <div class="side-strip-bookmark" title="Bookmark 2"><i class="fa-solid fa-bookmark"></i></div>
+                                <div class="side-strip-bookmark" title="Bookmark 3"><i class="fa-solid fa-bookmark"></i></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1465,11 +1858,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=3.2"></script>
-    <script src="scenarios.js?v=3.2"></script>
+    <script src="slides.js?v=3.3"></script>
+    <script src="scenarios.js?v=3.3"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=3.2"></script>
-    <script src="app.js?v=3.2"></script>
-    <script src="ai-agent.js?v=3.2"></script>
+    <script src="kb-data.js?v=3.3"></script>
+    <script src="app.js?v=3.3"></script>
+    <script src="ai-agent.js?v=3.3"></script>
 </body>
 </html>

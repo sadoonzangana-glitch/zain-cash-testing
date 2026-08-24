@@ -1,8 +1,8 @@
 // Zain Cash Customer Care Training Application Logic (Amyo Style)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatic Cache-Busting for Master System Prompt Upgrade
-    const STOCKS_DISP_VERSION = 'v13_master_system_prompt_upgrade';
+    // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
+    const STOCKS_DISP_VERSION = 'v14_ameyo_call_simulator';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Master System Prompt update!");
+        console.log("Purged legacy localStorage cache for Ameyo Call Simulator update!");
     }
 
     // Global Dispositions Catalog
@@ -4876,10 +4876,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const startSlides = document.getElementById('btn-start-slides');
     const startSimulator = document.getElementById('btn-start-simulator');
     const startAiAgent = document.getElementById('btn-start-ai-agent');
+    const startCallSimulator = document.getElementById('btn-start-call-simulator');
 
     if (startSlides) startSlides.addEventListener('click', () => switchTab('tab-slides'));
     if (startSimulator) startSimulator.addEventListener('click', () => switchTab('tab-simulator'));
     if (startAiAgent) startAiAgent.addEventListener('click', () => switchTab('tab-ai-agent'));
+    if (startCallSimulator) startCallSimulator.addEventListener('click', () => {
+        switchTab('tab-call-simulator');
+        if (window.initAmeyoCallSimulator) window.initAmeyoCallSimulator();
+    });
 
     document.querySelectorAll('.btn-back-to-tc').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -5464,22 +5469,604 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Modal close bindings
-    const adminDetailsModal = document.getElementById('admin-details-modal');
-    const btnCloseModal = document.getElementById('btn-close-details-modal');
-    const btnCloseModalBottom = document.getElementById('btn-close-details-modal-bottom');
+    // =========================================================================
+    // 📞 AMEYO TELEPHONY & VOICE CALL SIMULATOR ENGINE
+    // =========================================================================
+    const OUTBOUND_SUB_DISPOSITIONS = [
+        "Informations Required",
+        "Customer Requested Call",
+        "Clarifications Call",
+        "Customer Callback",
+        "Survey Call",
+        "Manager Call",
+        "Technical Assistance Follow-up"
+    ];
 
-    const closeModalFunc = () => {
-        if (adminDetailsModal) adminDetailsModal.style.display = 'none';
-    };
+    const CALL_SCENARIOS = [
+        {
+            id: 'inbound-1',
+            type: 'inbound',
+            customerName: 'أحمد محمد عبد الله',
+            customerPhone: '07723065187',
+            campaign: 'Zain Cash',
+            queue: 'CustomerService_Ar',
+            heading: 'مكالمة واردة: استفسار عن تداول الأسهم الأمريكية (US Stocks)',
+            voiceText: 'السلام عليكم أخي، ردت استفسر عن تداول الأسهم بالتطبيق، كاعد يطلعلي خطأ وما يقبل يسوي أمر الشراء، ممكن تساعدني وتوضحلي شنو المتطلبات وعقد W-8BEN؟',
+            correctDisp: 'Inquiry',
+            correctSubDisp: 'Application Usage',
+            balance: '350,000 د.ع',
+            walletType: 'دائمية موثقة (Full KYC)',
+            status: 'نشطة (Active)'
+        },
+        {
+            id: 'inbound-2',
+            type: 'inbound',
+            customerName: 'سارة فاضل عباس',
+            customerPhone: '07802345678',
+            campaign: 'Zain Cash',
+            queue: 'CustomerService_Ar',
+            heading: 'مكالمة واردة: محفظة متوقفة ورسالة CI (Inactive Wallet)',
+            voiceText: 'مرحبا عيني، محفظتي انقفلت فجأة ومكتوب Additional Customer Information (CI) ومكاعد اكدر احول فلوس، شسوي حتى تفتح؟',
+            correctDisp: 'Inquiry',
+            correctSubDisp: 'Wallet Account Status',
+            balance: '120,000 د.ع',
+            walletType: 'دائمية (CI Flagged)',
+            status: 'متوقفة مؤقتاً (Inactive / CI)'
+        },
+        {
+            id: 'inbound-3',
+            type: 'inbound',
+            customerName: 'حيدر جاسم كاظم',
+            customerPhone: '07719876543',
+            campaign: 'Zain Cash',
+            queue: 'CustomerService_Ar',
+            heading: 'مكالمة واردة: حوالة ويسترن يونيون معلقة (WU Name Amendment)',
+            voiceText: 'هلو أخي، استلمت حوالة ويسترن يونيون على المحفظة ومكتوب اسمي بي غلط بحرف واحد ومكاعد تنزل، شلون اصلح الاسم؟',
+            correctDisp: 'Request',
+            correctSubDisp: 'Western Union',
+            balance: '500.00 $',
+            walletType: 'دائمية موثقة (Full KYC)',
+            status: 'نشطة (Active)'
+        },
+        {
+            id: 'outbound-1',
+            type: 'outbound',
+            customerName: 'علي مهدي صالح',
+            customerPhone: '07727900402',
+            campaign: 'Zain Cash_Outbound',
+            queue: 'Outbound_Campaign',
+            heading: 'مكالمة صادرة: متابعة تذكرة دعم فني أو استبيان جودة',
+            voiceText: 'أهلاً بك، أنا علي.. بخصوص الشكوى الي رفعتها قبل يومين مال استرجاع رصيد البطاقة، صار تحديث؟',
+            correctDisp: 'Outbound Calls',
+            correctSubDisp: 'Customer Callback',
+            balance: '75,000 د.ع',
+            walletType: 'دائمية موثقة',
+            status: 'نشطة (Active)'
+        }
+    ];
 
-    if (btnCloseModal) btnCloseModal.addEventListener('click', closeModalFunc);
-    if (btnCloseModalBottom) btnCloseModalBottom.addEventListener('click', closeModalFunc);
-    if (adminDetailsModal) {
-        adminDetailsModal.addEventListener('click', (e) => {
-            if (e.target === adminDetailsModal) closeModalFunc();
-        });
+    let currentCallState = 'idle'; // 'idle', 'ringing', 'active', 'disposition'
+    let activeCallScenario = null;
+    let callDurationSeconds = 0;
+    let holdDurationSeconds = 0;
+    let acwDurationSeconds = 0;
+    let isCallOnHold = false;
+    let isCallMuted = false;
+    let callDurationInterval = null;
+    let holdDurationInterval = null;
+    let acwDurationInterval = null;
+
+    // Web Audio Synthesizer for Zero-Asset Sound Effects
+    let audioCtx = null;
+    let activeRingOsc1 = null, activeRingOsc2 = null, ringGain = null;
+    let activeHoldOsc = null, holdIntervalId = null;
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
     }
+
+    function playRingtone() {
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            stopRingtone();
+
+            ringGain = ctx.createGain();
+            ringGain.gain.setValueAtTime(0.15, ctx.currentTime);
+            ringGain.connect(ctx.destination);
+
+            activeRingOsc1 = ctx.createOscillator();
+            activeRingOsc2 = ctx.createOscillator();
+            activeRingOsc1.type = 'sine';
+            activeRingOsc2.type = 'sine';
+            activeRingOsc1.frequency.setValueAtTime(440, ctx.currentTime);
+            activeRingOsc2.frequency.setValueAtTime(480, ctx.currentTime);
+
+            activeRingOsc1.connect(ringGain);
+            activeRingOsc2.connect(ringGain);
+            activeRingOsc1.start();
+            activeRingOsc2.start();
+        } catch (e) {
+            console.warn("Audio synthesis error", e);
+        }
+    }
+
+    function stopRingtone() {
+        try {
+            if (activeRingOsc1) { activeRingOsc1.stop(); activeRingOsc1.disconnect(); activeRingOsc1 = null; }
+            if (activeRingOsc2) { activeRingOsc2.stop(); activeRingOsc2.disconnect(); activeRingOsc2 = null; }
+            if (ringGain) { ringGain.disconnect(); ringGain = null; }
+        } catch (e) {}
+    }
+
+    function playHoldTune() {
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            stopHoldTune();
+
+            const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 659.25];
+            let noteIdx = 0;
+
+            holdIntervalId = setInterval(() => {
+                try {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(notes[noteIdx % notes.length], ctx.currentTime);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                    noteIdx++;
+                } catch (e) {}
+            }, 550);
+        } catch (e) {}
+    }
+
+    function stopHoldTune() {
+        if (holdIntervalId) {
+            clearInterval(holdIntervalId);
+            holdIntervalId = null;
+        }
+    }
+
+    function playBeep(freq = 600, duration = 0.15) {
+        try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration);
+        } catch (e) {}
+    }
+
+    function formatTimeMMSS(totalSecs) {
+        const m = Math.floor(totalSecs / 60).toString().padStart(2, '0');
+        const s = (totalSecs % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function formatTimeHHMMSS(totalSecs) {
+        const h = Math.floor(totalSecs / 3600).toString().padStart(2, '0');
+        const m = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
+        const s = (totalSecs % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function switchAmeyoPhoneView(viewName) {
+        const views = {
+            'idle': document.getElementById('phone-view-idle'),
+            'ringing': document.getElementById('phone-view-ringing'),
+            'active': document.getElementById('phone-view-active'),
+            'disposition': document.getElementById('phone-view-disposition')
+        };
+        Object.keys(views).forEach(k => {
+            if (views[k]) {
+                if (k === viewName) views[k].classList.remove('hidden');
+                else views[k].classList.add('hidden');
+            }
+        });
+        currentCallState = viewName;
+    }
+
+    function updateCrmCustomerProfile(sc) {
+        if (!sc) return;
+        const nameEl = document.getElementById('crm-cust-name');
+        const phoneEl = document.getElementById('crm-cust-phone');
+        const statusEl = document.getElementById('crm-cust-status');
+        const headingEl = document.getElementById('transcript-customer-heading');
+        const textEl = document.getElementById('transcript-customer-text');
+        const liveWave = document.getElementById('ameyo-live-transcript-box');
+
+        if (nameEl) nameEl.textContent = sc.customerName;
+        if (phoneEl) phoneEl.textContent = sc.customerPhone;
+        if (statusEl) statusEl.textContent = sc.status || 'نشطة (Active)';
+        if (headingEl) headingEl.textContent = sc.heading || 'محادثة الزبون الصوتية الحية:';
+        if (textEl) textEl.textContent = `"${sc.voiceText || 'مرحبا، عندي استفسار عن خدمات زين كاش'}"`;
+        if (liveWave) liveWave.classList.remove('hidden');
+    }
+
+    function triggerIncomingCall(sc) {
+        activeCallScenario = sc || CALL_SCENARIOS[0];
+        updateCrmCustomerProfile(activeCallScenario);
+
+        const rNum = document.getElementById('ringing-caller-number');
+        const rName = document.getElementById('ringing-caller-name');
+        if (rNum) rNum.textContent = activeCallScenario.customerPhone;
+        if (rName) rName.textContent = activeCallScenario.customerName;
+
+        switchAmeyoPhoneView('ringing');
+        playRingtone();
+    }
+
+    function triggerOutboundCall(sc) {
+        activeCallScenario = sc || CALL_SCENARIOS[3];
+        updateCrmCustomerProfile(activeCallScenario);
+
+        playBeep(440, 0.4);
+        setTimeout(() => {
+            connectActiveCall();
+        }, 800);
+    }
+
+    function connectActiveCall() {
+        stopRingtone();
+        stopHoldTune();
+        isCallOnHold = false;
+        isCallMuted = false;
+        callDurationSeconds = 0;
+        holdDurationSeconds = 0;
+
+        const phoneDisp = document.getElementById('active-call-phone-display');
+        const campDisp = document.getElementById('active-meta-campaign');
+        const queueDisp = document.getElementById('active-meta-queue');
+        const typeDisp = document.getElementById('active-meta-calltype');
+        const statusInd = document.getElementById('active-call-status-indicator');
+        const holdBtn = document.getElementById('btn-call-hold');
+        const muteBtn = document.getElementById('btn-call-mute');
+        const muteIcon = document.getElementById('mute-icon');
+
+        if (phoneDisp) phoneDisp.textContent = activeCallScenario ? activeCallScenario.customerPhone : '07723065187';
+        if (campDisp) campDisp.textContent = activeCallScenario ? activeCallScenario.campaign : 'Zain Cash';
+        if (queueDisp) queueDisp.textContent = activeCallScenario ? activeCallScenario.queue : 'CustomerService_Ar';
+        if (typeDisp) typeDisp.textContent = activeCallScenario && activeCallScenario.type === 'outbound' ? 'Outbound' : 'Inbound';
+        if (statusInd) {
+            statusInd.textContent = 'Connected';
+            statusInd.className = 'active-call-status-label';
+        }
+        if (holdBtn) holdBtn.classList.remove('active-hold');
+        if (muteBtn) muteBtn.classList.remove('active-mute');
+        if (muteIcon) muteIcon.className = 'fa-solid fa-microphone-slash';
+
+        switchAmeyoPhoneView('active');
+
+        // Start call duration timer
+        clearInterval(callDurationInterval);
+        clearInterval(holdDurationInterval);
+        const timerEl = document.getElementById('active-call-duration-timer');
+        if (timerEl) timerEl.textContent = '00:00:00';
+
+        callDurationInterval = setInterval(() => {
+            callDurationSeconds++;
+            if (timerEl) timerEl.textContent = formatTimeHHMMSS(callDurationSeconds);
+        }, 1000);
+    }
+
+    function endActiveCall() {
+        clearInterval(callDurationInterval);
+        clearInterval(holdDurationInterval);
+        stopHoldTune();
+        playBeep(400, 0.3);
+
+        const liveWave = document.getElementById('ameyo-live-transcript-box');
+        if (liveWave) liveWave.classList.add('hidden');
+
+        // Switch to Disposition view
+        switchAmeyoPhoneView('disposition');
+
+        // Populate Dispositions according to Inbound vs Outbound
+        const isOutbound = activeCallScenario && activeCallScenario.type === 'outbound';
+        const custNameEl = document.getElementById('disp-customer-name-display');
+        if (custNameEl) {
+            custNameEl.textContent = activeCallScenario ? activeCallScenario.customerName : 'Ahmad Muhammad';
+        }
+
+        const mainSelect = document.getElementById('call-disp-main-select');
+        const subSelect = document.getElementById('call-disp-sub-select');
+        const quickGrid = document.getElementById('call-quick-disp-grid');
+        const saveBtn = document.getElementById('btn-save-and-dispose');
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.className = 'btn-save-and-dispose disabled';
+        }
+
+        if (isOutbound) {
+            // OUTBOUND DISPOSITIONS LOGIC
+            if (mainSelect) {
+                mainSelect.innerHTML = `<option value="Outbound Calls" selected>Outbound Calls</option>`;
+                mainSelect.disabled = true;
+            }
+            if (subSelect) {
+                subSelect.innerHTML = `<option value="">Select a Sub Disposition</option>` +
+                    OUTBOUND_SUB_DISPOSITIONS.map(s => `<option value="${s}">${s}</option>`).join('');
+                subSelect.disabled = false;
+            }
+            if (quickGrid) {
+                quickGrid.innerHTML = OUTBOUND_SUB_DISPOSITIONS.slice(0, 6).map(s => `
+                    <button type="button" class="quick-disp-btn" data-sub="${s}" title="${s}">${s}</button>
+                `).join('');
+            }
+        } else {
+            // INBOUND DISPOSITIONS LOGIC
+            const dispData = window.DISPOSITION_DATA || GLOBAL_DISPOSITION_DATA || {};
+            const categories = Object.keys(dispData);
+
+            if (mainSelect) {
+                mainSelect.disabled = false;
+                mainSelect.innerHTML = `<option value="">Select Disposition</option>` +
+                    categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                if (categories.includes('Inquiry')) mainSelect.value = 'Inquiry';
+            }
+
+            const populateInboundSubs = (mainCat) => {
+                if (subSelect) {
+                    const subs = dispData[mainCat] || [];
+                    subSelect.innerHTML = `<option value="">Select a Sub Disposition</option>` +
+                        subs.map(s => `<option value="${s}">${s}</option>`).join('');
+                }
+            };
+
+            populateInboundSubs('Inquiry');
+
+            if (mainSelect) {
+                mainSelect.onchange = (e) => {
+                    populateInboundSubs(e.target.value);
+                    checkDispositionReady();
+                };
+            }
+
+            if (quickGrid) {
+                const sampleQuick = [
+                    { main: 'Inquiry', sub: 'Agent & Shop Location' },
+                    { main: 'Complaint', sub: 'Agent/ROS attitude' },
+                    { main: 'Inquiry', sub: 'Application' },
+                    { main: 'Inquiry', sub: 'Application Usage' }
+                ];
+                quickGrid.innerHTML = sampleQuick.map(q => `
+                    <button type="button" class="quick-disp-btn" data-main="${q.main}" data-sub="${q.sub}" title="${q.sub}">${q.sub}</button>
+                `).join('');
+            }
+        }
+
+        // Bind quick disposition clicks
+        if (quickGrid) {
+            quickGrid.querySelectorAll('.quick-disp-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    quickGrid.querySelectorAll('.quick-disp-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+
+                    const targetMain = btn.getAttribute('data-main');
+                    const targetSub = btn.getAttribute('data-sub');
+
+                    if (targetMain && mainSelect && !isOutbound) {
+                        mainSelect.value = targetMain;
+                        const dispData = window.DISPOSITION_DATA || GLOBAL_DISPOSITION_DATA || {};
+                        if (subSelect) {
+                            subSelect.innerHTML = `<option value="">Select a Sub Disposition</option>` +
+                                (dispData[targetMain] || []).map(s => `<option value="${s}">${s}</option>`).join('');
+                        }
+                    }
+                    if (targetSub && subSelect) {
+                        subSelect.value = targetSub;
+                    }
+                    checkDispositionReady();
+                });
+            });
+        }
+
+        if (subSelect) {
+            subSelect.onchange = checkDispositionReady;
+        }
+
+        // Start ACW Wrap-up timer
+        clearInterval(acwDurationInterval);
+        acwDurationSeconds = 0;
+        const acwTimerEl = document.getElementById('acw-wrapup-timer');
+        if (acwTimerEl) acwTimerEl.textContent = '00:00';
+        acwDurationInterval = setInterval(() => {
+            acwDurationSeconds++;
+            if (acwTimerEl) acwTimerEl.textContent = formatTimeMMSS(acwDurationSeconds);
+        }, 1000);
+    }
+
+    function checkDispositionReady() {
+        const subSelect = document.getElementById('call-disp-sub-select');
+        const saveBtn = document.getElementById('btn-save-and-dispose');
+        if (!saveBtn) return;
+
+        if (subSelect && subSelect.value) {
+            saveBtn.disabled = false;
+            saveBtn.className = 'btn-save-and-dispose active';
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.className = 'btn-save-and-dispose disabled';
+        }
+    }
+
+    window.initAmeyoCallSimulator = function() {
+        // Set agent name
+        const user = window.currentUser || JSON.parse(localStorage.getItem('zain_cash_user') || '{}');
+        const agentNamePill = document.getElementById('ameyo-agent-profile-name');
+        if (agentNamePill) {
+            agentNamePill.textContent = (user.name || 'Hussein Al-Iraqi') + ` (${user.code || 'ZC000'})`;
+        }
+
+        // Quick Scenario Buttons
+        const btnIn1 = document.getElementById('btn-trigger-inbound-1');
+        const btnIn2 = document.getElementById('btn-trigger-inbound-2');
+        const btnIn3 = document.getElementById('btn-trigger-inbound-3');
+        const btnOut = document.getElementById('btn-trigger-outbound-sim');
+        const btnMakeCall = document.getElementById('btn-widget-make-call');
+
+        if (btnIn1) btnIn1.onclick = () => triggerIncomingCall(CALL_SCENARIOS[0]);
+        if (btnIn2) btnIn2.onclick = () => triggerIncomingCall(CALL_SCENARIOS[1]);
+        if (btnIn3) btnIn3.onclick = () => triggerIncomingCall(CALL_SCENARIOS[2]);
+        if (btnOut) btnOut.onclick = () => triggerOutboundCall(CALL_SCENARIOS[3]);
+        if (btnMakeCall) btnMakeCall.onclick = () => triggerOutboundCall(CALL_SCENARIOS[3]);
+
+        // Ringing Action Buttons
+        const btnAnswer = document.getElementById('btn-ringing-answer');
+        const btnReject = document.getElementById('btn-ringing-reject');
+        if (btnAnswer) btnAnswer.onclick = () => connectActiveCall();
+        if (btnReject) {
+            btnReject.onclick = () => {
+                stopRingtone();
+                switchAmeyoPhoneView('idle');
+            };
+        }
+
+        // Active Call Controls
+        const btnHold = document.getElementById('btn-call-hold');
+        const holdTimerText = document.getElementById('hold-timer-text');
+        const statusLabel = document.getElementById('active-call-status-indicator');
+
+        if (btnHold) {
+            btnHold.onclick = () => {
+                isCallOnHold = !isCallOnHold;
+                if (isCallOnHold) {
+                    btnHold.classList.add('active-hold');
+                    if (statusLabel) {
+                        statusLabel.textContent = 'On Hold';
+                        statusLabel.className = 'active-call-status-label on-hold';
+                    }
+                    playHoldTune();
+                    holdDurationSeconds = 0;
+                    if (holdTimerText) holdTimerText.textContent = '00:00';
+                    clearInterval(holdDurationInterval);
+                    holdDurationInterval = setInterval(() => {
+                        holdDurationSeconds++;
+                        if (holdTimerText) holdTimerText.textContent = formatTimeMMSS(holdDurationSeconds);
+                    }, 1000);
+                } else {
+                    btnHold.classList.remove('active-hold');
+                    if (statusLabel) {
+                        statusLabel.textContent = 'Connected';
+                        statusLabel.className = 'active-call-status-label';
+                    }
+                    stopHoldTune();
+                    clearInterval(holdDurationInterval);
+                    if (holdTimerText) holdTimerText.textContent = '00:00';
+                }
+            };
+        }
+
+        const btnMute = document.getElementById('btn-call-mute');
+        const muteIcon = document.getElementById('mute-icon');
+        if (btnMute) {
+            btnMute.onclick = () => {
+                isCallMuted = !isCallMuted;
+                if (isCallMuted) {
+                    btnMute.classList.add('active-mute');
+                    if (muteIcon) muteIcon.className = 'fa-solid fa-microphone';
+                } else {
+                    btnMute.classList.remove('active-mute');
+                    if (muteIcon) muteIcon.className = 'fa-solid fa-microphone-slash';
+                }
+            };
+        }
+
+        const btnEnd = document.getElementById('btn-call-end');
+        if (btnEnd) btnEnd.onclick = () => endActiveCall();
+
+        // Copy Phone Number
+        const btnCopyPhone = document.getElementById('btn-copy-active-phone');
+        if (btnCopyPhone) {
+            btnCopyPhone.onclick = () => {
+                const phone = document.getElementById('active-call-phone-display')?.textContent || '';
+                if (navigator.clipboard) navigator.clipboard.writeText(phone);
+                showToastNotification('✅ تم نسخ رقم الهاتف: ' + phone, 'success');
+            };
+        }
+
+        // Save and Dispose
+        const btnSaveDisp = document.getElementById('btn-save-and-dispose');
+        const dispOverlay = document.getElementById('disp-success-overlay');
+        if (btnSaveDisp) {
+            btnSaveDisp.onclick = () => {
+                clearInterval(acwDurationInterval);
+                playBeep(800, 0.2);
+
+                const subVal = document.getElementById('call-disp-sub-select')?.value || '';
+                const mainVal = document.getElementById('call-disp-main-select')?.value || '';
+
+                if (dispOverlay) dispOverlay.classList.remove('hidden');
+
+                // Save call session log
+                const callRecord = {
+                    type: activeCallScenario?.type || 'inbound',
+                    customerName: activeCallScenario?.customerName || 'Customer',
+                    customerPhone: activeCallScenario?.customerPhone || '07700000000',
+                    duration: callDurationSeconds,
+                    holdDuration: holdDurationSeconds,
+                    wrapupDuration: acwDurationSeconds,
+                    disposition: mainVal,
+                    subDisposition: subVal,
+                    date: new Date().toLocaleString()
+                };
+
+                const storedCalls = JSON.parse(localStorage.getItem('zain_call_training_logs') || '[]');
+                storedCalls.push(callRecord);
+                localStorage.setItem('zain_call_training_logs', JSON.stringify(storedCalls));
+
+                setTimeout(() => {
+                    if (dispOverlay) dispOverlay.classList.add('hidden');
+                    switchAmeyoPhoneView('idle');
+                    showToastNotification('✅ تم إنهاء وتصنيف المكالمة بنجاح، والعودة للوضع المتاح Available', 'success');
+                }, 1400);
+            };
+        }
+
+        // Agent Status Dropdown
+        const statusToggle = document.getElementById('ameyo-agent-status-toggle');
+        const statusMenu = document.getElementById('ameyo-status-menu');
+        const statusLabelEl = document.getElementById('ameyo-agent-status-label');
+
+        if (statusToggle && statusMenu) {
+            statusToggle.onclick = (e) => {
+                e.stopPropagation();
+                statusMenu.classList.toggle('hidden');
+            };
+            statusMenu.querySelectorAll('.status-option').forEach(opt => {
+                opt.onclick = () => {
+                    const st = opt.getAttribute('data-status');
+                    if (statusLabelEl) statusLabelEl.textContent = st;
+                    statusMenu.querySelectorAll('.status-option').forEach(o => o.classList.remove('active'));
+                    opt.classList.add('active');
+                    statusMenu.classList.add('hidden');
+                };
+            });
+            document.addEventListener('click', () => {
+                if (!statusMenu.classList.contains('hidden')) statusMenu.classList.add('hidden');
+            });
+        }
+    };
 
     // Initial session check
     checkUserSession();
