@@ -934,10 +934,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="disp-dotted-divider"></div>
 
                         <div class="quick-dispositions-grid">
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Agent attitude">Agent/ROS attitude</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Customer Care attitude">Customer Care attit...</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Process or Policy">Process or Policy</button>
-                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Customer Concern" data-sub="Field Team attitude">Field Team attitude</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Inquiry" data-sub="Application Usage">Application Usage</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Complaint" data-sub="Local Transfer Failure">Local Transfer Failure</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Incomplete Contact" data-sub="Spam / Junk">Spam / Junk</button>
+                            <button type="button" class="quick-disp-btn" data-chat="${i}" data-disp="Inquiry" data-sub="Wallet Balance">Wallet Balance</button>
                         </div>
 
                         <div class="ticket-status-row">
@@ -1215,61 +1215,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 dispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const val = item.getAttribute('data-val');
-                        currentDisp = val;
-                        if (dispText) {
-                            dispText.textContent = val || 'Select a Disposition';
-                            if (val) dispTrigger.classList.add('has-value');
-                            else dispTrigger.classList.remove('has-value');
-                        }
-                        closePopups();
-
-                        // Reset sub disposition
-                        currentSubDisp = '';
-                        if (subDispText) {
-                            subDispText.textContent = 'Select a Sub Disposition';
-                            subDispTrigger.classList.remove('has-value');
-                        }
-                        checkValidity();
-
-                        // Automatically open Sub Disposition popup and focus search
-                        if (val) {
-                            setTimeout(() => {
-                                openSubDispPopup();
-                            }, 50);
-                        }
-                    });
-                });
-            };
-
-            const populateSubDispOptions = (filter = '') => {
-                if (!subDispList) return;
-                const query = filter.toLowerCase().trim();
-                let options = [];
-
-                if (currentDisp && DISPOSITION_DATA[currentDisp]) {
-                    options = DISPOSITION_DATA[currentDisp].map(s => ({ disp: currentDisp, sub: s }));
-                } else {
-                    Object.keys(DISPOSITION_DATA).forEach(d => {
-                        DISPOSITION_DATA[d].forEach(s => {
-                            options.push({ disp: d, sub: s });
-                        });
-                    });
-                }
-
-                const filtered = options.filter(o => o.sub.toLowerCase().includes(query));
-                let html = `<div class="disp-dropdown-item ${!currentSubDisp ? 'selected' : ''}" data-disp="" data-sub="">Select a Sub Disposition</div>`;
-                filtered.forEach(o => {
-                    html += `<div class="disp-dropdown-item ${currentSubDisp === o.sub ? 'selected' : ''}" data-disp="${o.disp}" data-sub="${o.sub}">${o.sub}</div>`;
-                });
-                subDispList.innerHTML = html;
-
-                subDispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        e.stopPropagation();
                         const sub = item.getAttribute('data-sub');
                         const disp = item.getAttribute('data-disp');
                         currentSubDisp = sub;
+                        quickButtons.forEach(b => b.classList.remove('active'));
                         if (sub) {
                             if (!currentDisp && disp) {
                                 currentDisp = disp;
