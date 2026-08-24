@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v26_peerjs_webrtc_full_voice_sync';
+    const STOCKS_DISP_VERSION = 'v27_peerjs_silent_carrier_fallback';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for PeerJS WebRTC Full Voice Sync update!");
+        console.log("Purged legacy localStorage cache for PeerJS Silent Carrier Fallback update!");
     }
 
     // Global Dispositions Catalog
@@ -6073,6 +6073,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return remoteAudioEl;
     }
 
+    function createFallbackAudioStream() {
+        try {
+            const ctx = getAudioContext() || new (window.AudioContext || window.webkitAudioContext)();
+            const dest = ctx.createMediaStreamDestination();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            gain.gain.value = 0.00001;
+            osc.connect(gain);
+            gain.connect(dest);
+            osc.start();
+            return dest.stream;
+        } catch(e) {
+            console.warn("Fallback audio stream generation error:", e);
+            return null;
+        }
+    }
+
     async function startLocalAudioStream() {
         if (localStream && localStream.active && localStream.getAudioTracks().length > 0) {
             return localStream;
@@ -6094,9 +6111,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 return localStream;
             } catch (err2) {
-                console.error("Microphone access failed completely:", err2);
-                showToast(`⚠️ تعذر فتح المايك (${err2.name}): يرجى التأكد من السماح للمايك بالمتصفح`, "warning");
-                return null;
+                console.warn("Microphone access unavailable or denied, creating silent carrier track:", err2);
+                localStream = createFallbackAudioStream();
+                return localStream;
             }
         }
     }
@@ -6122,13 +6139,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("📞 Incoming PeerJS call from:", incomingCall.peer);
                 activePeerCall = incomingCall;
 
-                const stream = await startLocalAudioStream();
-                incomingCall.answer(stream || undefined);
+                let stream = await startLocalAudioStream();
+                if (!stream) stream = createFallbackAudioStream();
+
+                incomingCall.answer(stream);
 
                 incomingCall.on('stream', (remoteStream) => {
                     console.log("🔊 PeerJS remote audio stream received on answerer:", remoteStream);
                     const el = ensureRemoteAudioElement();
                     el.srcObject = remoteStream;
+                    el.muted = false;
+                    el.volume = 1.0;
                     el.play().catch(e => console.warn("Audio play() blocked:", e));
                     startAudioVisualizers(stream, remoteStream);
                     showToast("🎙️ تم اتصال الصوت المباشر بنجاح (Voice Connected)", "success");
@@ -6718,7 +6739,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast(`📞 جاري الاتصال المباشر بالموظف: ${targetEmpName}...`, 'info');
 
                     // Pre-capture audio stream
-                    const stream = await startLocalAudioStream();
+                    let stream = await startLocalAudioStream();
+                    if (!stream) stream = createFallbackAudioStream();
                     if (!peerInstance && user.id) initPeerSession(user.id);
 
                     // Dial via PeerJS
@@ -6726,13 +6748,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         const targetPeerId = 'zc_user_' + String(targetEmpId).toLowerCase().replace(/[^a-z0-9]/g, '_');
                         console.log("Dialing PeerJS peer:", targetPeerId);
                         try {
-                            const call = peerInstance.call(targetPeerId, stream || undefined);
+                            const call = peerInstance.call(targetPeerId, stream);
                             if (call) {
                                 activePeerCall = call;
                                 call.on('stream', (remoteStream) => {
                                     console.log("🔊 PeerJS remote audio stream received on caller:", remoteStream);
                                     const el = ensureRemoteAudioElement();
                                     el.srcObject = remoteStream;
+                                    el.muted = false;
+                                    el.volume = 1.0;
                                     el.play().catch(e => console.warn("Audio play() blocked:", e));
                                     startAudioVisualizers(stream, remoteStream);
                                     showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
@@ -6792,14 +6816,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnAnswer) {
             btnAnswer.onclick = async () => {
                 if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
-                    const stream = await startLocalAudioStream();
+                    let stream = await startLocalAudioStream();
+                    if (!stream) stream = createFallbackAudioStream();
+
                     if (activePeerCall) {
                         try {
-                            activePeerCall.answer(stream || undefined);
+                            activePeerCall.answer(stream);
                             activePeerCall.on('stream', (remoteStream) => {
                                 console.log("🔊 PeerJS remote audio stream received on answerer click:", remoteStream);
                                 const el = ensureRemoteAudioElement();
                                 el.srcObject = remoteStream;
+                                el.muted = false;
+                                el.volume = 1.0;
                                 el.play().catch(e => console.warn("Audio play() blocked:", e));
                                 startAudioVisualizers(stream, remoteStream);
                                 showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
