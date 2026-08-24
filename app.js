@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v19_fix_call_test_routing';
+    const STOCKS_DISP_VERSION = 'v20_admin_calling_ui';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Fix Call Test Routing update!");
+        console.log("Purged legacy localStorage cache for Admin Calling UI update!");
     }
 
     // Global Dispositions Catalog
@@ -542,6 +542,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (tabId === 'tab-ai-agent') {
             if (typeof window.onAITabActivated === 'function') {
                 window.onAITabActivated();
+            }
+        } else if (tabId === 'tab-call-simulator') {
+            if (typeof window.initAmeyoCallSimulator === 'function') {
+                window.initAmeyoCallSimulator();
             }
         }
     }
@@ -3280,6 +3284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function onUserLoggedIn() {
+        window.currentUser = currentUser;
         if (loginScreen) {
             loginScreen.classList.add('hidden');
             loginScreen.style.display = 'none';
@@ -6033,8 +6038,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         currentCallState = viewName;
 
-        const user = window.currentUser || JSON.parse(localStorage.getItem('zain_cash_user') || '{}');
-        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin';
+        const user = currentUser || window.currentUser || JSON.parse(sessionStorage.getItem('zain_cash_user') || localStorage.getItem('zain_cash_user') || '{}');
+        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin' || user.id === 'ZC000' || user.id === 'ZC599';
         const idleWaiting = document.getElementById('crm-idle-waiting-state');
         const crmCards = document.getElementById('ameyo-crm-cards-grid');
         const liveWave = document.getElementById('ameyo-live-transcript-box');
@@ -6288,13 +6293,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let callSignalPollInterval = null;
 
     window.initAmeyoCallSimulator = async function() {
-        const user = window.currentUser || JSON.parse(localStorage.getItem('zain_cash_user') || '{}');
+        const user = currentUser || window.currentUser || JSON.parse(sessionStorage.getItem('zain_cash_user') || localStorage.getItem('zain_cash_user') || '{}');
         const agentNamePill = document.getElementById('ameyo-agent-profile-name');
         if (agentNamePill) {
-            agentNamePill.textContent = (user.name || 'Amr Nasr') + ` (${user.code || 'ZC000'})`;
+            agentNamePill.textContent = (user.name || 'Amr Nasr') + ` (${user.code || user.id || 'ZC000'})`;
         }
 
-        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin';
+        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin' || user.id === 'ZC000' || user.id === 'ZC599';
 
         const adminVoiceBar = document.getElementById('admin-voice-scenario-launcher');
         const adminTargetWrap = document.getElementById('widget-employee-target-wrap');
