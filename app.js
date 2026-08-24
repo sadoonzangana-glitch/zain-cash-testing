@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v21_fix_call_execution';
+    const STOCKS_DISP_VERSION = 'v22_webrtc_voice_calls';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Fix Call Execution update!");
+        console.log("Purged legacy localStorage cache for WebRTC Voice Calls update!");
     }
 
     // Global Dispositions Catalog
@@ -6023,6 +6023,139 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${h}:${m}:${s}`;
     }
 
+    // ==========================================
+    // 🎙️ WebRTC Real-Time Audio Manager
+    // ==========================================
+    let localStream = null;
+    let peerConn = null;
+    let remoteAudioEl = null;
+    let pendingOfferSdp = null;
+
+    const rtcConfig = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+    };
+
+    function ensureRemoteAudioElement() {
+        if (!remoteAudioEl) {
+            remoteAudioEl = document.createElement('audio');
+            remoteAudioEl.id = 'webrtc-remote-audio';
+            remoteAudioEl.autoplay = true;
+            remoteAudioEl.style.display = 'none';
+            document.body.appendChild(remoteAudioEl);
+        }
+        return remoteAudioEl;
+    }
+
+    async function startLocalAudioStream() {
+        try {
+            if (!localStream) {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            }
+            return localStream;
+        } catch (err) {
+            console.warn("Microphone access not granted or unavailable:", err);
+            return null;
+        }
+    }
+
+    function stopLocalAudioStream() {
+        if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+        }
+        if (peerConn) {
+            try { peerConn.close(); } catch(e){}
+            peerConn = null;
+        }
+    }
+
+    async function initWebRTCOffer(targetUserId, currentUserId) {
+        stopLocalAudioStream();
+        const audio = ensureRemoteAudioElement();
+        const stream = await startLocalAudioStream();
+        
+        peerConn = new RTCPeerConnection(rtcConfig);
+
+        if (stream) {
+            stream.getTracks().forEach(track => peerConn.addTrack(track, stream));
+        }
+
+        peerConn.ontrack = (event) => {
+            if (event.streams && event.streams[0]) {
+                audio.srcObject = event.streams[0];
+            }
+        };
+
+        peerConn.onicecandidate = (event) => {
+            if (event.candidate) {
+                apiCall('/api/call-signal', 'POST', {
+                    toUserId: targetUserId,
+                    fromUserId: currentUserId,
+                    type: 'ice_candidate',
+                    candidate: event.candidate
+                }).catch(() => {});
+            }
+        };
+
+        const offer = await peerConn.createOffer();
+        await peerConn.setLocalDescription(offer);
+
+        return offer;
+    }
+
+    async function handleWebRTCOffer(offerSdp, fromUserId, currentUserId) {
+        stopLocalAudioStream();
+        const audio = ensureRemoteAudioElement();
+        const stream = await startLocalAudioStream();
+
+        peerConn = new RTCPeerConnection(rtcConfig);
+
+        if (stream) {
+            stream.getTracks().forEach(track => peerConn.addTrack(track, stream));
+        }
+
+        peerConn.ontrack = (event) => {
+            if (event.streams && event.streams[0]) {
+                audio.srcObject = event.streams[0];
+            }
+        };
+
+        peerConn.onicecandidate = (event) => {
+            if (event.candidate) {
+                apiCall('/api/call-signal', 'POST', {
+                    toUserId: fromUserId,
+                    fromUserId: currentUserId,
+                    type: 'ice_candidate',
+                    candidate: event.candidate
+                }).catch(() => {});
+            }
+        };
+
+        await peerConn.setRemoteDescription(new RTCSessionDescription(offerSdp));
+        const answer = await peerConn.createAnswer();
+        await peerConn.setLocalDescription(answer);
+
+        return answer;
+    }
+
+    async function handleWebRTCAnswer(answerSdp) {
+        if (peerConn && peerConn.signalingState !== 'closed') {
+            await peerConn.setRemoteDescription(new RTCSessionDescription(answerSdp));
+        }
+    }
+
+    async function handleRemoteIceCandidate(candidate) {
+        if (peerConn && peerConn.signalingState !== 'closed') {
+            try {
+                await peerConn.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch(e){}
+        }
+    }
+
     function switchAmeyoPhoneView(viewName) {
         const views = {
             'idle': document.getElementById('phone-view-idle'),
@@ -6467,6 +6600,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     showToast(`📞 جاري الاتصال المباشر بالموظف: ${targetEmpName}...`, 'info');
 
+                    let offerSdp = null;
+                    try {
+                        offerSdp = await initWebRTCOffer(targetEmpId, user.id);
+                    } catch (e) {
+                        console.warn("WebRTC offer init:", e);
+                    }
+
                     // Send Call Offer Signal to target employee
                     await apiCall('/api/call-signal', 'POST', {
                         toUserId: targetEmpId,
@@ -6474,7 +6614,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         fromUserName: user.name || 'المشرف (Admin)',
                         type: 'call_offer',
                         campaign: campVal,
-                        phone: targetEmpPhone
+                        phone: targetEmpPhone,
+                        sdp: offerSdp
                     }).catch(console.error);
 
                     const liveSc = {
@@ -6514,10 +6655,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnAnswer) {
             btnAnswer.onclick = async () => {
                 if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
+                    let answerSdp = null;
+                    if (pendingOfferSdp) {
+                        try {
+                            answerSdp = await handleWebRTCOffer(pendingOfferSdp, activeCallScenario.fromUserId, user.id);
+                        } catch(e) {
+                            console.warn("WebRTC answer handle:", e);
+                        }
+                    }
+
                     await apiCall('/api/call-signal', 'POST', {
                         toUserId: activeCallScenario.fromUserId,
                         fromUserId: user.id,
-                        type: 'call_answered'
+                        type: 'call_answered',
+                        sdp: answerSdp
                     }).catch(console.error);
                 }
                 connectActiveCall();
@@ -6532,6 +6683,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         type: 'call_ended'
                     }).catch(console.error);
                 }
+                stopLocalAudioStream();
                 stopRingtone();
                 switchAmeyoPhoneView('idle');
             };
@@ -6545,6 +6697,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnHold) {
             btnHold.onclick = () => {
                 isCallOnHold = !isCallOnHold;
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(t => t.enabled = !isCallOnHold);
+                }
                 if (isCallOnHold) {
                     btnHold.classList.add('active-hold');
                     if (statusLabel) {
@@ -6577,6 +6732,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnMute) {
             btnMute.onclick = () => {
                 isCallMuted = !isCallMuted;
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(t => t.enabled = !isCallMuted);
+                }
                 if (isCallMuted) {
                     btnMute.classList.add('active-mute');
                     if (muteIcon) muteIcon.className = 'fa-solid fa-microphone';
@@ -6590,6 +6748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnEnd = document.getElementById('btn-call-end');
         if (btnEnd) {
             btnEnd.onclick = async () => {
+                stopLocalAudioStream();
                 if (activeCallScenario && activeCallScenario.isLiveCall) {
                     const targetId = activeCallScenario.targetUserId || activeCallScenario.fromUserId;
                     if (targetId) {
@@ -6688,6 +6847,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Acknowledge/clear signal
                             await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
                             
+                            pendingOfferSdp = sig.sdp;
                             const liveIncoming = {
                                 id: 'live-admin-incoming',
                                 type: sig.campaign === 'Zain Cash' ? 'inbound' : 'outbound',
@@ -6705,8 +6865,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
 
                             triggerIncomingCall(liveIncoming);
+                        } else if (sig.type === 'call_answered') {
+                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
+                            if (sig.sdp) {
+                                await handleWebRTCAnswer(sig.sdp).catch(console.warn);
+                            }
+                            showToast("🟢 تم الرد وبدء المحادثة الصوتية المباشرة!", "success");
+                        } else if (sig.type === 'ice_candidate') {
+                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
+                            if (sig.candidate) {
+                                await handleRemoteIceCandidate(sig.candidate).catch(console.warn);
+                            }
                         } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
                             await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
+                            stopLocalAudioStream();
                             if (currentCallState === 'ringing') {
                                 stopRingtone();
                                 switchAmeyoPhoneView('idle');
