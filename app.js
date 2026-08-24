@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v24_webrtc_audio_fix_and_visualizer';
+    const STOCKS_DISP_VERSION = 'v25_webrtc_turn_relay_and_audio_stream_fix';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for WebRTC Audio Fix and Visualizer update!");
+        console.log("Purged legacy localStorage cache for WebRTC TURN Relay & Audio Stream update!");
     }
 
     // Global Dispositions Catalog
@@ -6039,9 +6039,24 @@ document.addEventListener('DOMContentLoaded', () => {
             { urls: 'stun:stun2.l.google.com:19302' },
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:stun.services.mozilla.com' },
-            { urls: 'stun:stun.counterpath.net:3478' }
-        ]
+            { urls: 'stun:stun.relay.metered.ca:80' },
+            {
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelay',
+                credential: 'openrelay'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelay',
+                credential: 'openrelay'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelay',
+                credential: 'openrelay'
+            }
+        ],
+        iceCandidatePoolSize: 10
     };
 
     function ensureRemoteAudioElement() {
@@ -6063,22 +6078,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function startLocalAudioStream() {
-        try {
-            if (!localStream || localStream.getAudioTracks().length === 0 || !localStream.active) {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    },
-                    video: false
-                });
-            }
+        if (localStream && localStream.active && localStream.getAudioTracks().length > 0) {
             return localStream;
-        } catch (err) {
-            console.warn("Microphone access not granted or unavailable:", err);
-            showToast("⚠️ يرجى تفعيل إذن المايكروفون بالمتصفح لإجراء المكالمة الصوتية", "warning");
-            return null;
+        }
+
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                },
+                video: false
+            });
+            return localStream;
+        } catch (err1) {
+            console.warn("Standard audio constraints failed, trying basic audio...", err1);
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                return localStream;
+            } catch (err2) {
+                console.error("Microphone access failed completely:", err2);
+                showToast(`⚠️ تعذر فتح المايك (${err2.name}): يرجى التأكد من السماح للمايك بالمتصفح`, "warning");
+                return null;
+            }
         }
     }
 
@@ -6222,8 +6245,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         peerConn = new RTCPeerConnection(rtcConfig);
 
-        if (stream) {
-            stream.getAudioTracks().forEach(track => peerConn.addTrack(track, stream));
+        if (stream && stream.getAudioTracks().length > 0) {
+            stream.getAudioTracks().forEach(track => {
+                track.enabled = true;
+                peerConn.addTrack(track, stream);
+            });
+        } else {
+            try { peerConn.addTransceiver('audio', { direction: 'sendrecv' }); } catch(e){}
         }
 
         peerConn.ontrack = (event) => {
@@ -6276,8 +6304,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         peerConn = new RTCPeerConnection(rtcConfig);
 
-        if (stream) {
-            stream.getAudioTracks().forEach(track => peerConn.addTrack(track, stream));
+        if (stream && stream.getAudioTracks().length > 0) {
+            stream.getAudioTracks().forEach(track => {
+                track.enabled = true;
+                peerConn.addTrack(track, stream);
+            });
+        } else {
+            try { peerConn.addTransceiver('audio', { direction: 'sendrecv' }); } catch(e){}
         }
 
         peerConn.ontrack = (event) => {
@@ -6642,6 +6675,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (crmCardsGrid) crmCardsGrid.classList.add('hidden');
             if (liveWaveBox) liveWaveBox.classList.add('hidden');
         }
+
+        // WebRTC Mic Test Badge Click
+        const webrtcBadge = document.getElementById('webrtc-audio-status-badge');
+        if (webrtcBadge) {
+            webrtcBadge.style.cursor = 'pointer';
+            webrtcBadge.title = 'انقر لاختبار وتفعيل المايكروفون';
+            webrtcBadge.onclick = async () => {
+                const s = await startLocalAudioStream();
+                if (s) {
+                    showToast("🎙️ تم تفعيل واختبار المايكروفون بنجاح!", "success");
+                }
+            };
+        }
+
+        // Auto warm-up local audio stream on entering call simulator
+        startLocalAudioStream().catch(() => {});
 
         // Campaign Change Listener
         const campaignSelect = document.getElementById('widget-campaign-select');
