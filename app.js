@@ -1165,46 +1165,229 @@ document.addEventListener('DOMContentLoaded', () => {
             const profileBtn = document.getElementById(`chat-profile-${i}`);
             const dispPanel = document.getElementById(`disposition-panel-${i}`);
             const profPanel = document.getElementById(`profile-panel-${i}`);
-            const selectDisp = document.getElementById(`disp-select-${i}`);
-            const selectSub = document.getElementById(`sub-disp-select-${i}`);
-            const descBox = document.getElementById(`disp-desc-${i}`);
-            const saveBtn = document.getElementById(`btn-save-dispose-${i}`);
 
-            if (selectDisp) {
-                selectDisp.innerHTML = '<option value="">اختر القسم الرئيسي (Select a Disposition)</option>';
-                Object.keys(DISPOSITION_DATA).forEach(disp => {
-                    const opt = document.createElement('option');
-                    opt.value = disp;
-                    opt.textContent = disp;
-                    selectDisp.appendChild(opt);
+            const dispBlock = document.getElementById(`disp-block-${i}`);
+            const dispTrigger = document.getElementById(`disp-select-trigger-${i}`);
+            const dispText = document.getElementById(`disp-selected-text-${i}`);
+            const dispPopup = document.getElementById(`disp-popup-${i}`);
+            const dispSearch = document.getElementById(`disp-search-${i}`);
+            const dispList = document.getElementById(`disp-list-${i}`);
+
+            const subDispBlock = document.getElementById(`sub-disp-block-${i}`);
+            const subDispTrigger = document.getElementById(`sub-disp-select-trigger-${i}`);
+            const subDispText = document.getElementById(`sub-disp-selected-text-${i}`);
+            const subDispPopup = document.getElementById(`sub-disp-popup-${i}`);
+            const subDispSearch = document.getElementById(`sub-disp-search-${i}`);
+            const subDispList = document.getElementById(`sub-disp-list-${i}`);
+
+            const saveBtn = document.getElementById(`btn-save-dispose-${i}`);
+            const quickButtons = document.querySelectorAll(`.quick-disp-btn[data-chat="${i}"]`);
+
+            let currentDisp = '';
+            let currentSubDisp = '';
+
+            const checkValidity = () => {
+                if (currentDisp && currentSubDisp) {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.classList.add('active');
+                    }
+                } else {
+                    if (saveBtn) {
+                        saveBtn.disabled = true;
+                        saveBtn.classList.remove('active');
+                    }
+                }
+            };
+
+            const populateDispOptions = (filter = '') => {
+                if (!dispList) return;
+                const query = filter.toLowerCase().trim();
+                const categories = Object.keys(DISPOSITION_DATA);
+                const filtered = categories.filter(c => c.toLowerCase().includes(query));
+
+                let html = `<div class="disp-dropdown-item ${!currentDisp ? 'selected' : ''}" data-val="">Select a Disposition</div>`;
+                filtered.forEach(c => {
+                    html += `<div class="disp-dropdown-item ${currentDisp === c ? 'selected' : ''}" data-val="${c}">${c}</div>`;
+                });
+                dispList.innerHTML = html;
+
+                dispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const val = item.getAttribute('data-val');
+                        currentDisp = val;
+                        if (dispText) {
+                            dispText.textContent = val || 'Select a Disposition';
+                            if (val) dispTrigger.classList.add('has-value');
+                            else dispTrigger.classList.remove('has-value');
+                        }
+                        closePopups();
+
+                        // Reset sub disposition
+                        currentSubDisp = '';
+                        if (subDispText) {
+                            subDispText.textContent = 'Select a Sub Disposition';
+                            subDispTrigger.classList.remove('has-value');
+                        }
+                        checkValidity();
+
+                        // Automatically open Sub Disposition popup and focus search
+                        if (val) {
+                            setTimeout(() => {
+                                openSubDispPopup();
+                            }, 50);
+                        }
+                    });
+                });
+            };
+
+            const populateSubDispOptions = (filter = '') => {
+                if (!subDispList) return;
+                const query = filter.toLowerCase().trim();
+                let options = [];
+
+                if (currentDisp && DISPOSITION_DATA[currentDisp]) {
+                    options = DISPOSITION_DATA[currentDisp].map(s => ({ disp: currentDisp, sub: s }));
+                } else {
+                    Object.keys(DISPOSITION_DATA).forEach(d => {
+                        DISPOSITION_DATA[d].forEach(s => {
+                            options.push({ disp: d, sub: s });
+                        });
+                    });
+                }
+
+                const filtered = options.filter(o => o.sub.toLowerCase().includes(query));
+                let html = `<div class="disp-dropdown-item ${!currentSubDisp ? 'selected' : ''}" data-disp="" data-sub="">Select a Sub Disposition</div>`;
+                filtered.forEach(o => {
+                    html += `<div class="disp-dropdown-item ${currentSubDisp === o.sub ? 'selected' : ''}" data-disp="${o.disp}" data-sub="${o.sub}">${o.sub}</div>`;
+                });
+                subDispList.innerHTML = html;
+
+                subDispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const sub = item.getAttribute('data-sub');
+                        const disp = item.getAttribute('data-disp');
+                        currentSubDisp = sub;
+                        if (sub) {
+                            if (!currentDisp && disp) {
+                                currentDisp = disp;
+                                if (dispText) {
+                                    dispText.textContent = disp;
+                                    dispTrigger.classList.add('has-value');
+                                }
+                            }
+                            if (subDispText) {
+                                subDispText.textContent = sub;
+                                subDispTrigger.classList.add('has-value');
+                            }
+                        } else {
+                            if (subDispText) {
+                                subDispText.textContent = 'Select a Sub Disposition';
+                                subDispTrigger.classList.remove('has-value');
+                            }
+                        }
+                        closePopups();
+                        checkValidity();
+                    });
+                });
+            };
+
+            const closePopups = () => {
+                if (dispPopup) dispPopup.classList.add('hidden');
+                if (dispBlock) dispBlock.classList.remove('open');
+                if (subDispPopup) subDispPopup.classList.add('hidden');
+                if (subDispBlock) subDispBlock.classList.remove('open');
+            };
+
+            const openDispPopup = () => {
+                closePopups();
+                populateDispOptions('');
+                if (dispPopup) dispPopup.classList.remove('hidden');
+                if (dispBlock) dispBlock.classList.add('open');
+                if (dispSearch) {
+                    dispSearch.value = '';
+                    setTimeout(() => dispSearch.focus(), 30);
+                }
+            };
+
+            const openSubDispPopup = () => {
+                closePopups();
+                populateSubDispOptions('');
+                if (subDispPopup) subDispPopup.classList.remove('hidden');
+                if (subDispBlock) subDispBlock.classList.add('open');
+                if (subDispSearch) {
+                    subDispSearch.value = '';
+                    setTimeout(() => subDispSearch.focus(), 30);
+                }
+            };
+
+            if (dispTrigger) {
+                dispTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (dispPopup && !dispPopup.classList.contains('hidden')) {
+                        closePopups();
+                    } else {
+                        openDispPopup();
+                    }
                 });
             }
 
-            const populateSubDispositions = (dispVal) => {
-                if (!selectSub) return;
-                selectSub.innerHTML = '<option value="">اختر القسم الفرعي (Select a Sub Disposition)</option>';
-                if (descBox) descBox.style.display = 'none';
-                if (dispVal && DISPOSITION_DATA[dispVal]) {
-                    DISPOSITION_DATA[dispVal].forEach(sub => {
-                        const opt = document.createElement('option');
-                        opt.value = sub;
-                        opt.textContent = sub;
-                        selectSub.appendChild(opt);
-                    });
-                }
-            };
+            if (subDispTrigger) {
+                subDispTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (subDispPopup && !subDispPopup.classList.contains('hidden')) {
+                        closePopups();
+                    } else {
+                        openSubDispPopup();
+                    }
+                });
+            }
 
-            const updateDescription = () => {
-                if (!descBox) return;
-                const dispVal = selectDisp ? selectDisp.value : '';
-                const subVal = selectSub ? selectSub.value : '';
-                if (dispVal && subVal && DISPOSITION_DETAILS[dispVal] && DISPOSITION_DETAILS[dispVal][subVal]) {
-                    descBox.textContent = DISPOSITION_DETAILS[dispVal][subVal];
-                    descBox.style.display = 'block';
-                } else {
-                    descBox.style.display = 'none';
-                }
-            };
+            if (dispSearch) {
+                dispSearch.addEventListener('input', () => {
+                    populateDispOptions(dispSearch.value);
+                });
+                dispSearch.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            if (subDispSearch) {
+                subDispSearch.addEventListener('input', () => {
+                    populateSubDispOptions(subDispSearch.value);
+                });
+                subDispSearch.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            document.addEventListener('click', () => {
+                closePopups();
+            });
+
+            quickButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const dispVal = btn.getAttribute('data-disp');
+                    const subVal = btn.getAttribute('data-sub');
+
+                    currentDisp = dispVal;
+                    currentSubDisp = subVal;
+
+                    if (dispText) {
+                        dispText.textContent = dispVal;
+                        dispTrigger.classList.add('has-value');
+                    }
+                    if (subDispText) {
+                        subDispText.textContent = subVal;
+                        subDispTrigger.classList.add('has-value');
+                    }
+
+                    quickButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    closePopups();
+                    checkValidity();
+                });
+            });
 
             if (closeBtn && dispPanel) {
                 closeBtn.addEventListener('click', (e) => {
@@ -1212,6 +1395,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (disposedChats[i]) return;
                     dispPanel.classList.toggle('hidden');
                     if (profPanel) profPanel.classList.add('hidden');
+                    closePopups();
                 });
             }
 
@@ -1220,6 +1404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation();
                     profPanel.classList.toggle('hidden');
                     if (dispPanel) dispPanel.classList.add('hidden');
+                    closePopups();
                 });
             }
 
@@ -1228,65 +1413,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation();
                     if (dispPanel) dispPanel.classList.add('hidden');
                     if (profPanel) profPanel.classList.add('hidden');
+                    closePopups();
                 });
             }
-
-            const checkFormValidity = () => {
-                if (selectDisp && selectSub && selectDisp.value && selectSub.value) {
-                    saveBtn.disabled = false;
-                    saveBtn.classList.add('active');
-                } else {
-                    saveBtn.disabled = true;
-                    saveBtn.classList.remove('active');
-                }
-            };
-
-            if (selectDisp) {
-                selectDisp.addEventListener('change', () => {
-                    populateSubDispositions(selectDisp.value);
-                    updateDescription();
-                    checkFormValidity();
-                });
-            }
-            if (selectSub) {
-                selectSub.addEventListener('change', () => {
-                    updateDescription();
-                    checkFormValidity();
-                });
-            }
-
-            const quickButtons = document.querySelectorAll(`.quick-disp-btn[data-chat="${i}"]`);
-            quickButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const dispVal = btn.getAttribute('data-disp');
-                    const subVal = btn.getAttribute('data-sub');
-
-                    if (selectDisp) {
-                        selectDisp.value = dispVal;
-                        populateSubDispositions(dispVal);
-                    }
-                    if (selectSub) selectSub.value = subVal;
-
-                    updateDescription();
-                    quickButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-
-                    checkFormValidity();
-                });
-            });
 
             if (saveBtn) {
                 saveBtn.addEventListener('click', () => {
-                    if (selectDisp.value && selectSub.value) {
+                    if (currentDisp && currentSubDisp) {
                         disposedChats[i] = true;
+                        userDispositions[i] = {
+                            disp: currentDisp,
+                            subDisp: currentSubDisp
+                        };
                         dispPanel.classList.add('hidden');
                         
                         const disposedOverlay = document.getElementById(`disposed-overlay-${i}`);
                         if (disposedOverlay) {
                             disposedOverlay.classList.remove('hidden');
                         }
-                        showToast(`تم تصنيف وإغلاق المحادثة ${i} بنجاح`, 'success');
+                        showToast(`Chat ${i} disposed successfully.`, 'success');
                     }
                 });
             }
