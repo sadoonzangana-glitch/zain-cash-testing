@@ -472,7 +472,7 @@
 
                             <!-- Agent Name Profile -->
                             <div class="ameyo-agent-profile-pill">
-                                <span id="ameyo-agent-profile-name">Hussein Al-Iraqi (ZC000)</span>
+                                <span id="ameyo-agent-profile-name">Amr Nasr (ZC000)</span>
                                 <i class="fa-solid fa-caret-down"></i>
                             </div>
                         </div>
@@ -582,19 +582,28 @@
                                     <div class="widget-form-group">
                                         <label class="widget-label">Campaign*</label>
                                         <select class="widget-select" id="widget-campaign-select">
-                                            <option value="Zain Cash">Zain Cash</option>
-                                            <option value="Zain Cash_Outbound" selected>Zain Cash_Outbound</option>
+                                            <option value="Zain Cash" selected>Zain Cash (Inbound)</option>
                                             <option value="Asiacell_Outbound">Asiacell_Outbound</option>
-                                            <option value="Korek_Outbound">Korek_Outbound</option>
+                                            <option value="Test Campaign">Test Campaign</option>
                                         </select>
                                     </div>
 
                                     <div class="widget-search-row">
-                                        <div class="widget-search-input-wrap">
+                                        <!-- Standard Customer Search Input for Employee -->
+                                        <div class="widget-search-input-wrap" id="widget-customer-search-wrap">
                                             <i class="fa-solid fa-magnifying-glass search-icon"></i>
                                             <input type="text" id="widget-customer-search-input" placeholder="Search for customer" autocomplete="off" value="07723065187">
                                             <i class="fa-solid fa-caret-down drop-icon"></i>
                                             <i class="fa-solid fa-table-cells keypad-icon" id="btn-toggle-dialpad" title="Dialpad"></i>
+                                        </div>
+                                        <!-- Target Employee Dropdown for Admin Live Calling -->
+                                        <div class="widget-admin-employee-wrap hidden" id="widget-admin-employee-wrap" style="margin-top: 4px;">
+                                            <label style="font-size: 0.72rem; font-weight: 700; color: #0284c7; display: block; margin-bottom: 2px;">
+                                                <i class="fa-solid fa-user-gear"></i> اختر الموظف المسند له الاختبار:
+                                            </label>
+                                            <select id="widget-employee-target-select" class="widget-select" style="width: 100%; border-color: #38bdf8; font-weight: 700; color: #0369a1; background: #f0f9ff; height: 34px;">
+                                                <option value="">-- تحميل الموظفين... --</option>
+                                            </select>
                                         </div>
                                     </div>
 
@@ -1175,17 +1184,21 @@
                                     <p>Select employees required to take the test. When selected employees log in, they will be in test mode and their final score will be recorded automatically.</p>
                                 </div>
                                 
-                                <div class="assignment-type-selector" style="margin-top: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 12px 18px; border-radius: 12px; border: 1px solid #e2e8f0; direction: rtl;">
+                                <div class="assignment-type-selector" style="margin-top: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 12px 18px; border-radius: 12px; border: 1px solid #e2e8f0; direction: rtl; flex-wrap: wrap;">
                                     <span style="font-weight: 800; color: var(--text-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
                                         <i class="fa-solid fa-graduation-cap" style="color: var(--primary);"></i> نوع الاختبار النشط للإسناد:
                                     </span>
                                     <label class="radio-label" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
                                         <input type="radio" name="assign-test-type" value="simulator" checked id="assign-test-type-simulator" style="margin: 0; width: 16px; height: 16px;">
-                                        <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">محاكي الدردشة (Chat Simulator)</span>
+                                        <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">محاكي الدردشة (Chat)</span>
                                     </label>
                                     <label class="radio-label" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
                                         <input type="radio" name="assign-test-type" value="ai-agent" id="assign-test-type-ai" style="margin: 0; width: 16px; height: 16px;">
-                                        <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">أيجنت الذكاء الاصطناعي (AI Agent)</span>
+                                        <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">مدرب الذكاء الاصطناعي (AI)</span>
+                                    </label>
+                                    <label class="radio-label" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                        <input type="radio" name="assign-test-type" value="call-simulator" id="assign-test-type-call" style="margin: 0; width: 16px; height: 16px;">
+                                        <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">محاكي المكالمات (Voice Call)</span>
                                     </label>
                                 </div>
                                 
@@ -1858,11 +1871,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=3.3"></script>
-    <script src="scenarios.js?v=3.3"></script>
+    <script src="slides.js?v=3.5"></script>
+    <script src="scenarios.js?v=3.5"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=3.3"></script>
-    <script src="app.js?v=3.3"></script>
-    <script src="ai-agent.js?v=3.3"></script>
+    <script src="kb-data.js?v=3.5"></script>
+    <script src="app.js?v=3.5"></script>
+    <script src="ai-agent.js?v=3.5"></script>
 </body>
 </html>

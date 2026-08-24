@@ -426,6 +426,59 @@ exports.handler = async (event, context) => {
         }
     }
 
+    if (cleanPath === '/call-assignments') {
+        if (event.httpMethod === 'GET') {
+            return { statusCode: 200, headers, body: JSON.stringify(db.callAssignments || []) };
+        }
+        if (event.httpMethod === 'POST') {
+            db.callAssignments = bodyData;
+            await saveDb(db);
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
+    }
+
+    if (cleanPath === '/call-signal') {
+        db.callSignals = db.callSignals || {};
+        if (event.httpMethod === 'POST') {
+            const { toUserId, fromUserId, fromUserName, type, sdp, candidate, campaign, phone } = bodyData || {};
+            if (!toUserId) return { statusCode: 400, headers, body: JSON.stringify({ error: 'toUserId required' }) };
+            db.callSignals[toUserId] = {
+                toUserId,
+                fromUserId,
+                fromUserName,
+                type,
+                sdp,
+                candidate,
+                campaign,
+                phone,
+                timestamp: Date.now()
+            };
+            await saveDb(db);
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
+        if (event.httpMethod === 'GET') {
+            const userId = event.queryStringParameters?.userId;
+            if (!userId || !db.callSignals[userId]) {
+                return { statusCode: 200, headers, body: JSON.stringify({ signal: null }) };
+            }
+            const signal = db.callSignals[userId];
+            if (Date.now() - signal.timestamp > 30000) {
+                delete db.callSignals[userId];
+                await saveDb(db);
+                return { statusCode: 200, headers, body: JSON.stringify({ signal: null }) };
+            }
+            return { statusCode: 200, headers, body: JSON.stringify({ signal }) };
+        }
+        if (event.httpMethod === 'DELETE') {
+            const userId = event.queryStringParameters?.userId;
+            if (userId && db.callSignals[userId]) {
+                delete db.callSignals[userId];
+                await saveDb(db);
+            }
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
+    }
+
     if (cleanPath === '/results') {
         if (event.httpMethod === 'GET') {
             return { statusCode: 200, headers, body: JSON.stringify(db.results || []) };

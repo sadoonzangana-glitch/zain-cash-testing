@@ -412,11 +412,74 @@ app.post('/api/ai-assignments', requireAdminRole, async (req, res) => {
     res.json({ success: true });
 });
 
+// Voice Call Assignments API
+app.get('/api/call-assignments', async (req, res) => {
+    const db = await readDb();
+    res.json(db.callAssignments || []);
+});
+
+app.post('/api/call-assignments', requireAdminRole, async (req, res) => {
+    const db = await readDb();
+    db.callAssignments = req.body;
+    db.callAssignmentsMeta = {
+        assignedAt: Date.now()
+    };
+    await writeDb(db);
+    res.json({ success: true });
+});
+
+// Live Voice Call Signaling (WebRTC Signaling & Status)
+app.post('/api/call-signal', async (req, res) => {
+    const db = await readDb();
+    db.callSignals = db.callSignals || {};
+    const { toUserId, fromUserId, fromUserName, type, sdp, candidate, campaign, phone } = req.body;
+    if (!toUserId) return res.status(400).json({ error: 'toUserId required' });
+    db.callSignals[toUserId] = {
+        toUserId,
+        fromUserId,
+        fromUserName,
+        type,
+        sdp,
+        candidate,
+        campaign,
+        phone,
+        timestamp: Date.now()
+    };
+    await writeDb(db);
+    res.json({ success: true });
+});
+
+app.get('/api/call-signal', async (req, res) => {
+    const db = await readDb();
+    const userId = req.query.userId;
+    if (!userId || !db.callSignals || !db.callSignals[userId]) {
+        return res.json({ signal: null });
+    }
+    const signal = db.callSignals[userId];
+    if (Date.now() - signal.timestamp > 30000) {
+        delete db.callSignals[userId];
+        await writeDb(db);
+        return res.json({ signal: null });
+    }
+    res.json({ signal });
+});
+
+app.delete('/api/call-signal', async (req, res) => {
+    const db = await readDb();
+    const userId = req.query.userId;
+    if (userId && db.callSignals && db.callSignals[userId]) {
+        delete db.callSignals[userId];
+        await writeDb(db);
+    }
+    res.json({ success: true });
+});
+
 app.get('/api/assignments/meta', async (req, res) => {
     const db = await readDb();
     res.json({
         assignmentsMeta: db.assignmentsMeta || { assignedAt: 0 },
-        aiAssignmentsMeta: db.aiAssignmentsMeta || { assignedAt: 0 }
+        aiAssignmentsMeta: db.aiAssignmentsMeta || { assignedAt: 0 },
+        callAssignmentsMeta: db.callAssignmentsMeta || { assignedAt: 0 }
     });
 });
 

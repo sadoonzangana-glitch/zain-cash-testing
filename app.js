@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v14_ameyo_call_simulator';
+    const STOCKS_DISP_VERSION = 'v15_ameyo_live_calling';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Ameyo Call Simulator update!");
+        console.log("Purged legacy localStorage cache for Ameyo Live Calling update!");
     }
 
     // Global Dispositions Catalog
@@ -3522,11 +3522,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allUsers = [];
     let allTestSessions = {};
-    let currentTestType = 'simulator'; // 'simulator' or 'ai-agent'
+    let currentTestType = 'simulator'; // 'simulator', 'ai-agent', or 'call-simulator'
     let currentAssignments = [];
     let currentAiAssignments = [];
+    let currentCallAssignments = [];
     let simulatorAssignAll = false;
     let aiAssignAll = false;
+    let callAssignAll = false;
     
     async function loadAssignmentsTab() {
         loadSMTPSettings();
@@ -3538,18 +3540,24 @@ document.addEventListener('DOMContentLoaded', () => {
             allUsers = await apiCall('/api/users', 'GET');
             currentAssignments = await apiCall('/api/assignments', 'GET');
             currentAiAssignments = await apiCall('/api/ai-assignments', 'GET');
+            currentCallAssignments = await apiCall('/api/call-assignments', 'GET').catch(() => []);
             allTestSessions = (await apiCall('/api/test-sessions', 'GET').catch(() => ({}))) || {};
             
             allUsers = allUsers.filter(u => u.role !== 'Admin');
             
             simulatorAssignAll = currentAssignments.includes('all');
             aiAssignAll = currentAiAssignments.includes('all');
+            callAssignAll = currentCallAssignments.includes('all');
             
             const activeType = currentTestType;
-            const assignAll = activeType === 'simulator' ? simulatorAssignAll : aiAssignAll;
+            let assignAll = false;
+            if (activeType === 'simulator') assignAll = simulatorAssignAll;
+            else if (activeType === 'ai-agent') assignAll = aiAssignAll;
+            else if (activeType === 'call-simulator') assignAll = callAssignAll;
             
             if (typeSimulatorRadio) typeSimulatorRadio.checked = (activeType === 'simulator');
             if (typeAiRadio) typeAiRadio.checked = (activeType === 'ai-agent');
+            if (typeCallRadio) typeCallRadio.checked = (activeType === 'call-simulator');
             
             const radioAll = document.getElementById('assign-all-radio');
             const radioSpecific = document.getElementById('assign-specific-radio');
@@ -3591,7 +3599,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        const activeList = currentTestType === 'simulator' ? currentAssignments : currentAiAssignments;
+        const activeList = currentTestType === 'simulator' ? currentAssignments : (currentTestType === 'ai-agent' ? currentAiAssignments : currentCallAssignments);
         
         filtered.forEach(user => {
             const isChecked = activeList.includes(user.id);
@@ -3610,6 +3618,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const isSimAssigned = currentAssignments.includes(user.id) || simulatorAssignAll;
             const isAiAssigned = currentAiAssignments.includes(user.id) || aiAssignAll;
+            const isCallAssigned = currentCallAssignments.includes(user.id) || callAssignAll;
             
             // Calculate status badges for the selected test type
             let statusBadgeHtml = '';
@@ -3649,6 +3658,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="user-assignment-badges">
                         ${isSimAssigned ? '<span class="status-badge badge-simulator"><i class="fa-solid fa-comments"></i> Chat Simulator Active</span>' : ''}
                         ${isAiAssigned ? '<span class="status-badge badge-ai"><i class="fa-solid fa-robot"></i> AI Agent Active</span>' : ''}
+                        ${isCallAssigned ? '<span class="status-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;"><i class="fa-solid fa-phone"></i> Voice Call Active</span>' : ''}
                     </div>
                 </div>
                 <div class="user-card-right">
@@ -3677,7 +3687,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkbox = card.querySelector('input[type="checkbox"]');
             if (checkbox) {
                 checkbox.addEventListener('change', () => {
-                    const activeArray = currentTestType === 'simulator' ? currentAssignments : currentAiAssignments;
+                    let activeArray = currentAssignments;
+                    if (currentTestType === 'ai-agent') activeArray = currentAiAssignments;
+                    else if (currentTestType === 'call-simulator') activeArray = currentCallAssignments;
+
                     if (checkbox.checked) {
                         card.classList.add('selected');
                         if (!activeArray.includes(user.id)) {
@@ -3688,8 +3701,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const updated = activeArray.filter(id => id !== user.id);
                         if (currentTestType === 'simulator') {
                             currentAssignments = updated;
-                        } else {
+                        } else if (currentTestType === 'ai-agent') {
                             currentAiAssignments = updated;
+                        } else if (currentTestType === 'call-simulator') {
+                            currentCallAssignments = updated;
                         }
                     }
                     
@@ -3697,9 +3712,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (badgeContainer) {
                         const isSimAssignedNow = currentAssignments.includes(user.id) || simulatorAssignAll;
                         const isAiAssignedNow = currentAiAssignments.includes(user.id) || aiAssignAll;
+                        const isCallAssignedNow = currentCallAssignments.includes(user.id) || callAssignAll;
                         badgeContainer.innerHTML = `
                             ${isSimAssignedNow ? '<span class="status-badge badge-simulator"><i class="fa-solid fa-comments"></i> Chat Simulator Active</span>' : ''}
                             ${isAiAssignedNow ? '<span class="status-badge badge-ai"><i class="fa-solid fa-robot"></i> AI Agent Active</span>' : ''}
+                            ${isCallAssignedNow ? '<span class="status-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;"><i class="fa-solid fa-phone"></i> Voice Call Active</span>' : ''}
                         `;
                     }
                 });
@@ -3718,8 +3735,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (specificUsersListWrapper) specificUsersListWrapper.classList.add('hidden');
             if (currentTestType === 'simulator') {
                 simulatorAssignAll = true;
-            } else {
+            } else if (currentTestType === 'ai-agent') {
                 aiAssignAll = true;
+            } else if (currentTestType === 'call-simulator') {
+                callAssignAll = true;
             }
         });
     }
@@ -3729,8 +3748,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (specificUsersListWrapper) specificUsersListWrapper.classList.remove('hidden');
             if (currentTestType === 'simulator') {
                 simulatorAssignAll = false;
-            } else {
+            } else if (currentTestType === 'ai-agent') {
                 aiAssignAll = false;
+            } else if (currentTestType === 'call-simulator') {
+                callAssignAll = false;
             }
             renderUsersGrid();
         });
@@ -3744,7 +3765,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSelectAllUsers = document.getElementById('btn-select-all-users');
     if (btnSelectAllUsers) {
         btnSelectAllUsers.addEventListener('click', () => {
-            const activeArray = currentTestType === 'simulator' ? currentAssignments : currentAiAssignments;
+            let activeArray = currentAssignments;
+            if (currentTestType === 'ai-agent') activeArray = currentAiAssignments;
+            else if (currentTestType === 'call-simulator') activeArray = currentCallAssignments;
+
             allUsers.forEach(u => {
                 if (!activeArray.includes(u.id)) {
                     activeArray.push(u.id);
@@ -3759,8 +3783,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnDeselectAllUsers.addEventListener('click', () => {
             if (currentTestType === 'simulator') {
                 currentAssignments = [];
-            } else {
+            } else if (currentTestType === 'ai-agent') {
                 currentAiAssignments = [];
+            } else if (currentTestType === 'call-simulator') {
+                currentCallAssignments = [];
             }
             renderUsersGrid();
         });
@@ -3768,10 +3794,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const typeSimulatorRadio = document.getElementById('assign-test-type-simulator');
     const typeAiRadio = document.getElementById('assign-test-type-ai');
+    const typeCallRadio = document.getElementById('assign-test-type-call');
     
     function handleTestTypeChange(type) {
         currentTestType = type;
-        const assignAll = type === 'simulator' ? simulatorAssignAll : aiAssignAll;
+        let assignAll = false;
+        if (type === 'simulator') assignAll = simulatorAssignAll;
+        else if (type === 'ai-agent') assignAll = aiAssignAll;
+        else if (type === 'call-simulator') assignAll = callAssignAll;
         
         if (assignAll) {
             if (assignAllRadio) assignAllRadio.checked = true;
@@ -3789,6 +3819,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeAiRadio) {
         typeAiRadio.addEventListener('change', () => handleTestTypeChange('ai-agent'));
     }
+    if (typeCallRadio) {
+        typeCallRadio.addEventListener('change', () => handleTestTypeChange('call-simulator'));
+    }
     
     const btnSaveAssignments = document.getElementById('btn-save-assignments');
     if (btnSaveAssignments) {
@@ -3800,19 +3833,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (assignAll) {
                 targets = ['all'];
             } else {
-                const activeArray = activeTest === 'simulator' ? currentAssignments : currentAiAssignments;
+                let activeArray = currentAssignments;
+                if (activeTest === 'ai-agent') activeArray = currentAiAssignments;
+                else if (activeTest === 'call-simulator') activeArray = currentCallAssignments;
                 targets = [...activeArray].filter(id => id !== 'all');
             }
             
             if (activeTest === 'simulator') {
                 simulatorAssignAll = assignAll;
                 currentAssignments = targets;
-            } else {
+            } else if (activeTest === 'ai-agent') {
                 aiAssignAll = assignAll;
                 currentAiAssignments = targets;
+            } else if (activeTest === 'call-simulator') {
+                callAssignAll = assignAll;
+                currentCallAssignments = targets;
             }
             
-            const endpoint = activeTest === 'simulator' ? '/api/assignments' : '/api/ai-assignments';
+            let endpoint = '/api/assignments';
+            if (activeTest === 'ai-agent') endpoint = '/api/ai-assignments';
+            else if (activeTest === 'call-simulator') endpoint = '/api/call-assignments';
             
             try {
                 await apiCall(endpoint, 'POST', targets);
@@ -5910,12 +5950,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.initAmeyoCallSimulator = function() {
-        // Set agent name
+    let callSignalPollInterval = null;
+
+    window.initAmeyoCallSimulator = async function() {
         const user = window.currentUser || JSON.parse(localStorage.getItem('zain_cash_user') || '{}');
         const agentNamePill = document.getElementById('ameyo-agent-profile-name');
         if (agentNamePill) {
-            agentNamePill.textContent = (user.name || 'Hussein Al-Iraqi') + ` (${user.code || 'ZC000'})`;
+            agentNamePill.textContent = (user.name || 'Amr Nasr') + ` (${user.code || 'ZC000'})`;
+        }
+
+        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin';
+
+        // Campaign Change Listener
+        const campaignSelect = document.getElementById('widget-campaign-select');
+        if (campaignSelect) {
+            campaignSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === 'Zain Cash') {
+                    activeCallScenario = CALL_SCENARIOS[0];
+                } else {
+                    activeCallScenario = CALL_SCENARIOS[3];
+                    activeCallScenario.campaign = val;
+                }
+                updateCrmCustomerProfile(activeCallScenario);
+            });
+        }
+
+        // Admin Target Employee Dropdown Handling
+        const adminWrap = document.getElementById('widget-admin-employee-wrap');
+        const employeeTargetSelect = document.getElementById('widget-employee-target-select');
+
+        if (isAdmin && adminWrap && employeeTargetSelect) {
+            adminWrap.classList.remove('hidden');
+            try {
+                const [usersList, callAssignments] = await Promise.all([
+                    apiCall('/api/users', 'GET').catch(() => []),
+                    apiCall('/api/call-assignments', 'GET').catch(() => [])
+                ]);
+
+                const nonAdmins = usersList.filter(u => u.role !== 'Admin');
+                const isAllAssigned = callAssignments.includes('all');
+
+                if (nonAdmins.length === 0) {
+                    employeeTargetSelect.innerHTML = `<option value="">لا يوجد موظفون متاحون</option>`;
+                } else {
+                    employeeTargetSelect.innerHTML = `<option value="">-- اختر الموظف للاتصال به --</option>` +
+                        nonAdmins.map(u => {
+                            const isAssigned = isAllAssigned || callAssignments.includes(u.id);
+                            return `<option value="${u.id}" data-name="${escapeHtml(u.name)}" data-phone="${u.phone || '07700000000'}">
+                                ${escapeHtml(u.name)} (${u.code || u.id}) ${isAssigned ? '⭐ [مسند له كول]' : ''}
+                            </option>`;
+                        }).join('');
+                }
+            } catch (err) {
+                console.error("Failed to load employee list for calling:", err);
+            }
+        } else if (adminWrap) {
+            adminWrap.classList.add('hidden');
         }
 
         // Quick Scenario Buttons
@@ -5928,15 +6019,84 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnIn1) btnIn1.onclick = () => triggerIncomingCall(CALL_SCENARIOS[0]);
         if (btnIn2) btnIn2.onclick = () => triggerIncomingCall(CALL_SCENARIOS[1]);
         if (btnIn3) btnIn3.onclick = () => triggerIncomingCall(CALL_SCENARIOS[2]);
-        if (btnOut) btnOut.onclick = () => triggerOutboundCall(CALL_SCENARIOS[3]);
-        if (btnMakeCall) btnMakeCall.onclick = () => triggerOutboundCall(CALL_SCENARIOS[3]);
+        if (btnOut) {
+            btnOut.onclick = () => {
+                const campVal = campaignSelect ? campaignSelect.value : 'Test Campaign';
+                const sc = { ...CALL_SCENARIOS[3], campaign: campVal === 'Zain Cash' ? 'Test Campaign' : campVal };
+                triggerOutboundCall(sc);
+            };
+        }
+
+        if (btnMakeCall) {
+            btnMakeCall.onclick = async () => {
+                const campVal = campaignSelect ? campaignSelect.value : 'Zain Cash';
+                
+                // If Admin has selected a specific employee from dropdown
+                if (isAdmin && employeeTargetSelect && employeeTargetSelect.value) {
+                    const targetEmpId = employeeTargetSelect.value;
+                    const selectedOpt = employeeTargetSelect.options[employeeTargetSelect.selectedIndex];
+                    const targetEmpName = selectedOpt.getAttribute('data-name') || 'الموظف';
+                    const targetEmpPhone = selectedOpt.getAttribute('data-phone') || '07700000000';
+
+                    showToastNotification(`📞 جاري الاتصال بالموظف: ${targetEmpName}...`, 'info');
+
+                    // Send Call Offer Signal to target employee
+                    await apiCall('/api/call-signal', 'POST', {
+                        toUserId: targetEmpId,
+                        fromUserId: user.id,
+                        fromUserName: user.name || 'المشرف (Admin)',
+                        type: 'call_offer',
+                        campaign: campVal,
+                        phone: targetEmpPhone
+                    }).catch(console.error);
+
+                    const liveSc = {
+                        id: 'live-admin-call',
+                        type: campVal === 'Zain Cash' ? 'inbound' : 'outbound',
+                        customerName: `${targetEmpName} (${targetEmpId})`,
+                        customerPhone: targetEmpPhone,
+                        campaign: campVal,
+                        queue: 'Live_Training_Queue',
+                        heading: `مكالمة تدريبية مباشرة مع الموظف: ${targetEmpName}`,
+                        voiceText: `(اتصال صوتي تدريبي مباشر بين الأدمن والموظف ${targetEmpName})`,
+                        balance: '350,000 د.ع',
+                        status: 'متصل الآن (Live Call)'
+                    };
+                    triggerOutboundCall(liveSc);
+                } else {
+                    // Regular simulation call
+                    const isOut = campVal !== 'Zain Cash';
+                    const sc = isOut ? { ...CALL_SCENARIOS[3], campaign: campVal } : CALL_SCENARIOS[0];
+                    if (isOut) triggerOutboundCall(sc);
+                    else triggerIncomingCall(sc);
+                }
+            };
+        }
 
         // Ringing Action Buttons
         const btnAnswer = document.getElementById('btn-ringing-answer');
         const btnReject = document.getElementById('btn-ringing-reject');
-        if (btnAnswer) btnAnswer.onclick = () => connectActiveCall();
+        if (btnAnswer) {
+            btnAnswer.onclick = async () => {
+                if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
+                    await apiCall('/api/call-signal', 'POST', {
+                        toUserId: activeCallScenario.fromUserId,
+                        fromUserId: user.id,
+                        type: 'call_answered'
+                    }).catch(console.error);
+                }
+                connectActiveCall();
+            };
+        }
         if (btnReject) {
-            btnReject.onclick = () => {
+            btnReject.onclick = async () => {
+                if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
+                    await apiCall('/api/call-signal', 'POST', {
+                        toUserId: activeCallScenario.fromUserId,
+                        fromUserId: user.id,
+                        type: 'call_ended'
+                    }).catch(console.error);
+                }
                 stopRingtone();
                 switchAmeyoPhoneView('idle');
             };
@@ -5993,7 +6153,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const btnEnd = document.getElementById('btn-call-end');
-        if (btnEnd) btnEnd.onclick = () => endActiveCall();
+        if (btnEnd) {
+            btnEnd.onclick = async () => {
+                if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
+                    await apiCall('/api/call-signal', 'POST', {
+                        toUserId: activeCallScenario.fromUserId,
+                        fromUserId: user.id,
+                        type: 'call_ended'
+                    }).catch(console.error);
+                }
+                endActiveCall();
+            };
+        }
 
         // Copy Phone Number
         const btnCopyPhone = document.getElementById('btn-copy-active-phone');
@@ -6065,6 +6236,54 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('click', () => {
                 if (!statusMenu.classList.contains('hidden')) statusMenu.classList.add('hidden');
             });
+        }
+
+        // Live Call Background Signaling Polling for Non-Admin Employees
+        if (!isAdmin && user.id) {
+            if (callSignalPollInterval) clearInterval(callSignalPollInterval);
+            callSignalPollInterval = setInterval(async () => {
+                try {
+                    const res = await apiCall(`/api/call-signal?userId=${user.id}`, 'GET');
+                    if (res && res.signal) {
+                        const sig = res.signal;
+                        if (sig.type === 'call_offer' && currentCallState === 'idle') {
+                            // Acknowledge/clear signal
+                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
+                            
+                            const liveIncoming = {
+                                id: 'live-admin-incoming',
+                                type: sig.campaign === 'Zain Cash' ? 'inbound' : 'outbound',
+                                customerName: `${sig.fromUserName || 'مشرف التدريب'} (Admin)`,
+                                customerPhone: sig.phone || '07700000000',
+                                campaign: sig.campaign || 'Zain Cash',
+                                queue: 'Live_Training_Call',
+                                heading: `📞 مكالمة تدريبية مباشرة واردة من المشرف: ${sig.fromUserName}`,
+                                voiceText: `مرحباً، أنا المشرف وأقوم بإجراء اتصال تدريبي مباشر معك.`,
+                                balance: '350,000 د.ع',
+                                status: 'نشطة (Active)',
+                                isLiveCall: true,
+                                fromUserId: sig.fromUserId
+                            };
+
+                            // Switch to Call Simulator tab if not already on it
+                            const callTab = document.getElementById('tab-call-simulator');
+                            if (callTab && callTab.classList.contains('hidden')) {
+                                switchTab('tab-call-simulator');
+                            }
+
+                            triggerIncomingCall(liveIncoming);
+                        } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
+                            await apiCall(`/api/call-signal?userId=${user.id}`, 'DELETE').catch(() => {});
+                            if (currentCallState === 'ringing') {
+                                stopRingtone();
+                                switchAmeyoPhoneView('idle');
+                            } else {
+                                endActiveCall();
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }, 1800);
         }
     };
 
