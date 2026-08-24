@@ -1,15 +1,15 @@
 // Zain Cash Customer Care Training Application Logic (Amyo Style)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatic Cache-Busting for Stock Trading & Complete Individual Wallet Services Knowledge Base
-    const STOCKS_DISP_VERSION = 'v10_complete_word_knowledge_base';
+    // Automatic Cache-Busting for Smart Deep Search & No-Flicker KB update
+    const STOCKS_DISP_VERSION = 'v11_smart_deep_search_and_no_flicker';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
         localStorage.removeItem('zain_cash_kb');
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for new Complete Knowledge Base update!");
+        console.log("Purged legacy localStorage cache for Smart Deep Search update!");
     }
 
     // API base URL
@@ -4244,26 +4244,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedKbArticleId = null;
     let kbArticleListAdmin = [];
     let currentKbSearchQuery = '';
+    let activeMatchIndex = 0;
+    let totalMatchElements = [];
 
     async function initKb() {
         try {
             kbArticles = await apiCall('/api/kb', 'GET');
-            // If server returned nothing (null/undefined/empty), try embedded data
             if (!kbArticles || kbArticles.length === 0) {
                 if (window.EMBEDDED_KB_DATA && window.EMBEDDED_KB_DATA.length > 0) {
                     kbArticles = window.EMBEDDED_KB_DATA;
-                    console.log('KB: loaded from embedded data (offline mode)');
                 }
             }
         } catch (err) {
-            console.warn("KB API failed, trying embedded data:", err);
             if (window.EMBEDDED_KB_DATA && window.EMBEDDED_KB_DATA.length > 0) {
                 kbArticles = window.EMBEDDED_KB_DATA;
-                console.log('KB: loaded', kbArticles.length, 'articles from embedded data');
             }
         }
 
-        // Ensure every article has a valid numeric/string id
         if (kbArticles && Array.isArray(kbArticles)) {
             kbArticles.forEach((a, idx) => {
                 if (!a.id) a.id = idx + 1;
@@ -4273,7 +4270,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderKbCategories();
         renderKbPopularArticles();
         bindKbSearchEvents();
-        filterAndRenderKbArticles();
+        
+        // Immediately view the first article smoothly without flashing welcome screen
+        if (kbArticles && kbArticles.length > 0) {
+            viewKbArticle(kbArticles[0].id);
+        }
 
         if (currentUser && currentUser.role === 'Admin') {
             initAdminKb();
@@ -4281,32 +4282,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderKbCategories() {
+    function renderKbCategories(articlesToRender = null) {
         const ul = document.getElementById('kb-categories-ul');
-        if (!ul) return;
 
-        if (!kbArticles || kbArticles.length === 0) {
-            ul.innerHTML = '<li style="padding:12px; color:#94a3b8; font-size:0.85rem; text-align:center;">جاري تحميل الأقسام...</li>';
+        const list = articlesToRender !== null ? articlesToRender : (kbArticles || []);
+        const matchCountEl = document.getElementById('kb-search-match-count');
+        if (matchCountEl) {
+            if (currentKbSearchQuery && currentKbSearchQuery.trim()) {
+                matchCountEl.textContent = `(${list.length} قسم)`;
+            } else {
+                matchCountEl.textContent = '';
+            }
+        }
+
+        if (!list || list.length === 0) {
+            ul.innerHTML = '<li style="padding:14px; color:#94a3b8; font-size:0.85rem; text-align:center;"><i class="fa-solid fa-magnifying-glass" style="margin-bottom:6px; font-size:1.2rem; display:block;"></i>لا توجد نتائج مطابقة</li>';
             return;
         }
 
-        let html = kbArticles.map(article => {
+        let html = list.map(article => {
             const isStocks = (article.id === 1);
             const displayName = isStocks ? '📈 الدليل الشامل لخدمة تداول الأسهم' : article.title;
             const icon = isStocks ? 'fa-chart-line' : (article.icon || 'fa-folder-open');
             const isActive = (String(selectedKbArticleId) === String(article.id)) || (!selectedKbArticleId && isStocks);
 
+            let countBadge = '';
+            if (currentKbSearchQuery && currentKbSearchQuery.trim()) {
+                const tokens = currentKbSearchQuery.trim().toLowerCase().split(/\s+/).filter(t => t.length > 0);
+                const fullText = (cleanSnippetText(article.content || '') + ' ' + (article.title || '')).toLowerCase();
+                let matchOccurrences = 0;
+                tokens.forEach(t => {
+                    const matches = fullText.split(t).length - 1;
+                    matchOccurrences += Math.max(0, matches);
+                });
+                if (matchOccurrences > 0) {
+                    countBadge = `<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size:0.72rem; font-weight:800; padding:1px 6px; border-radius:10px; flex-shrink:0;">${matchOccurrences}</span>`;
+                }
+            }
+
             return `
-                <li class="${isActive ? 'active' : ''}" data-article-id="${article.id}" style="cursor:pointer; padding:10px 12px; margin:3px 6px; border-radius:10px; display:flex; align-items:center; gap:10px; font-size:0.85rem; font-weight:700; transition:all 0.2s; line-height:1.4;">
-                    <i class="fa-solid ${icon}" style="color:var(--primary); font-size:0.95rem; width:18px; text-align:center; flex-shrink:0;"></i>
-                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(displayName)}</span>
+                <li class="${isActive ? 'active' : ''}" data-article-id="${article.id}" style="cursor:pointer; padding:9px 12px; margin:2px 4px; border-radius:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:0.84rem; font-weight:700; transition:all 0.2s; line-height:1.4;">
+                    <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;">
+                        <i class="fa-solid ${icon}" style="color:var(--primary); font-size:0.92rem; width:18px; text-align:center; flex-shrink:0;"></i>
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(displayName)}</span>
+                    </div>
+                    ${countBadge}
                 </li>
             `;
         }).join('');
 
         ul.innerHTML = html;
 
-        ul.querySelectorAll('li').forEach(li => {
+        ul.querySelectorAll('li[data-article-id]').forEach(li => {
             li.addEventListener('click', () => {
                 ul.querySelectorAll('li').forEach(item => item.classList.remove('active'));
                 li.classList.add('active');
@@ -4315,9 +4342,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedKbCategory = String(articleId);
                 
                 viewKbArticle(articleId);
-                
-                const contentEl = document.getElementById('kb-view-content');
-                if (contentEl) contentEl.scrollTop = 0;
             });
         });
     }
@@ -4371,30 +4395,43 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Render filtered sidebar list
+        renderKbCategories(tokens.length > 0 ? filtered : null);
+
         const viewArea = document.querySelector('.kb-content-area');
         if (!viewArea) return;
 
-        // Directly display the full master comprehensive article if available
+        const welcomeDiv = document.getElementById('kb-no-article-selected');
+        if (welcomeDiv) welcomeDiv.classList.add('hidden');
+        
+        const oldResults = viewArea.querySelector('.kb-results-container');
+        if (oldResults) oldResults.remove();
+
         if (filtered.length > 0) {
-            viewKbArticle(filtered[0].id);
+            // If currently selected article is in filtered list, stay on it, otherwise switch to first match
+            const exists = filtered.find(a => String(a.id) === String(selectedKbArticleId));
+            const targetId = exists ? selectedKbArticleId : filtered[0].id;
+            viewKbArticle(targetId);
         } else {
-            document.getElementById('kb-no-article-selected').classList.add('hidden');
-            document.getElementById('kb-article-view').classList.add('hidden');
+            const articleView = document.getElementById('kb-article-view');
+            if (articleView) articleView.classList.add('hidden');
             
             let listHtml = `
-                <div class="kb-results-container" style="display:flex; flex-direction:column; gap:18px; width:100%;">
-                    <p style="text-align:center; color:#94a3b8; padding:50px 20px;"><i class="fa-solid fa-circle-info" style="font-size:3rem; margin-bottom:14px; color:#cbd5e1;"></i><br/>عذراً، لم نجد أي محتوى يطابق <strong>"${escapeHtml(rawQuery)}"</strong>.</p>
+                <div class="kb-results-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:60px 20px; text-align:center;">
+                    <div style="background:#f1f5f9; width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:2rem;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <h3 style="font-size:1.2rem; font-weight:800; color:#1e293b; margin:0;">لم يتم العثور على نتائج</h3>
+                    <p style="color:#64748b; font-size:0.9rem; margin:0; max-width:400px; line-height:1.6;">
+                        عذراً، لم نجد أي تعليمات أو إجراءات تطابق <strong>"${escapeHtml(rawQuery)}"</strong>. يرجى تجربة كلمات مفتاحية أخرى.
+                    </p>
                 </div>
             `;
-            const oldResults = viewArea.querySelector('.kb-results-container');
-            if (oldResults) oldResults.remove();
-            
-            const welcomeDiv = document.getElementById('kb-no-article-selected');
-            welcomeDiv.insertAdjacentHTML('afterend', listHtml);
+            if (articleView) articleView.insertAdjacentHTML('afterend', listHtml);
         }
     }
 
-        function renderKbPopularArticles() {
+    function renderKbPopularArticles() {
         const grid = document.getElementById('kb-popular-grid');
         if (!grid) return;
 
@@ -4402,13 +4439,13 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 1, title: 'المفاهيم وسوق الأسهم وكسور الأسهم', targetSec: 'sec-1' },
             { id: 1, title: 'إنشاء الحساب، المتطلبات والاشتراكات', targetSec: 'sec-2' },
             { id: 1, title: 'الإيداع والسحب وتفاصيل محفظتك', targetSec: 'sec-3' },
-            { id: 2, title: 'محفظة متوقفة CI والعمليات المسموحة', targetSec: 'ci-sec-1' },
-            { id: 2, title: 'مسارات التدقيق واستمارة التحقق في Utilities', targetSec: 'ci-sec-2' },
-            { id: 2, title: 'حالات استمارة التحقق (KYC Check)', targetSec: 'ci-sec-3' }
+            { id: 4, title: 'محفظة متوقفة CI والعمليات المسموحة', targetSec: null },
+            { id: 8, title: 'تعبئة المحفظة الإلكترونية', targetSec: null },
+            { id: 11, title: 'بطاقة الماستر كارد (والت كارد)', targetSec: null }
         ];
 
         grid.innerHTML = popularSections.map(s => `
-            <div class="popular-item" data-article-id="${s.id}" data-target-sec="${s.targetSec}">
+            <div class="popular-item" data-article-id="${s.id}" data-target-sec="${s.targetSec || ''}">
                 <i class="fa-solid fa-circle-play" style="color:var(--primary);"></i>
                 <span>${escapeHtml(s.title)}</span>
             </div>
@@ -4429,6 +4466,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function scrollToMatch(index) {
+        if (!totalMatchElements || totalMatchElements.length === 0) return;
+        
+        totalMatchElements.forEach(el => el.classList.remove('active-match'));
+        
+        if (index < 0) index = totalMatchElements.length - 1;
+        if (index >= totalMatchElements.length) index = 0;
+        
+        activeMatchIndex = index;
+        const targetEl = totalMatchElements[activeMatchIndex];
+        if (targetEl) {
+            targetEl.classList.add('active-match');
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            const currentIdxEl = document.getElementById('kb-current-match-idx');
+            if (currentIdxEl) currentIdxEl.textContent = String(activeMatchIndex + 1);
+        }
+    }
+
     function viewKbArticle(articleId) {
         const article = (kbArticles || []).find(a => String(a.id) === String(articleId));
         if (!article) return;
@@ -4445,7 +4501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (view) view.classList.remove('hidden');
 
         const catEl = document.getElementById('kb-view-category');
-        if (catEl) catEl.textContent = article.category || 'الأسهم والتداول';
+        if (catEl) catEl.textContent = article.category || 'خدمات محفظة الأفراد';
         
         const titleEl = document.getElementById('kb-view-title');
         const contentEl = document.getElementById('kb-view-content');
@@ -4459,9 +4515,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (contentEl) {
-            if (currentKbSearchQuery) {
+            let toolbarHtml = '';
+            
+            if (currentKbSearchQuery && currentKbSearchQuery.trim()) {
                 const rawHtml = article.content || '';
                 const tokens = currentKbSearchQuery.trim().split(/\s+/).filter(t => t.length > 0);
+                
                 if (tokens.length > 0) {
                     const escapedTokens = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
                     const regex = new RegExp(`(?<!<[^>]*>)(${escapedTokens.join('|')})`, 'gi');
@@ -4469,8 +4528,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     contentEl.innerHTML = rawHtml;
                 }
+
+                // Query all matching marks inside the article body
+                totalMatchElements = Array.from(contentEl.querySelectorAll('mark.search-highlight'));
+                
+                if (totalMatchElements.length > 0) {
+                    toolbarHtml = `
+                        <div class="kb-search-toolbar" id="kb-active-search-toolbar">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="background:#eff6ff; color:#1d4ed8; font-weight:800; padding:4px 12px; border-radius:20px; font-size:0.82rem; border:1px solid #bfdbfe; display:inline-flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-bullseye"></i> نتيجة <span id="kb-current-match-idx">1</span> من <span id="kb-total-match-idx">${totalMatchElements.length}</span>
+                                </span>
+                                <span style="font-size:0.84rem; color:#475569; font-weight:700;">لكلمة: <strong style="color:#0f172a;">"${escapeHtml(currentKbSearchQuery)}"</strong></span>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="kb-search-nav-btn" id="kb-btn-prev-match"><i class="fa-solid fa-chevron-up"></i> السابق</button>
+                                <button type="button" class="kb-search-nav-btn" id="kb-btn-next-match">التالي <i class="fa-solid fa-chevron-down"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
             } else {
                 contentEl.innerHTML = article.content || '';
+                totalMatchElements = [];
+            }
+
+            // Remove any existing toolbar and insert new if matches exist
+            const oldToolbar = view.querySelector('#kb-active-search-toolbar');
+            if (oldToolbar) oldToolbar.remove();
+            
+            if (toolbarHtml) {
+                const headerBadge = view.querySelector('div[style*="justify-content:space-between"]');
+                if (headerBadge) {
+                    headerBadge.insertAdjacentHTML('afterend', toolbarHtml);
+                    
+                    const btnPrev = document.getElementById('kb-btn-prev-match');
+                    const btnNext = document.getElementById('kb-btn-next-match');
+                    if (btnPrev) btnPrev.addEventListener('click', () => scrollToMatch(activeMatchIndex - 1));
+                    if (btnNext) btnNext.addEventListener('click', () => scrollToMatch(activeMatchIndex + 1));
+                }
             }
 
             // Bind in-article anchor links for smooth scrolling
@@ -4484,20 +4580,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+
+            // Automatically deep-scroll to the FIRST match immediately!
+            if (totalMatchElements.length > 0) {
+                setTimeout(() => {
+                    scrollToMatch(0);
+                }, 80);
+            } else {
+                contentEl.scrollTop = 0;
+            }
         }
 
         const dispEl = document.getElementById('kb-view-correct-disp');
-        if (dispEl) dispEl.textContent = article.category || 'الأسهم والتداول';
+        if (dispEl) dispEl.textContent = article.category || 'خدمات محفظة الأفراد';
         
         const subDispEl = document.getElementById('kb-view-correct-sub');
-        if (subDispEl) subDispEl.textContent = article.title || 'تداول الأسهم الأمريكية';
+        if (subDispEl) subDispEl.textContent = article.title || 'دليل الخدمات';
     }
 
     function bindKbSearchEvents() {
         const searchInput = document.getElementById('kb-search-input');
         if (searchInput) {
+            let debounceTimer = null;
             searchInput.addEventListener('input', () => {
-                filterAndRenderKbArticles();
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterAndRenderKbArticles();
+                }, 120);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        scrollToMatch(activeMatchIndex - 1);
+                    } else {
+                        scrollToMatch(activeMatchIndex + 1);
+                    }
+                }
             });
         }
 

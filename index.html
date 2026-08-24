@@ -11,7 +11,7 @@
     <!-- FontAwesome for professional icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css?v=3.0">
+    <link rel="stylesheet" href="styles.css?v=3.1">
 </head>
 <body>
 
@@ -118,12 +118,15 @@
                     <aside class="kb-sidebar" style="width: 290px; padding: 16px; display: flex; flex-direction: column; gap: 14px; flex-shrink: 0; overflow-y: auto;">
                         <div class="kb-search-box" style="position: relative; display: flex; align-items: center;">
                             <i class="fa-solid fa-magnifying-glass search-icon" style="position: absolute; right: 10px; color: #94a3b8;"></i>
-                            <input type="text" id="kb-search-input" placeholder="ابحث في المعرفة..." style="width: 100%; padding: 8px 32px 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc;">
+                            <input type="search" id="kb-search-input" placeholder="بحث ذكي وعميق في المعرفة..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width: 100%; padding: 8px 32px 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc;">
                         </div>
                         
                         <div class="kb-categories-list" style="flex: 1; overflow-y: auto;">
-                            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; border-bottom: 2px solid var(--primary); padding-bottom: 6px;">أقسام المعرفة</h3>
-                            <ul id="kb-categories-ul" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; border-bottom: 2px solid var(--primary); padding-bottom: 6px;">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">أقسام المعرفة</h3>
+                                <span id="kb-search-match-count" style="font-size: 0.75rem; color: #64748b; font-weight: 700;"></span>
+                            </div>
+                            <ul id="kb-categories-ul" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;">
                                 <!-- Loaded dynamically -->
                             </ul>
                         </div>
@@ -131,14 +134,14 @@
                     
                     <!-- Main Area: Article reader or search results -->
                     <main class="kb-content-area" style="flex: 1; padding: 22px; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; position: relative;">
-                        <div id="kb-no-article-selected" class="kb-welcome-screen" style="display: flex; align-items: center; justify-content: center; height: 100%; text-align: center; width: 100%;">
+                        <div id="kb-no-article-selected" class="kb-welcome-screen hidden" style="display: flex; align-items: center; justify-content: center; height: 100%; text-align: center; width: 100%;">
                             <div class="kb-welcome-card" style="max-width: 500px; padding: 20px;">
                                 <i class="fa-solid fa-book-open welcome-icon" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 20px; display: inline-block;"></i>
                                 <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">مكتبة المعرفة الذكية لزين كاش</h2>
                                 <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 25px; line-height: 1.6;">ابحث عن إجراءات العمل، والتعليمات الرسمية، وتصنيف التذاكر الصحيح لمساعدتك في إجابة الزبائن بسرعة ودقة.</p>
                                 
                                 <div class="kb-welcome-search-large" style="display: flex; gap: 8px; margin-bottom: 25px;">
-                                    <input type="text" id="kb-welcome-search-input" placeholder="اكتب سؤالك أو الكلمة المفتاحية هنا..." style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; background: #f8fafc; font-family: inherit;">
+                                    <input type="search" id="kb-welcome-search-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="اكتب سؤالك أو الكلمة المفتاحية هنا..." style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none; background: #f8fafc; font-family: inherit;">
                                     <button class="btn btn-primary" id="kb-welcome-search-btn" style="padding: 10px 20px; font-weight: bold; flex-shrink: 0;">بحث ذكي</button>
                                 </div>
                                 
@@ -151,7 +154,7 @@
                             </div>
                         </div>
                         
-                        <article id="kb-article-view" class="kb-article-card hidden" style="display: flex; flex-direction: column; gap: 15px; height: 100%;">
+                        <article id="kb-article-view" class="kb-article-card" style="display: flex; flex-direction: column; gap: 15px; height: 100%;">
                             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:5px;">
                                 <span class="kb-article-category-badge" id="kb-view-category" style="background: #eff6ff; color: #1d4ed8; font-size: 0.8rem; font-weight: 800; padding: 4px 14px; border-radius: 20px; border: 1px solid #bfdbfe; display:inline-flex; align-items:center; gap:6px;">
                                     <i class="fa-solid fa-chart-line"></i> الأسهم والتداول
@@ -1429,11 +1432,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=3.0"></script>
-    <script src="scenarios.js?v=3.0"></script>
+    <script src="slides.js?v=3.1"></script>
+    <script src="scenarios.js?v=3.1"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=3.0"></script>
-    <script src="app.js?v=3.0"></script>
-    <script src="ai-agent.js?v=3.0"></script>
+    <script src="kb-data.js?v=3.1"></script>
+    <script src="app.js?v=3.1"></script>
+    <script src="ai-agent.js?v=3.1"></script>
 </body>
 </html>
