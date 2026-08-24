@@ -1,15 +1,15 @@
 // Zain Cash Customer Care Training Application Logic (Amyo Style)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatic Cache-Busting for Stock Trading & 23-Category Dispositions update
-    const STOCKS_DISP_VERSION = 'v7_only_us_stocks_kb_and_ai_coach';
+    // Automatic Cache-Busting for Stock Trading & CI Compliance Knowledge Base update
+    const STOCKS_DISP_VERSION = 'v8_us_stocks_and_ci_compliance_kb';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
         localStorage.removeItem('zain_cash_kb');
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for new Stock Trading & Dispositions update!");
+        console.log("Purged legacy localStorage cache for new Stock Trading & CI Compliance KB update!");
     }
 
     // API base URL
@@ -4281,47 +4281,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderKbCategories() {
+        function renderKbCategories() {
         const ul = document.getElementById('kb-categories-ul');
         if (!ul) return;
 
-        const sections = [
-            { id: 'all', name: '📖 الدليل الشامل (الكل)', icon: 'fa-book-open', targetSec: null },
-            { id: 'sec-1', name: '1. المفاهيم والبورصة والكسور', icon: 'fa-compass', targetSec: 'sec-1' },
-            { id: 'sec-2', name: '2. إنشاء الحساب والاشتراك', icon: 'fa-user-check', targetSec: 'sec-2' },
-            { id: 'sec-3', name: '3. الإيداع والسحب ومحفظتك', icon: 'fa-wallet', targetSec: 'sec-3' },
-            { id: 'sec-4', name: '4. شراء وبيع الأسهم والأوامر', icon: 'fa-right-left', targetSec: 'sec-4' },
-            { id: 'sec-5', name: '5. المؤشرات والأساسيات والأرباح', icon: 'fa-chart-pie', targetSec: 'sec-5' },
-            { id: 'sec-6', name: '6. إعدادات الحساب وحماية SIPC', icon: 'fa-gears', targetSec: 'sec-6' },
-            { id: 'sec-7', name: '7. قاموس المصطلحات المالي', icon: 'fa-book-bookmark', targetSec: 'sec-7' },
-            { id: 'sec-8', name: '8. معلومات عامة وحالات خاصة', icon: 'fa-circle-info', targetSec: 'sec-8' }
+        const categoriesConfig = [
+            {
+                groupTitle: "📈 الأسهم وتداول البورصة الأمريكية",
+                articleId: 1,
+                items: [
+                    { id: 'stocks-all', articleId: 1, name: 'الدليل الكامل للأسهم (الكل)', icon: 'fa-book-open', targetSec: null },
+                    { id: 'sec-1', articleId: 1, name: '1. المفاهيم والبورصة والكسور', icon: 'fa-compass', targetSec: 'sec-1' },
+                    { id: 'sec-2', articleId: 1, name: '2. إنشاء الحساب والاشتراك', icon: 'fa-user-check', targetSec: 'sec-2' },
+                    { id: 'sec-3', articleId: 1, name: '3. الإيداع والسحب ومحفظتك', icon: 'fa-wallet', targetSec: 'sec-3' },
+                    { id: 'sec-4', articleId: 1, name: '4. شراء وبيع الأسهم والأوامر', icon: 'fa-right-left', targetSec: 'sec-4' },
+                    { id: 'sec-5', articleId: 1, name: '5. المؤشرات والأساسيات والأرباح', icon: 'fa-chart-pie', targetSec: 'sec-5' },
+                    { id: 'sec-6', articleId: 1, name: '6. إعدادات الحساب وحماية SIPC', icon: 'fa-gears', targetSec: 'sec-6' },
+                    { id: 'sec-7', articleId: 1, name: '7. قاموس المصطلحات المالي', icon: 'fa-book-bookmark', targetSec: 'sec-7' },
+                    { id: 'sec-8', articleId: 1, name: '8. معلومات عامة وحالات خاصة', icon: 'fa-circle-info', targetSec: 'sec-8' }
+                ]
+            },
+            {
+                groupTitle: "🛡️ خدمات محفظة الأفراد والامتثال",
+                articleId: 2,
+                items: [
+                    { id: 'ci-all', articleId: 2, name: 'دليل المحافظ الموقوفة CI (الكل)', icon: 'fa-shield-halved', targetSec: null },
+                    { id: 'ci-sec-1', articleId: 2, name: '1. التعريف والعمليات المسموحة', icon: 'fa-scale-balanced', targetSec: 'ci-sec-1' },
+                    { id: 'ci-sec-2', articleId: 2, name: '2. مسارات التدقيق في Utilities', icon: 'fa-magnifying-glass-chart', targetSec: 'ci-sec-2' },
+                    { id: 'ci-sec-3', articleId: 2, name: '3. حالات استمارة التحقق (KYC)', icon: 'fa-list-check', targetSec: 'ci-sec-3' },
+                    { id: 'ci-sec-4', articleId: 2, name: '4. إعادة إرسال الرابط (SMS Push)', icon: 'fa-paper-plane', targetSec: 'ci-sec-4' },
+                    { id: 'ci-sec-5', articleId: 2, name: '5. إجراءات التصعيد (AML Queue)', icon: 'fa-triangle-exclamation', targetSec: 'ci-sec-5' }
+                ]
+            }
         ];
 
-        ul.innerHTML = sections.map(sec => `
-            <li class="${selectedKbCategory === sec.id ? 'active' : ''}" data-cat-id="${sec.id}" data-target-sec="${sec.targetSec || ''}" style="cursor:pointer; padding:10px 12px; border-radius:8px; display:flex; align-items:center; gap:8px; font-size:0.86rem; font-weight:700; transition:all 0.2s;">
-                <i class="fa-solid ${sec.icon}" style="color:var(--primary); font-size:0.95rem;"></i>
-                <span>${sec.name}</span>
-            </li>
-        `).join('');
+        let html = '';
+        categoriesConfig.forEach(group => {
+            html += `<div style="padding:10px 14px 4px 14px; font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">${group.groupTitle}</div>`;
+            group.items.forEach(sec => {
+                const isActive = (selectedKbCategory === sec.id) || (selectedKbCategory === 'all' && sec.id === 'stocks-all');
+                html += `
+                    <li class="${isActive ? 'active' : ''}" data-cat-id="${sec.id}" data-article-id="${sec.articleId}" data-target-sec="${sec.targetSec || ''}" style="cursor:pointer; padding:9px 12px; margin:2px 8px; border-radius:8px; display:flex; align-items:center; gap:8px; font-size:0.84rem; font-weight:700; transition:all 0.2s;">
+                        <i class="fa-solid ${sec.icon}" style="color:var(--primary); font-size:0.9rem;"></i>
+                        <span>${sec.name}</span>
+                    </li>
+                `;
+            });
+        });
+
+        ul.innerHTML = html;
 
         ul.querySelectorAll('li').forEach(li => {
             li.addEventListener('click', () => {
                 ul.querySelectorAll('li').forEach(item => item.classList.remove('active'));
                 li.classList.add('active');
                 selectedKbCategory = li.getAttribute('data-cat-id');
+                const articleId = parseInt(li.getAttribute('data-article-id')) || 1;
                 const targetSec = li.getAttribute('data-target-sec');
                 
-                if (kbArticles && kbArticles.length > 0) {
-                    viewKbArticle(kbArticles[0].id);
-                    if (targetSec) {
-                        setTimeout(() => {
-                            const el = document.getElementById(targetSec);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 60);
-                    } else {
-                        const contentEl = document.getElementById('kb-view-content');
-                        if (contentEl) contentEl.scrollTop = 0;
-                    }
+                viewKbArticle(articleId);
+                
+                if (targetSec) {
+                    setTimeout(() => {
+                        const el = document.getElementById(targetSec);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 60);
+                } else {
+                    const contentEl = document.getElementById('kb-view-content');
+                    if (contentEl) contentEl.scrollTop = 0;
                 }
             });
         });
@@ -4399,7 +4426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderKbPopularArticles() {
+        function renderKbPopularArticles() {
         const grid = document.getElementById('kb-popular-grid');
         if (!grid) return;
 
@@ -4407,13 +4434,13 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 1, title: 'المفاهيم وسوق الأسهم وكسور الأسهم', targetSec: 'sec-1' },
             { id: 1, title: 'إنشاء الحساب، المتطلبات والاشتراكات', targetSec: 'sec-2' },
             { id: 1, title: 'الإيداع والسحب وتفاصيل محفظتك', targetSec: 'sec-3' },
-            { id: 1, title: 'شراء وبيع الأسهم وأنواع الأوامر', targetSec: 'sec-4' },
-            { id: 1, title: 'المؤشرات والأساسيات المالية وعن الشركة', targetSec: 'sec-5' },
-            { id: 1, title: 'قاموس المصطلحات المالي الشامل', targetSec: 'sec-7' }
+            { id: 2, title: 'محفظة متوقفة CI والعمليات المسموحة', targetSec: 'ci-sec-1' },
+            { id: 2, title: 'مسارات التدقيق واستمارة التحقق في Utilities', targetSec: 'ci-sec-2' },
+            { id: 2, title: 'حالات استمارة التحقق (KYC Check)', targetSec: 'ci-sec-3' }
         ];
 
         grid.innerHTML = popularSections.map(s => `
-            <div class="popular-item" data-target-sec="${s.targetSec}">
+            <div class="popular-item" data-article-id="${s.id}" data-target-sec="${s.targetSec}">
                 <i class="fa-solid fa-circle-play" style="color:var(--primary);"></i>
                 <span>${escapeHtml(s.title)}</span>
             </div>
@@ -4421,15 +4448,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.querySelectorAll('.popular-item').forEach(item => {
             item.addEventListener('click', () => {
+                const articleId = parseInt(item.getAttribute('data-article-id')) || 1;
                 const targetSec = item.getAttribute('data-target-sec');
-                if (kbArticles && kbArticles.length > 0) {
-                    viewKbArticle(kbArticles[0].id);
-                    if (targetSec) {
-                        setTimeout(() => {
-                            const el = document.getElementById(targetSec);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 60);
-                    }
+                viewKbArticle(articleId);
+                if (targetSec) {
+                    setTimeout(() => {
+                        const el = document.getElementById(targetSec);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 60);
                 }
             });
         });
