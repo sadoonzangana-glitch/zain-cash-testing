@@ -1552,7 +1552,7 @@ ${articlesContext}
         });
         if (chatWindows[0]) chatWindows[0].classList.add('active-window');
 
-        for (let i = 1; i <= scenarios.length; i++) {
+                for (let i = 1; i <= scenarios.length; i++) {
             const inputEl = document.getElementById(`ai-chat-input-${i}`);
             const sendBtn = document.getElementById(`ai-chat-send-${i}`);
             const closeBtn = document.getElementById(`ai-chat-close-${i}`);
@@ -1611,10 +1611,65 @@ ${articlesContext}
                 dispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        const val = item.getAttribute('data-val');
+                        currentDisp = val;
+                        quickButtons.forEach(b => b.classList.remove('active'));
+
+                        if (dispText) {
+                            dispText.textContent = val || 'Select a Disposition';
+                            if (val) dispTrigger.classList.add('has-value');
+                            else dispTrigger.classList.remove('has-value');
+                        }
+                        closePopups();
+
+                        // Reset sub disposition
+                        currentSubDisp = '';
+                        if (subDispText) {
+                            subDispText.textContent = 'Select a Sub Disposition';
+                            subDispTrigger.classList.remove('has-value');
+                        }
+                        checkValidity();
+
+                        // Automatically open Sub Disposition popup
+                        if (val) {
+                            setTimeout(() => {
+                                openSubDispPopup();
+                            }, 50);
+                        }
+                    });
+                });
+            };
+
+            const populateSubDispOptions = (filter = '') => {
+                if (!subDispList) return;
+                const query = filter.toLowerCase().trim();
+                let options = [];
+
+                if (currentDisp && DISPOSITION_DATA[currentDisp]) {
+                    options = DISPOSITION_DATA[currentDisp].map(s => ({ disp: currentDisp, sub: s }));
+                } else {
+                    Object.keys(DISPOSITION_DATA).forEach(d => {
+                        DISPOSITION_DATA[d].forEach(s => {
+                            options.push({ disp: d, sub: s });
+                        });
+                    });
+                }
+
+                const filtered = options.filter(o => o.sub.toLowerCase().includes(query));
+                let html = `<div class="disp-dropdown-item ${!currentSubDisp ? 'selected' : ''}" data-disp="" data-sub="">Select a Sub Disposition</div>`;
+                filtered.forEach(o => {
+                    html += `<div class="disp-dropdown-item ${currentSubDisp === o.sub ? 'selected' : ''}" data-disp="${o.disp}" data-sub="${o.sub}">${o.sub}</div>`;
+                });
+                subDispList.innerHTML = html;
+
+                subDispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
                         const sub = item.getAttribute('data-sub');
                         const disp = item.getAttribute('data-disp');
                         currentSubDisp = sub;
                         quickButtons.forEach(b => b.classList.remove('active'));
+
                         if (sub) {
                             if (!currentDisp && disp) {
                                 currentDisp = disp;
@@ -1708,7 +1763,7 @@ ${articlesContext}
                 closePopups();
             });
 
-            if (inputEl) {
+            if (inputEl && isAi) {
                 inputEl.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -1717,7 +1772,7 @@ ${articlesContext}
                 });
             }
 
-            if (sendBtn) {
+            if (sendBtn && isAi) {
                 sendBtn.addEventListener('click', () => {
                     handleAiSendMessage(i);
                 });
@@ -1781,6 +1836,7 @@ ${articlesContext}
                 saveBtn.addEventListener('click', () => {
                     if (currentDisp && currentSubDisp) {
                         aiDisposedChats[i] = true;
+                        
                         dispPanel.classList.add('hidden');
                         
                         const disposedOverlay = document.getElementById(`ai-disposed-overlay-${i}`);

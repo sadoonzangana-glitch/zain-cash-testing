@@ -1159,10 +1159,13 @@ document.addEventListener('DOMContentLoaded', () => {
 };
         window.DISPOSITION_DATA = DISPOSITION_DATA;
 
-        for (let i = 1; i <= numChats; i++) {
+                for (let i = 1; i <= numChats; i++) {
+            const inputEl = document.getElementById(`chat-input-${i}`);
+            const sendBtn = document.getElementById(`chat-send-${i}`);
             const closeBtn = document.getElementById(`chat-close-${i}`);
             const backBtn = document.getElementById(`chat-back-${i}`);
             const profileBtn = document.getElementById(`chat-profile-${i}`);
+            
             const dispPanel = document.getElementById(`disposition-panel-${i}`);
             const profPanel = document.getElementById(`profile-panel-${i}`);
 
@@ -1215,10 +1218,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 dispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        const val = item.getAttribute('data-val');
+                        currentDisp = val;
+                        quickButtons.forEach(b => b.classList.remove('active'));
+
+                        if (dispText) {
+                            dispText.textContent = val || 'Select a Disposition';
+                            if (val) dispTrigger.classList.add('has-value');
+                            else dispTrigger.classList.remove('has-value');
+                        }
+                        closePopups();
+
+                        // Reset sub disposition
+                        currentSubDisp = '';
+                        if (subDispText) {
+                            subDispText.textContent = 'Select a Sub Disposition';
+                            subDispTrigger.classList.remove('has-value');
+                        }
+                        checkValidity();
+
+                        // Automatically open Sub Disposition popup
+                        if (val) {
+                            setTimeout(() => {
+                                openSubDispPopup();
+                            }, 50);
+                        }
+                    });
+                });
+            };
+
+            const populateSubDispOptions = (filter = '') => {
+                if (!subDispList) return;
+                const query = filter.toLowerCase().trim();
+                let options = [];
+
+                if (currentDisp && DISPOSITION_DATA[currentDisp]) {
+                    options = DISPOSITION_DATA[currentDisp].map(s => ({ disp: currentDisp, sub: s }));
+                } else {
+                    Object.keys(DISPOSITION_DATA).forEach(d => {
+                        DISPOSITION_DATA[d].forEach(s => {
+                            options.push({ disp: d, sub: s });
+                        });
+                    });
+                }
+
+                const filtered = options.filter(o => o.sub.toLowerCase().includes(query));
+                let html = `<div class="disp-dropdown-item ${!currentSubDisp ? 'selected' : ''}" data-disp="" data-sub="">Select a Sub Disposition</div>`;
+                filtered.forEach(o => {
+                    html += `<div class="disp-dropdown-item ${currentSubDisp === o.sub ? 'selected' : ''}" data-disp="${o.disp}" data-sub="${o.sub}">${o.sub}</div>`;
+                });
+                subDispList.innerHTML = html;
+
+                subDispList.querySelectorAll('.disp-dropdown-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
                         const sub = item.getAttribute('data-sub');
                         const disp = item.getAttribute('data-disp');
                         currentSubDisp = sub;
                         quickButtons.forEach(b => b.classList.remove('active'));
+
                         if (sub) {
                             if (!currentDisp && disp) {
                                 currentDisp = disp;
@@ -1312,6 +1370,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 closePopups();
             });
 
+            if (inputEl && isAi) {
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAiSendMessage(i);
+                    }
+                });
+            }
+
+            if (sendBtn && isAi) {
+                sendBtn.addEventListener('click', () => {
+                    handleAiSendMessage(i);
+                });
+            }
+
             quickButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1370,10 +1443,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveBtn.addEventListener('click', () => {
                     if (currentDisp && currentSubDisp) {
                         disposedChats[i] = true;
-                        userDispositions[i] = {
-                            disp: currentDisp,
-                            subDisp: currentSubDisp
-                        };
+                        userDispositions[i] = { disp: currentDisp, subDisp: currentSubDisp };
                         dispPanel.classList.add('hidden');
                         
                         const disposedOverlay = document.getElementById(`disposed-overlay-${i}`);
@@ -1387,7 +1457,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const smileyBtn = document.getElementById(`chat-smiley-${i}`);
             const picker = document.getElementById(`emoji-picker-${i}`);
-            const inputEl = document.getElementById(`chat-input-${i}`);
 
             if (smileyBtn && picker && inputEl) {
                 smileyBtn.addEventListener('click', (e) => {
@@ -1423,6 +1492,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        
         document.addEventListener('click', () => {
             for (let j = 1; j <= numChats; j++) {
                 const picker = document.getElementById(`emoji-picker-${j}`);
