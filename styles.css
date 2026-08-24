@@ -4677,6 +4677,26 @@ mark.search-highlight.active-match {
     border-right: 4px solid #3b82f6;
     border-radius: 8px;
     padding: 10px 14px;
+    margin: 10px 0;
+}
+
+#edit-kb-content-visual .kb-warning-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-right: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 10px 0;
+}
+
+#edit-kb-content-visual .kb-step-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
 /* =========================================================================
    Ameyo Voice Telephony & Call Simulator Styles (Pixel-Perfect)
    ========================================================================= */
