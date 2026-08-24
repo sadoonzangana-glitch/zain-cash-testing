@@ -1,16 +1,156 @@
 // Zain Cash Customer Care Training Application Logic (Amyo Style)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatic Cache-Busting for Smart Deep Search & No-Flicker KB update
-    const STOCKS_DISP_VERSION = 'v11_smart_deep_search_and_no_flicker';
+    // Automatic Cache-Busting for Admin KB Visual Rich Editor & Dispositions
+    const STOCKS_DISP_VERSION = 'v12_admin_kb_visual_editor';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
         localStorage.removeItem('zain_cash_kb');
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Smart Deep Search update!");
+        console.log("Purged legacy localStorage cache for Admin KB Visual Editor update!");
     }
+
+    // Global Dispositions Catalog
+    const GLOBAL_DISPOSITION_DATA = {
+        "Inquiry": [
+            "Agent & Shop Location",
+            "Application Usage",
+            "Become a agent & merchant",
+            "E-Goods",
+            "Forgot Wallet Number",
+            "Government Bill Payment",
+            "Wallet Top-up throught Visa or Master",
+            "Merchant Wallet Linking",
+            "Mastercard card top-up and transfer",
+            "MasterCard Activation/Status",
+            "MasterCard Limits & Fees",
+            "MasterCard Order/ Delivery",
+            "MasterCard Transaction",
+            "Merchant Payment Service",
+            "NBI Service",
+            "Passport Upload for International TRX",
+            "Top-Up Other Cards Using ZainCash Wallet",
+            "Wallet Account Status",
+            "Wallet Balance",
+            "Wallet Cash-Out",
+            "Wallet Limits & Fees",
+            "Wallet Local Transfer",
+            "Wallet Login",
+            "Wallet PIN Reset or Change",
+            "Wallet Registration Process",
+            "Wallet Top-Up through Agent or Bank",
+            "Western Union",
+            "Zain IQ Recharge",
+            "Wallet Change Number and Termination Process",
+            "Inquiry About Outbound Call",
+            "Change Wallet MSISDN(Korek)"
+        ],
+        "Request": [
+            "Cancel Wallet Termination Request",
+            "Card Statement",
+            "Change Wallet MSISDN Status",
+            "E-Goods PIN Send",
+            "Lock / Unlock Wallet",
+            "MasterCard Order Status - Delivery Schedule",
+            "MasterCard Balance Refund Request",
+            "Request Follow-up",
+            "MasterCard Resend PIN",
+            "Reset Wallet PIN",
+            "Transaction Status Verification",
+            "Update Customer Information & Documents",
+            "Wallet Statement"
+        ],
+        "Complaint": [
+            "Application Usage",
+            "Cashback Issue",
+            "E-Goods Other Issue",
+            "E-Goods Redemption Failure",
+            "Follow-up on Previous Escalation Ticket",
+            "Government Bill Payment",
+            "Local Transfer Failure",
+            "MasterCard Activation Failure",
+            "MasterCard Hold / Cancelled Card",
+            "MasterCard International Transactions",
+            "MasterCard Local Transactions",
+            "MasterCard Negative Balance",
+            "MasterCard Order or Delay Delivery",
+            "MasterCard Top-up Transfer",
+            "MasterCard Transaction Dispute",
+            "Merchant Payment Failure",
+            "NBI Link Issue",
+            "Passport Upload",
+            "Wallet Cash Disbursement",
+            "Wallet Cash-out",
+            "Wallet Change MSISDN",
+            "Wallet Delay in Receiving OTP/PIN",
+            "Wallet Limit-Fees",
+            "Wallet Login Failure",
+            "Wallet Registration",
+            "Wallet Status",
+            "Wallet Termination",
+            "Wallet Top-up through Visa/Master",
+            "Wallet Top-Up through Agent/Bank",
+            "Western Union Add-Edit Beneficiary",
+            "Western Union Received Money",
+            "Western Union Refund Money",
+            "Western Union Service on Hold",
+            "WU Send Money",
+            "Zain IQ Recharge",
+            "IllegalAgentCharge"
+        ],
+        "Fraud & Security": [
+            "Fraud or Scam",
+            "Other Security Concern",
+            "Suspicious Activity",
+            "Unauthorized Transaction"
+        ],
+        "Customer Concern": [
+            "Agent attitude",
+            "Customer Care attitude",
+            "Field Team attitude",
+            "Process or Policy"
+        ],
+        "Support": [
+            "English Support",
+            "Kurdish Support",
+            "Supervisor"
+        ],
+        "Incident": [
+            "Application",
+            "Hold Balance",
+            "MasterCard",
+            "Wallet Service Outage",
+            "Western Union Outage"
+        ],
+        "Incomplete Contact": [
+            "Disconnected Before Verification",
+            "Disconnected During Conversation",
+            "No Response",
+            "Silent Call Only",
+            "Spam / Junk",
+            "Unclear Customer Request",
+            "Traning & Test"
+        ],
+        "Social Media": [
+            "Wallet / Application",
+            "Mastercards (WalletCards)",
+            "Western Union",
+            "Digital Goods",
+            "Cash-In by VISA/MC (HC)",
+            "Zain IQ Top-Up",
+            "Merchant Payment",
+            "NBI",
+            "GOV Bill Payment",
+            "Report Fraud or Scam",
+            "Junk",
+            "Suggestion",
+            "Positive Feedback",
+            "Negative Feedback"
+        ]
+    };
+    window.DISPOSITION_DATA = GLOBAL_DISPOSITION_DATA;
 
     // API base URL
     const API_BASE = window.location.origin.startsWith('http') ? window.location.origin : '';
@@ -4750,6 +4890,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // ADMIN KNOWLEDGE BASE MANAGEMENT
     // ==========================================
+    let isKbVisualMode = true;
+
     async function initAdminKb() {
         const listUl = document.getElementById('admin-kb-list-ul');
         if (!listUl) return;
@@ -4759,6 +4901,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         populateKBDispositionsDropdowns();
         populateKBCategoriesDatalist();
+        initKBVisualEditor();
 
         const addNewBtn = document.getElementById('add-new-kb-btn');
         if (addNewBtn) {
@@ -4768,6 +4911,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const form = document.getElementById('kb-edit-form');
                 form.classList.remove('hidden');
                 form.reset();
+                
+                const visualEl = document.getElementById('edit-kb-content-visual');
+                const rawEl = document.getElementById('edit-kb-content');
+                if (visualEl) visualEl.innerHTML = '<p>اكتب التعليمات والخطوات هنا...</p>';
+                if (rawEl) rawEl.value = '<p>اكتب التعليمات والخطوات هنا...</p>';
+                
                 document.getElementById('edit-kb-id').value = 'new';
                 document.getElementById('delete-kb-btn').style.display = 'none';
                 updateKBLivePreview();
@@ -4780,11 +4929,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 const idVal = document.getElementById('edit-kb-id').value;
                 const title = document.getElementById('edit-kb-title').value.trim();
-                const category = document.getElementById('edit-kb-category').value;
-                const content = document.getElementById('edit-kb-content').value.trim();
+                const category = document.getElementById('edit-kb-category').value.trim() || 'خدمات محفظة الأفراد';
+                
+                // Read content from visual editor if in visual mode, else from raw textarea
+                const visualEl = document.getElementById('edit-kb-content-visual');
+                const rawEl = document.getElementById('edit-kb-content');
+                let content = isKbVisualMode && visualEl ? visualEl.innerHTML.trim() : (rawEl ? rawEl.value.trim() : '');
+                
                 const keywords = document.getElementById('edit-kb-keywords').value.trim();
-                const mainDisp = document.getElementById('edit-kb-correct-disp').value;
-                const subDisp = document.getElementById('edit-kb-correct-sub').value;
+                const mainDisp = document.getElementById('edit-kb-correct-disp').value || '';
+                const subDisp = document.getElementById('edit-kb-correct-sub').value || '';
 
                 if (idVal === 'new') {
                     const newArt = {
@@ -4826,14 +4980,105 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function initKBVisualEditor() {
+        const btnVisual = document.getElementById('btn-kb-mode-visual');
+        const btnHtml = document.getElementById('btn-kb-mode-html');
+        const toolbar = document.getElementById('kb-editor-toolbar');
+        const visualEl = document.getElementById('edit-kb-content-visual');
+        const rawEl = document.getElementById('edit-kb-content');
+
+        if (btnVisual && btnHtml && visualEl && rawEl) {
+            btnVisual.addEventListener('click', () => {
+                isKbVisualMode = true;
+                btnVisual.classList.add('active');
+                btnHtml.classList.remove('active');
+                if (toolbar) toolbar.classList.remove('hidden');
+                visualEl.innerHTML = rawEl.value;
+                visualEl.classList.remove('hidden');
+                rawEl.classList.add('hidden');
+                updateKBLivePreview();
+            });
+
+            btnHtml.addEventListener('click', () => {
+                isKbVisualMode = false;
+                btnHtml.classList.add('active');
+                btnVisual.classList.remove('active');
+                if (toolbar) toolbar.classList.add('hidden');
+                rawEl.value = visualEl.innerHTML;
+                rawEl.classList.remove('hidden');
+                visualEl.classList.add('hidden');
+                updateKBLivePreview();
+            });
+
+            visualEl.addEventListener('input', () => {
+                rawEl.value = visualEl.innerHTML;
+                updateKBLivePreview();
+            });
+
+            rawEl.addEventListener('input', () => {
+                visualEl.innerHTML = rawEl.value;
+                updateKBLivePreview();
+            });
+        }
+
+        // Setup toolbar commands
+        if (toolbar) {
+            toolbar.querySelectorAll('button[data-cmd]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const cmd = btn.getAttribute('data-cmd');
+                    document.execCommand(cmd, false, null);
+                    if (visualEl) visualEl.focus();
+                    if (visualEl && rawEl) rawEl.value = visualEl.innerHTML;
+                    updateKBLivePreview();
+                });
+            });
+
+            toolbar.querySelectorAll('button[data-format]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tag = btn.getAttribute('data-format');
+                    document.execCommand('formatBlock', false, `<${tag}>`);
+                    if (visualEl) visualEl.focus();
+                    if (visualEl && rawEl) rawEl.value = visualEl.innerHTML;
+                    updateKBLivePreview();
+                });
+            });
+
+            toolbar.querySelectorAll('button[data-snippet]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const snippet = btn.getAttribute('data-snippet');
+                    let htmlSnippet = '';
+                    if (snippet === 'alert-info') {
+                        htmlSnippet = '<div class="kb-alert-box" style="background:#eff6ff; border:1px solid #bfdbfe; border-right:4px solid #3b82f6; border-radius:8px; padding:10px 14px; margin:10px 0;"><i class="fa-solid fa-circle-info" style="color:#2563eb; margin-left:6px;"></i><strong>ملاحظة هامة:</strong> اكتب الملاحظة هنا...</div>';
+                    } else if (snippet === 'alert-warning') {
+                        htmlSnippet = '<div class="kb-warning-box" style="background:#fffbeb; border:1px solid #fde68a; border-right:4px solid #f59e0b; border-radius:8px; padding:10px 14px; margin:10px 0;"><i class="fa-solid fa-triangle-exclamation" style="color:#d97706; margin-left:6px;"></i><strong>تنبيه وتحذير:</strong> اكتب التنبيه هنا...</div>';
+                    } else if (snippet === 'step-card') {
+                        htmlSnippet = '<div class="kb-step-card" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin:10px 0;"><h4 style="margin:0 0 6px 0; color:#1e293b; font-size:0.92rem;">📌 الخطوة 1: العنوان المطلوب</h4><p style="margin:0; font-size:0.85rem; color:#475569;">التفاصيل والإجراء...</p></div>';
+                    } else if (snippet === 'queue-badge') {
+                        htmlSnippet = '&nbsp;<span style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:4px; display:inline-block;">BO-QueueName</span>&nbsp;';
+                    }
+
+                    if (htmlSnippet) {
+                        document.execCommand('insertHTML', false, htmlSnippet);
+                        if (visualEl) visualEl.focus();
+                        if (visualEl && rawEl) rawEl.value = visualEl.innerHTML;
+                        updateKBLivePreview();
+                    }
+                });
+            });
+        }
+    }
+
     function renderAdminKbList() {
         const listUl = document.getElementById('admin-kb-list-ul');
         if (!listUl) return;
 
         listUl.innerHTML = kbArticleListAdmin.map(a => `
             <li data-art-id="${a.id}">
-                <div style="font-size:0.65rem; color:#ff9900; font-weight:700;">${a.category}</div>
-                <div style="font-size:0.8rem; font-weight:700; margin-top:2px;">${a.title}</div>
+                <div style="font-size:0.65rem; color:#ff9900; font-weight:700;">${escapeHtml(a.category || 'خدمات محفظة الأفراد')}</div>
+                <div style="font-size:0.8rem; font-weight:700; margin-top:2px;">${escapeHtml(a.title || '')}</div>
             </li>
         `).join('');
 
@@ -4851,14 +5096,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('delete-kb-btn').style.display = 'block';
 
                     document.getElementById('edit-kb-id').value = art.id;
-                    document.getElementById('edit-kb-title').value = art.title;
-                    document.getElementById('edit-kb-category').value = art.category;
-                    document.getElementById('edit-kb-content').value = art.content;
+                    document.getElementById('edit-kb-title').value = art.title || '';
+                    document.getElementById('edit-kb-category').value = art.category || '';
+                    
+                    const visualEl = document.getElementById('edit-kb-content-visual');
+                    const rawEl = document.getElementById('edit-kb-content');
+                    if (visualEl) visualEl.innerHTML = art.content || '';
+                    if (rawEl) rawEl.value = art.content || '';
+
                     document.getElementById('edit-kb-keywords').value = art.keywords || '';
-                    document.getElementById('edit-kb-correct-disp').value = art.correctDisp || '';
+                    
+                    const mainSel = document.getElementById('edit-kb-correct-disp');
+                    if (mainSel) mainSel.value = art.correctDisp || '';
                     
                     populateKBSubDispositions();
-                    document.getElementById('edit-kb-correct-sub').value = art.correctSubDisp || '';
+                    const subSel = document.getElementById('edit-kb-correct-sub');
+                    if (subSel) subSel.value = art.correctSubDisp || '';
 
                     updateKBLivePreview();
                 }
@@ -4889,9 +5142,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const subSel = document.getElementById('edit-kb-correct-sub');
         if (!mainSel || !subSel) return;
 
-        const dispData = window.DISPOSITION_DATA || {};
-        mainSel.innerHTML = '<option value="">اختر التصنيف الرئيسي</option>' + 
-            Object.keys(dispData).map(k => `<option value="${k}">${k}</option>`).join('');
+        const dispData = window.DISPOSITION_DATA || GLOBAL_DISPOSITION_DATA || {};
+        mainSel.innerHTML = '<option value="">(بدون تصنيف / اختياري)</option>' + 
+            Object.keys(dispData).map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
 
         mainSel.addEventListener('change', () => {
             populateKBSubDispositions();
@@ -4908,12 +5161,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!mainSel || !subSel) return;
 
         const mainVal = mainSel.value;
-        const dispData = window.DISPOSITION_DATA || {};
+        const dispData = window.DISPOSITION_DATA || GLOBAL_DISPOSITION_DATA || {};
         if (mainVal && dispData[mainVal]) {
-            subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>' + 
-                dispData[mainVal].map(s => `<option value="${s}">${s}</option>`).join('');
+            subSel.innerHTML = '<option value="">(بدون تصنيف فرعي / اختياري)</option>' + 
+                dispData[mainVal].map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
         } else {
-            subSel.innerHTML = '<option value="">اختر التصنيف الفرعي</option>';
+            subSel.innerHTML = '<option value="">(بدون تصنيف فرعي / اختياري)</option>';
         }
     }
 
@@ -4921,7 +5174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const datalist = document.getElementById('kb-categories-datalist');
         if (!datalist) return;
         const uniqueCats = Array.from(new Set((kbArticleListAdmin || []).map(a => a.category).filter(Boolean)));
-        datalist.innerHTML = uniqueCats.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        datalist.innerHTML = uniqueCats.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
     }
 
     // ==========================================
@@ -4948,8 +5201,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectList.addEventListener('click', () => setTimeout(updateMCQLivePreview, 100));
             }
         }
-
-
 
         const slideForm = document.getElementById('slide-edit-form');
         if (slideForm) {
@@ -5011,22 +5262,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-
-
     function updateKBLivePreview() {
-        const title = document.getElementById('edit-kb-title').value || 'العنوان...';
-        const category = document.getElementById('edit-kb-category').value || 'Category';
-        const content = document.getElementById('edit-kb-content').value || 'محتوى المقال هنا...';
-        const disp = document.getElementById('edit-kb-correct-disp').value || 'Main Disp';
-        const sub = document.getElementById('edit-kb-correct-sub').value || 'Sub Disp';
+        const title = document.getElementById('edit-kb-title').value || 'عنوان المقال...';
+        const category = document.getElementById('edit-kb-category').value || 'خدمات محفظة الأفراد';
+        
+        const visualEl = document.getElementById('edit-kb-content-visual');
+        const rawEl = document.getElementById('edit-kb-content');
+        const content = isKbVisualMode && visualEl ? visualEl.innerHTML : (rawEl ? rawEl.value : '');
+        
+        const disp = document.getElementById('edit-kb-correct-disp').value || '(بدون تصنيف)';
+        const sub = document.getElementById('edit-kb-correct-sub').value || '(بدون تصنيف فرعي)';
 
         const panel = document.getElementById('kb-live-preview-panel');
         if (panel) panel.classList.remove('hidden');
 
         document.getElementById('kb-preview-title').textContent = title;
         document.getElementById('kb-preview-category').textContent = category;
-        document.getElementById('kb-preview-content').textContent = content;
+        
+        const contentPreview = document.getElementById('kb-preview-content');
+        if (contentPreview) {
+            contentPreview.innerHTML = content || '<span style="color:#94a3b8;">محتوى المقال سيظهر هنا...</span>';
+        }
+        
         document.getElementById('kb-preview-main-badge').textContent = disp;
         document.getElementById('kb-preview-sub-badge').textContent = sub;
     }

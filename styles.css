@@ -4610,5 +4610,93 @@ mark.search-highlight.active-match {
     transform: translateY(-1px);
 }
 
+/* ==========================================
+   ADMIN KNOWLEDGE BASE VISUAL EDITOR
+   ========================================== */
+.btn-editor-mode {
+    transition: all 0.2s ease;
+}
+.btn-editor-mode.active {
+    border-color: #2563eb !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.kb-tool-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.kb-tool-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.kb-tool-btn.custom-insert {
+    background: #f8fafc;
+    color: #1e40af;
+    border-color: #bfdbfe;
+    font-size: 0.75rem;
+}
+
+.kb-tool-btn.custom-insert:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+#edit-kb-content-visual:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+#edit-kb-content-visual h3, #edit-kb-content-visual h4 {
+    margin: 12px 0 6px 0;
+    color: #1e293b;
+}
+
+#edit-kb-content-visual ul, #edit-kb-content-visual ol {
+    margin: 8px 0;
+    padding-right: 22px;
+}
+
+#edit-kb-content-visual .kb-alert-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-right: 4px solid #3b82f6;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 10px 0;
+}
+
+#edit-kb-content-visual .kb-warning-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-right: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 10px 0;
+}
+
+#edit-kb-content-visual .kb-step-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+}
+
+
 
 

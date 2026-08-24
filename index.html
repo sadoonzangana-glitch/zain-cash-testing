@@ -11,7 +11,7 @@
     <!-- FontAwesome for professional icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css?v=3.1">
+    <link rel="stylesheet" href="styles.css?v=3.2">
 </head>
 <body>
 
@@ -1277,7 +1277,7 @@
                             </aside>
                             
                             <!-- Main Area: Edit Form & Live Preview Split Pane -->
-                            <main class="admin-form-area split-preview-container" style="flex: 1; display: flex; gap: 20px; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+<main class="admin-form-area split-preview-container" style="flex: 1; display: flex; gap: 20px; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
                                 <!-- Form Left -->
                                 <div class="split-left-form" style="flex: 1; min-width: 0; overflow-y: auto; padding-left: 10px;">
                                     <div id="no-kb-selected" class="no-selection-message" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8; text-align: center;">
@@ -1303,8 +1303,40 @@
                                         </div>
                                         
                                         <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
-                                            <label for="edit-kb-content" style="font-size: 0.82rem; font-weight: 700; color: #475569;">محتوى المقال التفصيلي (الخطوات والإجراءات):</label>
-                                            <textarea id="edit-kb-content" required placeholder="اكتب التعليمات والخطوات بوضوح..." style="min-height: 180px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; font-family: inherit; resize: vertical; line-height: 1.6;"></textarea>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                                <label for="edit-kb-content-visual" style="font-size: 0.82rem; font-weight: 700; color: #475569;">محتوى المقال (الخطوات والإجراءات):</label>
+                                                <div style="display: flex; gap: 6px;">
+                                                    <button type="button" id="btn-kb-mode-visual" class="btn-editor-mode active" style="padding: 3px 10px; font-size: 0.75rem; border-radius: 6px; border: 1px solid #3b82f6; background: #eff6ff; color: #1d4ed8; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-pen-to-square"></i> تحرير مرئي منسق
+                                                    </button>
+                                                    <button type="button" id="btn-kb-mode-html" class="btn-editor-mode" style="padding: 3px 10px; font-size: 0.75rem; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-code"></i> كود HTML
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Rich Editor Toolbar -->
+                                            <div id="kb-editor-toolbar" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 10px; background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom: none; border-radius: 8px 8px 0 0; align-items: center;">
+                                                <button type="button" class="kb-tool-btn" data-cmd="bold" title="تغميق (Bold)"><i class="fa-solid fa-bold"></i></button>
+                                                <button type="button" class="kb-tool-btn" data-cmd="italic" title="مائل (Italic)"><i class="fa-solid fa-italic"></i></button>
+                                                <button type="button" class="kb-tool-btn" data-cmd="underline" title="تسطير (Underline)"><i class="fa-solid fa-underline"></i></button>
+                                                <span style="width: 1px; height: 18px; background: #cbd5e1; margin: 0 3px;"></span>
+                                                <button type="button" class="kb-tool-btn" data-format="h3" title="عنوان رئيسي H3"><i class="fa-solid fa-heading"></i>3</button>
+                                                <button type="button" class="kb-tool-btn" data-format="h4" title="عنوان فرعي H4"><i class="fa-solid fa-heading"></i>4</button>
+                                                <button type="button" class="kb-tool-btn" data-cmd="insertUnorderedList" title="قائمة نقطية"><i class="fa-solid fa-list-ul"></i></button>
+                                                <button type="button" class="kb-tool-btn" data-cmd="insertOrderedList" title="قائمة رقمية"><i class="fa-solid fa-list-ol"></i></button>
+                                                <span style="width: 1px; height: 18px; background: #cbd5e1; margin: 0 3px;"></span>
+                                                <button type="button" class="kb-tool-btn custom-insert" data-snippet="alert-info" title="صندوق تنبيه أزرق"><i class="fa-solid fa-circle-info"></i> تنبيه</button>
+                                                <button type="button" class="kb-tool-btn custom-insert" data-snippet="alert-warning" title="صندوق تحذير أصفر"><i class="fa-solid fa-triangle-exclamation"></i> تحذير</button>
+                                                <button type="button" class="kb-tool-btn custom-insert" data-snippet="step-card" title="بطاقة خطوة"><i class="fa-solid fa-list-check"></i> بطاقة خطوة</button>
+                                                <button type="button" class="kb-tool-btn custom-insert" data-snippet="queue-badge" title="طابور عمل"><i class="fa-solid fa-tag"></i> طابور</button>
+                                            </div>
+
+                                            <!-- Visual Rich Editor Container -->
+                                            <div id="edit-kb-content-visual" contenteditable="true" style="min-height: 220px; max-height: 450px; overflow-y: auto; padding: 14px; border: 1px solid #cbd5e1; border-radius: 0 0 8px 8px; font-size: 0.9rem; outline: none; background: #ffffff; font-family: inherit; line-height: 1.7; direction: rtl; text-align: right;"></div>
+
+                                            <!-- Raw HTML Textarea (Hidden by default or toggled) -->
+                                            <textarea id="edit-kb-content" class="hidden" placeholder="اكتب كود HTML أو التعليمات..." style="min-height: 220px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 0 0 8px 8px; font-size: 0.85rem; outline: none; background: #f8fafc; font-family: monospace; resize: vertical; line-height: 1.5; direction: ltr; text-align: left;"></textarea>
                                         </div>
 
                                         <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
@@ -1314,14 +1346,14 @@
 
                                         <div class="form-row-double" style="display: flex; gap: 15px;">
                                             <div class="form-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                                                <label for="edit-kb-correct-disp" style="font-size: 0.82rem; font-weight: 700; color: #475569;">التصنيف الرئيسي (Main):</label>
-                                                <select id="edit-kb-correct-disp" required style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
+                                                <label for="edit-kb-correct-disp" style="font-size: 0.82rem; font-weight: 700; color: #475569;">التصنيف الرئيسي (Main) <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 400;">(اختياري)</span>:</label>
+                                                <select id="edit-kb-correct-disp" style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
                                                     <!-- Loaded dynamically -->
                                                 </select>
                                             </div>
                                             <div class="form-group" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                                                <label for="edit-kb-correct-sub" style="font-size: 0.82rem; font-weight: 700; color: #475569;">التصنيف الفرعي (Sub):</label>
-                                                <select id="edit-kb-correct-sub" required style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
+                                                <label for="edit-kb-correct-sub" style="font-size: 0.82rem; font-weight: 700; color: #475569;">التصنيف الفرعي (Sub) <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 400;">(اختياري)</span>:</label>
+                                                <select id="edit-kb-correct-sub" style="height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 0.85rem; color: var(--text-primary); outline: none; background: #f8fafc;">
                                                     <!-- Loaded dynamically -->
                                                 </select>
                                             </div>
@@ -1432,11 +1464,11 @@
     </div>
 
     <!-- Script Resources -->
-    <script src="slides.js?v=3.1"></script>
-    <script src="scenarios.js?v=3.1"></script>
+    <script src="slides.js?v=3.2"></script>
+    <script src="scenarios.js?v=3.2"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=3.1"></script>
-    <script src="app.js?v=3.1"></script>
-    <script src="ai-agent.js?v=3.1"></script>
+    <script src="kb-data.js?v=3.2"></script>
+    <script src="app.js?v=3.2"></script>
+    <script src="ai-agent.js?v=3.2"></script>
 </body>
 </html>
