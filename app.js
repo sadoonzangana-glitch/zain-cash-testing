@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v29_webaudio_hardware_speaker_bridge';
+    const STOCKS_DISP_VERSION = 'v30_consecutive_calls_and_e2e_resilience';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Web Audio Hardware Speaker Bridge update!");
+        console.log("Purged legacy localStorage cache for Consecutive Calls & E2E Resilience update!");
     }
 
     // Global Dispositions Catalog
@@ -6190,8 +6190,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (badgeText) badgeText.textContent = 'WebRTC Audio Online 🎙️';
             });
 
+            peerInstance.on('disconnected', () => {
+                console.log("PeerJS disconnected, auto-reconnecting session...");
+                try {
+                    if (peerInstance && !peerInstance.destroyed) peerInstance.reconnect();
+                } catch(e){}
+            });
+
             peerInstance.on('call', (incomingCall) => {
                 console.log("📞 Incoming PeerJS call from:", incomingCall.peer);
+                if (activePeerCall && activePeerCall !== incomingCall) {
+                    try { activePeerCall.close(); } catch(e){}
+                }
                 activePeerCall = incomingCall;
 
                 incomingCall.on('stream', (remoteStream) => {
@@ -6212,13 +6222,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If user already clicked Answer, answer immediately
                 if (isCallAnswerPending && currentAnswerStream) {
                     console.log("Answering incoming call from pending click queue");
-                    incomingCall.answer(currentAnswerStream);
+                    try { incomingCall.answer(currentAnswerStream); } catch(e){}
                     isCallAnswerPending = false;
                 }
             });
 
             peerInstance.on('error', (err) => {
                 console.warn("PeerJS error:", err);
+                if (err.type === 'disconnected' && peerInstance && !peerInstance.destroyed) {
+                    try { peerInstance.reconnect(); } catch(e){}
+                }
             });
 
             return peerInstance;
@@ -6783,73 +6796,99 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
+        let isDialingInProgress = false;
+
         if (btnMakeCall) {
             btnMakeCall.onclick = async () => {
+                if (isDialingInProgress) return;
                 const campVal = campaignSelect ? campaignSelect.value : 'Zain Cash';
                 const sel = employeeTargetSelect && employeeTargetSelect.selectedIndex >= 0 ? employeeTargetSelect.options[employeeTargetSelect.selectedIndex] : null;
                 const dtype = sel ? sel.getAttribute('data-type') : null;
 
                 // If calling a real employee from the list
                 if (dtype === 'employee' && sel) {
+                    isDialingInProgress = true;
+                    btnMakeCall.disabled = true;
+                    btnMakeCall.style.opacity = '0.7';
+                    const origBtnText = btnMakeCall.innerHTML;
+                    btnMakeCall.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الاتصال...</span>`;
+
                     const targetEmpId = sel.getAttribute('data-id');
                     const targetEmpName = sel.getAttribute('data-name') || 'الموظف';
                     const targetEmpPhone = sel.getAttribute('data-phone') || phoneInput?.value || '07723065187';
 
                     showToast(`📞 جاري الاتصال المباشر بالموظف: ${targetEmpName}...`, 'info');
 
-                    // Pre-capture audio stream
-                    let stream = await startLocalAudioStream();
-                    if (!stream) stream = createFallbackAudioStream();
-                    if (!peerInstance && user.id) initPeerSession(user.id);
+                    try {
+                        // Pre-capture audio stream
+                        let stream = await startLocalAudioStream();
+                        if (!stream) stream = createFallbackAudioStream();
+                        if (!peerInstance && user.id) initPeerSession(user.id);
 
-                    // Dial via PeerJS
-                    if (peerInstance) {
-                        const targetPeerId = 'zc_user_' + String(targetEmpId).toLowerCase().replace(/[^a-z0-9]/g, '_');
-                        console.log("Dialing PeerJS peer:", targetPeerId);
-                        try {
-                            const call = peerInstance.call(targetPeerId, stream);
-                            if (call) {
-                                activePeerCall = call;
-                                call.on('stream', (remoteStream) => {
-                                    console.log("🔊 PeerJS remote audio stream received on caller:", remoteStream);
-                                    playRemoteAudioStream(remoteStream);
-                                    startAudioVisualizers(stream, remoteStream);
-                                    showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
-                                });
-                                call.on('close', () => stopLocalAudioStream());
-                                call.on('error', (err) => console.warn("PeerJS call error:", err));
-                            }
-                        } catch(err) {
-                            console.warn("Peer call exception:", err);
+                        if (peerInstance && peerInstance.disconnected && !peerInstance.destroyed) {
+                            try { peerInstance.reconnect(); } catch(e){}
                         }
+
+                        // Dial via PeerJS
+                        if (peerInstance) {
+                            const targetPeerId = 'zc_user_' + String(targetEmpId).toLowerCase().replace(/[^a-z0-9]/g, '_');
+                            console.log("Dialing PeerJS peer:", targetPeerId);
+                            try {
+                                if (activePeerCall) {
+                                    try { activePeerCall.close(); } catch(e){}
+                                    activePeerCall = null;
+                                }
+                                const call = peerInstance.call(targetPeerId, stream);
+                                if (call) {
+                                    activePeerCall = call;
+                                    call.on('stream', (remoteStream) => {
+                                        console.log("🔊 PeerJS remote audio stream received on caller:", remoteStream);
+                                        playRemoteAudioStream(remoteStream);
+                                        startAudioVisualizers(stream, remoteStream);
+                                        showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
+                                    });
+                                    call.on('close', () => stopLocalAudioStream());
+                                    call.on('error', (err) => console.warn("PeerJS call error:", err));
+                                }
+                            } catch(err) {
+                                console.warn("Peer call exception:", err);
+                            }
+                        }
+
+                        // Send Call Offer Signal to target employee (triggers UI Ringing)
+                        await apiCall('/api/call-signal', 'POST', {
+                            toUserId: targetEmpId,
+                            fromUserId: user.id,
+                            fromUserName: user.name || 'المشرف (Admin)',
+                            type: 'call_offer',
+                            campaign: campVal,
+                            phone: targetEmpPhone
+                        }).catch(console.error);
+
+                        const liveSc = {
+                            id: 'live-admin-call',
+                            type: campVal === 'Zain Cash' ? 'inbound' : 'outbound',
+                            customerName: `${targetEmpName} (${targetEmpId})`,
+                            customerPhone: targetEmpPhone,
+                            campaign: campVal,
+                            queue: 'Live_Training_Queue',
+                            heading: `مكالمة تدريبية مباشرة مع الموظف: ${targetEmpName}`,
+                            voiceText: `(اتصال صوتي تدريبي مباشر بين الأدمن والموظف ${targetEmpName})`,
+                            balance: '350,000 د.ع',
+                            walletType: 'دائمية موثقة (Full KYC)',
+                            status: 'متصل الآن (Live Call)',
+                            isLiveCall: true,
+                            targetUserId: targetEmpId
+                        };
+                        triggerOutboundCall(liveSc);
+                    } finally {
+                        setTimeout(() => {
+                            isDialingInProgress = false;
+                            btnMakeCall.disabled = false;
+                            btnMakeCall.style.opacity = '1';
+                            btnMakeCall.innerHTML = origBtnText;
+                        }, 1200);
                     }
-
-                    // Send Call Offer Signal to target employee (triggers UI Ringing)
-                    await apiCall('/api/call-signal', 'POST', {
-                        toUserId: targetEmpId,
-                        fromUserId: user.id,
-                        fromUserName: user.name || 'المشرف (Admin)',
-                        type: 'call_offer',
-                        campaign: campVal,
-                        phone: targetEmpPhone
-                    }).catch(console.error);
-
-                    const liveSc = {
-                        id: 'live-admin-call',
-                        type: campVal === 'Zain Cash' ? 'inbound' : 'outbound',
-                        customerName: `${targetEmpName} (${targetEmpId})`,
-                        customerPhone: targetEmpPhone,
-                        campaign: campVal,
-                        queue: 'Live_Training_Queue',
-                        heading: `مكالمة تدريبية مباشرة مع الموظف: ${targetEmpName}`,
-                        voiceText: `(اتصال صوتي تدريبي مباشر بين الأدمن والموظف ${targetEmpName})`,
-                        balance: '350,000 د.ع',
-                        walletType: 'دائمية موثقة (Full KYC)',
-                        status: 'متصل الآن (Live Call)',
-                        isLiveCall: true,
-                        targetUserId: targetEmpId
-                    };
-                    triggerOutboundCall(liveSc);
                 } else if (dtype === 'scenario' && sel) {
                     const scId = sel.getAttribute('data-sc-id');
                     const sc = CALL_SCENARIOS.find(s => s.id === scId) || CALL_SCENARIOS[0];
