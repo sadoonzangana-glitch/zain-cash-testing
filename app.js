@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v31_admin_live_qa_scorecard_and_realtime_disp';
+    const STOCKS_DISP_VERSION = 'v32_auto_disposition_grading_and_sound_fix';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Admin Live QA Scorecard & Real-time Disp update!");
+        console.log("Purged legacy localStorage cache for Auto Disposition Grading & Sound Fix update!");
     }
 
     // Global Dispositions Catalog
@@ -6064,7 +6064,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 remoteAudioEl.autoplay = true;
                 remoteAudioEl.playsInline = true;
                 remoteAudioEl.controls = false;
-                remoteAudioEl.style.cssText = 'position:fixed; bottom:-999px; left:-999px; width:1px; height:1px; opacity:0.01; pointer-events:none;';
+                remoteAudioEl.style.cssText = 'position:fixed; bottom:0; right:0; width:1px; height:1px; opacity:0.01; pointer-events:none; z-index:-1;';
                 document.body.appendChild(remoteAudioEl);
             }
         }
@@ -6073,38 +6073,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return remoteAudioEl;
     }
 
-    let remoteAudioSourceNode = null;
-
     function playRemoteAudioStream(remoteStream) {
         if (!remoteStream) return;
-        console.log("🔊 Attaching remote audio stream for direct speaker output:", remoteStream);
+        console.log("🔊 Playing remote WebRTC audio stream...", remoteStream.getTracks());
 
-        // Channel 1: Native HTML5 Audio Element in DOM
         const el = ensureRemoteAudioElement();
         el.srcObject = remoteStream;
         el.muted = false;
         el.volume = 1.0;
-        el.play().catch(e => console.warn("HTML5 Audio play() error:", e));
 
-        // Channel 2: Direct Web Audio API Hardware Speaker Bridge
-        try {
-            const ctx = getAudioContext();
-            if (ctx) {
-                if (ctx.state === 'suspended') {
-                    ctx.resume().catch(() => {});
-                }
-                if (remoteAudioSourceNode) {
-                    try { remoteAudioSourceNode.disconnect(); } catch(e){}
-                }
-                remoteAudioSourceNode = ctx.createMediaStreamSource(remoteStream);
-                const gain = ctx.createGain();
-                gain.gain.value = 1.0;
-                remoteAudioSourceNode.connect(gain);
-                gain.connect(ctx.destination);
-                console.log("✅ Direct Web Audio API speaker bridge active and outputting audio!");
-            }
-        } catch(err) {
-            console.warn("Direct Web Audio bridge warning:", err);
+        const playPromise = el.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log("✅ Remote audio playing through hardware speakers successfully!");
+            }).catch((err) => {
+                console.warn("Autoplay blocked, waiting for user click/touch to unmute:", err);
+                const unlock = () => {
+                    el.play().catch(console.warn);
+                    document.removeEventListener('click', unlock);
+                    document.removeEventListener('keydown', unlock);
+                };
+                document.addEventListener('click', unlock);
+                document.addEventListener('keydown', unlock);
+            });
         }
     }
 
@@ -6499,15 +6490,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (applyBtn) applyBtn.style.display = 'none';
 
-        // Reset sliders to default values (15, 20, 35, 20, 10) -> total 100
-        const defaults = [15, 20, 35, 20, 10];
+        // Reset sliders to default values (15, 20, 35, 20, 0) -> total 90 until employee submits disposition
+        const maxes = [15, 20, 35, 20, 10];
+        const defaults = [15, 20, 35, 20, 0];
         for (let i = 1; i <= 5; i++) {
             const slider = document.getElementById(`qa-score-${i}`);
             const valEl = document.getElementById(`qa-score-${i}-val`);
-            const max = defaults[i - 1];
+            const max = maxes[i - 1];
+            const defVal = defaults[i - 1];
             if (slider && valEl) {
-                slider.value = max;
-                valEl.textContent = `${max} / ${max}`;
+                slider.value = defVal;
+                valEl.textContent = `${defVal} / ${max}`;
             }
         }
 
@@ -6523,21 +6516,52 @@ document.addEventListener('DOMContentLoaded', () => {
         const dispTrackerEl = document.getElementById('qa-employee-selected-disp');
         const applyBtn = document.getElementById('btn-qa-apply-disp-score');
 
-        if (dispTrackerEl) {
-            dispTrackerEl.innerHTML = `<span style="color:#16a34a; font-weight:800;"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(sig.mainDisp)} &rarr; ${escapeHtml(sig.subDisp)}</span>`;
+        const targetScenario = currentLiveQATarget || activeCallScenario;
+        const expectedMain = targetScenario ? (targetScenario.correctDisp || '') : '';
+        const expectedSub = targetScenario ? (targetScenario.correctSubDisp || '') : '';
+
+        const isMainMatch = expectedMain && sig.mainDisp && sig.mainDisp.trim().toLowerCase() === expectedMain.trim().toLowerCase();
+        const isSubMatch = !expectedSub || (sig.subDisp && sig.subDisp.trim().toLowerCase() === expectedSub.trim().toLowerCase());
+        const isFullMatch = isMainMatch && isSubMatch;
+
+        const s5 = document.getElementById('qa-score-5');
+        const s5Val = document.getElementById('qa-score-5-val');
+
+        if (isFullMatch) {
+            // Automatically grant 10/10 points
+            if (s5) s5.value = 10;
+            if (s5Val) s5Val.textContent = '10 / 10';
+            if (dispTrackerEl) {
+                dispTrackerEl.innerHTML = `
+                    <div style="color:#15803d; font-weight:800; font-size:0.92rem; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-circle-check" style="font-size:1.2rem; color:#16a34a;"></i>
+                        <span>✅ تم اختيار التصنيف الصحيح تلقائياً (+10 نقاط): <strong>${escapeHtml(sig.mainDisp)} &rarr; ${escapeHtml(sig.subDisp)}</strong></span>
+                    </div>
+                `;
+            }
+            showToast(`🎯 ممتاز! اختار الموظف (${sig.agentName || 'الموظف'}) التصنيف الصحيح وتم منحه (10/10) تلقائياً!`, "success");
+        } else {
+            // Automatically set to 0/10 points
+            if (s5) s5.value = 0;
+            if (s5Val) s5Val.textContent = '0 / 10';
+            if (dispTrackerEl) {
+                dispTrackerEl.innerHTML = `
+                    <div style="color:#b91c1c; font-weight:800; font-size:0.92rem;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                            <i class="fa-solid fa-circle-xmark" style="font-size:1.2rem; color:#ef4444;"></i>
+                            <span>❌ تصنيف غير مطابق (0 نقاط): <strong>${escapeHtml(sig.mainDisp || '-')} &rarr; ${escapeHtml(sig.subDisp || '-')}</strong></span>
+                        </div>
+                        <div style="font-size:0.8rem; color:#475569; padding-right:26px;">
+                            التصنيف الصحيح المطلوب: <strong style="color:#1e1b4b;">${escapeHtml(expectedMain || 'غير محدد')} &rarr; ${escapeHtml(expectedSub || '')}</strong>
+                        </div>
+                    </div>
+                `;
+            }
+            showToast(`⚠️ اختار الموظف تصنيفاً غير مطابق (${sig.mainDisp} / ${sig.subDisp}) - تم وضع الدرجة 0 تلقائياً.`, "warning");
         }
-        if (applyBtn) {
-            applyBtn.style.display = 'inline-block';
-            applyBtn.onclick = () => {
-                const s5 = document.getElementById('qa-score-5');
-                const s5Val = document.getElementById('qa-score-5-val');
-                if (s5) s5.value = 10;
-                if (s5Val) s5Val.textContent = '10 / 10';
-                updateQATotalScoreDisplay();
-                showToast("✅ تم اعتماد درجة التصنيف الكاملة للموظف (+10)", "success");
-            };
-        }
-        showToast(`📋 قام الموظف (${sig.agentName || 'الموظف'}) بحفظ التصنيف: ${sig.mainDisp} / ${sig.subDisp}`, "info");
+
+        if (applyBtn) applyBtn.style.display = 'none';
+        updateQATotalScoreDisplay();
     }
 
     function updateQATotalScoreDisplay() {
@@ -6956,28 +6980,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnIn1) {
             btnIn1.onclick = () => {
-                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_inbound-1';
-                triggerIncomingCall(CALL_SCENARIOS[0]);
+                const sc = CALL_SCENARIOS[0];
+                activeCallScenario = { ...sc, isLiveCall: true };
+                updateCrmCustomerProfile(sc);
+                showToast("✅ تم اختيار السيناريو: [1. تداول الأسهم] - اختر الموظف واضغط Call لتطبيقه عليه!", "info");
             };
         }
         if (btnIn2) {
             btnIn2.onclick = () => {
-                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_inbound-2';
-                triggerIncomingCall(CALL_SCENARIOS[1]);
+                const sc = CALL_SCENARIOS[1];
+                activeCallScenario = { ...sc, isLiveCall: true };
+                updateCrmCustomerProfile(sc);
+                showToast("✅ تم اختيار السيناريو: [2. محفظة متوقفة CI] - اختر الموظف واضغط Call لتطبيقه عليه!", "info");
             };
         }
         if (btnIn3) {
             btnIn3.onclick = () => {
-                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_inbound-3';
-                triggerIncomingCall(CALL_SCENARIOS[2]);
+                const sc = CALL_SCENARIOS[2];
+                activeCallScenario = { ...sc, isLiveCall: true };
+                updateCrmCustomerProfile(sc);
+                showToast("✅ تم اختيار السيناريو: [3. ويسترن يونيون معلقة] - اختر الموظف واضغط Call لتطبيقه عليه!", "info");
             };
         }
         if (btnOut) {
             btnOut.onclick = () => {
-                const campVal = campaignSelect ? campaignSelect.value : 'Test Campaign';
-                if (employeeTargetSelect) employeeTargetSelect.value = 'sc_outbound-1';
-                const sc = { ...CALL_SCENARIOS[3], campaign: campVal === 'Zain Cash' ? 'Test Campaign' : campVal };
-                triggerOutboundCall(sc);
+                const sc = CALL_SCENARIOS[3];
+                activeCallScenario = { ...sc, isLiveCall: true };
+                updateCrmCustomerProfile(sc);
+                showToast("✅ تم اختيار السيناريو: [4. مكالمة صادرة Outbound] - اختر الموظف واضغط Call لتطبيقه عليه!", "info");
             };
         }
 
@@ -6989,6 +7019,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const campVal = campaignSelect ? campaignSelect.value : 'Zain Cash';
                 const sel = employeeTargetSelect && employeeTargetSelect.selectedIndex >= 0 ? employeeTargetSelect.options[employeeTargetSelect.selectedIndex] : null;
                 const dtype = sel ? sel.getAttribute('data-type') : null;
+
+                // Prime remote audio element on user click
+                ensureRemoteAudioElement();
 
                 // If calling a real employee from the list
                 if (dtype === 'employee' && sel) {
@@ -7040,6 +7073,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
 
+                        const expectedDisp = (activeCallScenario && activeCallScenario.correctDisp) || 'Inquiry';
+                        const expectedSubDisp = (activeCallScenario && activeCallScenario.correctSubDisp) || 'Application Usage';
+
                         // Send Call Offer Signal to target employee (triggers UI Ringing)
                         await apiCall('/api/call-signal', 'POST', {
                             toUserId: targetEmpId,
@@ -7047,7 +7083,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             fromUserName: user.name || 'المشرف (Admin)',
                             type: 'call_offer',
                             campaign: campVal,
-                            phone: targetEmpPhone
+                            phone: targetEmpPhone,
+                            correctDisp: expectedDisp,
+                            correctSubDisp: expectedSubDisp,
+                            heading: (activeCallScenario && activeCallScenario.heading) || `مكالمة تدريبية مباشرة مع المشرف`,
+                            voiceText: (activeCallScenario && activeCallScenario.voiceText) || `مرحباً، أنا المشرف وأقوم بإجراء اتصال تدريبي مباشر معك.`,
+                            balance: (activeCallScenario && activeCallScenario.balance) || '350,000 د.ع',
+                            walletType: (activeCallScenario && activeCallScenario.walletType) || 'دائمية موثقة (Full KYC)',
+                            customerName: (activeCallScenario && activeCallScenario.customerName) || 'Ahmad Muhammad'
                         }).catch(console.error);
 
                         const liveSc = {
@@ -7057,14 +7100,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             customerPhone: targetEmpPhone,
                             campaign: campVal,
                             queue: 'Live_Training_Queue',
-                            heading: `مكالمة تدريبية مباشرة مع الموظف: ${targetEmpName}`,
-                            voiceText: `(اتصال صوتي تدريبي مباشر بين الأدمن والموظف ${targetEmpName})`,
-                            balance: '350,000 د.ع',
-                            walletType: 'دائمية موثقة (Full KYC)',
+                            heading: (activeCallScenario && activeCallScenario.heading) || `مكالمة تدريبية مباشرة مع الموظف: ${targetEmpName}`,
+                            voiceText: (activeCallScenario && activeCallScenario.voiceText) || `(اتصال صوتي تدريبي مباشر بين الأدمن والموظف ${targetEmpName})`,
+                            balance: (activeCallScenario && activeCallScenario.balance) || '350,000 د.ع',
+                            walletType: (activeCallScenario && activeCallScenario.walletType) || 'دائمية موثقة (Full KYC)',
                             status: 'متصل الآن (Live Call)',
                             isLiveCall: true,
-                            targetUserId: targetEmpId
+                            targetUserId: targetEmpId,
+                            correctDisp: expectedDisp,
+                            correctSubDisp: expectedSubDisp
                         };
+                        activeCallScenario = liveSc;
                         triggerOutboundCall(liveSc);
                     } finally {
                         setTimeout(() => {
@@ -7094,6 +7140,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnReject = document.getElementById('btn-ringing-reject');
         if (btnAnswer) {
             btnAnswer.onclick = async () => {
+                // Prime remote audio element on direct user click gesture
+                ensureRemoteAudioElement();
+
                 if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
                     let stream = await startLocalAudioStream();
                     if (!stream) stream = createFallbackAudioStream();
@@ -7333,17 +7382,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             const liveIncoming = {
                                 id: 'live-admin-incoming',
                                 type: sig.campaign === 'Zain Cash' ? 'inbound' : 'outbound',
-                                customerName: `${sig.fromUserName || 'مشرف التدريب'} (Admin)`,
+                                customerName: sig.customerName || `${sig.fromUserName || 'مشرف التدريب'} (Admin)`,
                                 customerPhone: sig.phone || '07723065187',
                                 campaign: sig.campaign || 'Zain Cash',
                                 queue: 'Live_Training_Call',
-                                heading: `📞 مكالمة تدريبية مباشرة واردة من المشرف: ${sig.fromUserName}`,
-                                voiceText: `مرحباً، أنا المشرف وأقوم بإجراء اتصال تدريبي مباشر معك.`,
-                                balance: '350,000 د.ع',
-                                walletType: 'دائمية موثقة (Full KYC)',
+                                heading: sig.heading || `📞 مكالمة تدريبية مباشرة واردة من المشرف: ${sig.fromUserName}`,
+                                voiceText: sig.voiceText || `مرحباً، أنا المشرف وأقوم بإجراء اتصال تدريبي مباشر معك.`,
+                                balance: sig.balance || '350,000 د.ع',
+                                walletType: sig.walletType || 'دائمية موثقة (Full KYC)',
                                 status: 'نشطة (Active)',
                                 isLiveCall: true,
-                                fromUserId: sig.fromUserId
+                                fromUserId: sig.fromUserId,
+                                correctDisp: sig.correctDisp || 'Inquiry',
+                                correctSubDisp: sig.correctSubDisp || 'Application Usage'
                             };
 
                             triggerIncomingCall(liveIncoming);
