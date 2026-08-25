@@ -1982,29 +1982,168 @@
         </div>
     </div>
 
-    <!-- Admin Details Modal -->
-    <div id="admin-details-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center; padding:20px; font-family:var(--font-ar); direction:rtl; text-align:right;">
-        <div style="background:#ffffff; border-radius:16px; width:100%; max-width:800px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow:hidden;">
-            <div style="padding:18px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
-                <h3 style="margin:0; font-size:1.1rem; color:#1e1b4b; font-weight:800;" id="admin-details-modal-title">تفاصيل إجابات الموظف</h3>
-                <button id="btn-close-details-modal" style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer; font-weight:bold; outline:none; line-height:1;">&times;</button>
+    <!-- Admin Live Call QA Scorecard Modal -->
+    <div id="admin-live-qa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.75); backdrop-filter:blur(6px); z-index:10000; justify-content:center; align-items:center; padding:20px; font-family:var(--font-ar); direction:rtl; text-align:right;">
+        <div style="background:#ffffff; border-radius:20px; width:100%; max-width:860px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.25); border:1px solid #e2e8f0; overflow:hidden; animation:modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+            
+            <!-- Modal Header -->
+            <div style="padding:18px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color:#ffffff;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+                        <i class="fa-solid fa-clipboard-check" style="color:#00B5E2;"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#ffffff;">استمارة تقييم جودة المكالمة المباشرة (Live QA Scorecard)</h3>
+                        <p style="margin:0; font-size:0.78rem; color:#cbd5e1;" id="qa-modal-agent-subtitle">تقييم أداء الموظف في المكالمة التدريبية المباشرة</p>
+                    </div>
+                </div>
+                <button id="btn-close-qa-modal" style="background:rgba(255,255,255,0.1); border:none; width:34px; height:34px; border-radius:50%; font-size:1.3rem; color:#ffffff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">&times;</button>
             </div>
-            <div style="padding:24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px; background:#f1f5f9;" id="admin-details-modal-body">
-                <!-- Details HTML populated dynamically -->
+
+            <!-- Modal Body -->
+            <div style="padding:22px 26px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px; background:#f8fafc;">
+                
+                <!-- Live Agent & Call Overview Bar -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; background:#ffffff; padding:14px 18px; border-radius:14px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; font-weight:700; display:block;">الموظف المقيّم:</span>
+                        <strong style="font-size:0.92rem; color:#0f172a;" id="qa-agent-name">سعدون محسن (ZC262)</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; font-weight:700; display:block;">نوع المكالمة:</span>
+                        <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;" id="qa-call-type">واردة (Inbound Live)</span>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; font-weight:700; display:block;">مدة المكالمة:</span>
+                        <strong style="font-size:0.92rem; color:#0f172a;" id="qa-call-duration">02:30 دقيقة</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#64748b; font-weight:700; display:block;">المشرف المقيم:</span>
+                        <span style="font-size:0.92rem; color:#1e1b4b; font-weight:700;" id="qa-supervisor-name">Amr Nasr (Admin)</span>
+                    </div>
+                </div>
+
+                <!-- Real-time Agent Disposition Monitor -->
+                <div style="background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border:1.5px dashed #22c55e; border-radius:14px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#22c55e; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                            <i class="fa-solid fa-tags"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:0.8rem; color:#15803d; font-weight:800;">رصد تصنيف الموظف (Live Disposition Tracker):</div>
+                            <div style="font-size:0.92rem; color:#0f172a; font-weight:700; margin-top:2px;" id="qa-employee-selected-disp">
+                                <i class="fa-solid fa-spinner fa-spin" style="color:#16a34a;"></i> بانتظار قيام الموظف باختيار وتأكيد التصنيف...
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="btn-qa-apply-disp-score" style="background:#16a34a; color:#fff; border:none; padding:6px 14px; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer; display:none;">
+                        اعتماد التصنيف الصحيح (+10)
+                    </button>
+                </div>
+
+                <!-- 5 Evaluation Rubrics -->
+                <div style="background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; padding:18px; display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+                        <h4 style="margin:0; font-size:0.95rem; color:#0f172a; font-weight:800;">معايير تقييم جودة المكالمة (Evaluation Rubrics)</h4>
+                        <span style="font-size:0.8rem; color:#64748b;">حدد درجة الموظف لكل معيار:</span>
+                    </div>
+
+                    <!-- Criteria 1 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; background:#f8fafc; padding:12px 16px; border-radius:12px; border:1px solid #f1f5f9;">
+                        <div style="flex:1;">
+                            <strong style="color:#1e293b; font-size:0.9rem; display:block;">1. الترحيب والافتتاحية الرسمية (Opening & Greeting)</strong>
+                            <small style="color:#64748b; font-size:0.75rem;">ذكر الاسم، الترحيب باسم زين كاش، والسؤال عن سبب الاتصال بلباقة.</small>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="range" min="0" max="15" value="15" step="1" id="qa-score-1" class="qa-slider" style="width:130px; cursor:pointer;">
+                            <span style="min-width:45px; text-align:center; font-weight:800; color:#1e1b4b; font-size:0.95rem;" id="qa-score-1-val">15 / 15</span>
+                        </div>
+                    </div>
+
+                    <!-- Criteria 2 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; background:#f8fafc; padding:12px 16px; border-radius:12px; border:1px solid #f1f5f9;">
+                        <div style="flex:1;">
+                            <strong style="color:#1e293b; font-size:0.9rem; display:block;">2. التحقق من هوية المشترك (Customer Verification & KYC)</strong>
+                            <small style="color:#64748b; font-size:0.75rem;">طلب رقم المحفظة، الاسم الثلاثي، والتحقق الأمني قبل تقديم التفاصيل المالية.</small>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="range" min="0" max="20" value="20" step="1" id="qa-score-2" class="qa-slider" style="width:130px; cursor:pointer;">
+                            <span style="min-width:45px; text-align:center; font-weight:800; color:#1e1b4b; font-size:0.95rem;" id="qa-score-2-val">20 / 20</span>
+                        </div>
+                    </div>
+
+                    <!-- Criteria 3 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; background:#f8fafc; padding:12px 16px; border-radius:12px; border:1px solid #f1f5f9;">
+                        <div style="flex:1;">
+                            <strong style="color:#1e293b; font-size:0.9rem; display:block;">3. دقة المعلومة والإجراء المالي (Procedure & Resolution)</strong>
+                            <small style="color:#64748b; font-size:0.75rem;">تقديم الحل المعتمد في الـ KB بدقة، إرشاد المشترك، وعدم إعطاء وعود غير نظامية.</small>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="range" min="0" max="35" value="35" step="1" id="qa-score-3" class="qa-slider" style="width:130px; cursor:pointer;">
+                            <span style="min-width:45px; text-align:center; font-weight:800; color:#1e1b4b; font-size:0.95rem;" id="qa-score-3-val">35 / 35</span>
+                        </div>
+                    </div>
+
+                    <!-- Criteria 4 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; background:#f8fafc; padding:12px 16px; border-radius:12px; border:1px solid #f1f5f9;">
+                        <div style="flex:1;">
+                            <strong style="color:#1e293b; font-size:0.9rem; display:block;">4. اللباقة ونبرة الصوت والتعامل (Soft Skills & Tone)</strong>
+                            <small style="color:#64748b; font-size:0.75rem;">الاستماع الفعال، عدم المقاطعة، التحدث باحترافية، وإظهار الاهتمام بالمشترك.</small>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="range" min="0" max="20" value="20" step="1" id="qa-score-4" class="qa-slider" style="width:130px; cursor:pointer;">
+                            <span style="min-width:45px; text-align:center; font-weight:800; color:#1e1b4b; font-size:0.95rem;" id="qa-score-4-val">20 / 20</span>
+                        </div>
+                    </div>
+
+                    <!-- Criteria 5 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; background:#f8fafc; padding:12px 16px; border-radius:12px; border:1px solid #f1f5f9;">
+                        <div style="flex:1;">
+                            <strong style="color:#1e293b; font-size:0.9rem; display:block;">5. إنهاء المكالمة والتصنيف (Wrap-up & Disposition)</strong>
+                            <small style="color:#64748b; font-size:0.75rem;">السؤال عما إذا كان هناك استفسار آخر، الشكر، واختيار التصنيف الصحيح في Ameyo.</small>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="range" min="0" max="10" value="10" step="1" id="qa-score-5" class="qa-slider" style="width:130px; cursor:pointer;">
+                            <span style="min-width:45px; text-align:center; font-weight:800; color:#1e1b4b; font-size:0.95rem;" id="qa-score-5-val">10 / 10</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Total Score Card & Notes -->
+                <div style="display:grid; grid-template-columns:220px 1fr; gap:16px; align-items:stretch;">
+                    <!-- Total Score Display -->
+                    <div style="background:linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); color:#ffffff; border-radius:16px; padding:18px; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 4px 15px rgba(30, 27, 75, 0.2);">
+                        <span style="font-size:0.8rem; color:#94a3b8; font-weight:700;">الدرجة النهائية للمكالمة:</span>
+                        <div style="font-size:2.4rem; font-weight:900; color:#22c55e; margin:6px 0; line-height:1;" id="qa-total-score-badge">100%</div>
+                        <span class="badge" id="qa-rating-label" style="background:#22c55e; color:#ffffff; font-weight:800; font-size:0.8rem; padding:4px 12px; border-radius:20px;">ممتاز (ناجح) 🏆</span>
+                    </div>
+
+                    <!-- Feedback Textarea -->
+                    <div style="background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; padding:14px 18px; display:flex; flex-direction:column;">
+                        <label style="font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;">ملاحظات المشرف والتغذية الراجعة (Supervisor Notes):</label>
+                        <textarea id="qa-supervisor-feedback" rows="3" placeholder="اكتب ملاحظاتك التوجيهية للموظف، نقاط القوة ونقاط التحسين المطلوب مراعاتها..." style="flex:1; width:100%; border:1px solid #cbd5e1; border-radius:10px; padding:10px; font-family:inherit; font-size:0.85rem; outline:none; resize:none;"></textarea>
+                    </div>
+                </div>
             </div>
-            <div style="padding:14px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; background:#f8fafc;">
-                <button id="btn-close-details-modal-bottom" class="btn btn-secondary" style="font-size:0.85rem; padding:8px 20px; border-radius:8px; background:#64748b; color:#fff; border:none; cursor:pointer; font-weight:700;">إغلاق</button>
+
+            <!-- Modal Footer -->
+            <div style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+                <button type="button" id="btn-cancel-qa-modal" class="btn btn-secondary" style="font-size:0.88rem; padding:10px 22px; border-radius:10px; background:#e2e8f0; color:#475569; border:none; cursor:pointer; font-weight:700;">إلغاء</button>
+                <button type="button" id="btn-submit-qa-scorecard" class="btn btn-primary" style="font-size:0.92rem; padding:10px 28px; border-radius:10px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; cursor:pointer; font-weight:800; display:flex; align-items:center; gap:8px; box-shadow:0 4px 12px rgba(16, 185, 129, 0.3);">
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>اعتماد النتيجة وحفظها في Test Results</span>
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Script Resources -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
-    <script src="slides.js?v=5.0"></script>
-    <script src="scenarios.js?v=5.0"></script>
+    <script src="slides.js?v=5.1"></script>
+    <script src="scenarios.js?v=5.1"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=5.0"></script>
-    <script src="app.js?v=5.0"></script>
-    <script src="ai-agent.js?v=5.0"></script>
+    <script src="kb-data.js?v=5.1"></script>
+    <script src="app.js?v=5.1"></script>
+    <script src="ai-agent.js?v=5.1"></script>
 </body>
 </html>

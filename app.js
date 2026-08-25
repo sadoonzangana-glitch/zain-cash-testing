@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v30_consecutive_calls_and_e2e_resilience';
+    const STOCKS_DISP_VERSION = 'v31_admin_live_qa_scorecard_and_realtime_disp';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Consecutive Calls & E2E Resilience update!");
+        console.log("Purged legacy localStorage cache for Admin Live QA Scorecard & Real-time Disp update!");
     }
 
     // Global Dispositions Catalog
@@ -4235,7 +4235,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td style="font-weight:700;">${res.userName || '-'}</td>
                     <td><strong>${res.score}%</strong></td>
                     <td>${res.errorsCount || 0}</td>
-                    <td><span class="${res.score >= 80 ? 'text-green' : (res.score >= 60 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade || '-'}</span></td>
+                    <td><span class="${res.score >= 75 ? 'text-green' : (res.score >= 50 ? 'text-orange' : 'text-red')}" style="font-weight:700;">${res.grade || res.status || '-'}</span></td>
                     <td>${res.date || '-'}</td>
                     <td>
                         <button class="btn btn-primary btn-sm btn-show-sim-result" data-userid="${res.userId}" data-date="${res.date}" style="font-size:0.72rem; padding:4px 8px; border-radius:6px; background:#4f46e5; color:#ffffff; border:none; cursor:pointer; margin-left:5px;">
@@ -6470,6 +6470,181 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
+    let currentLiveQATarget = null;
+    let currentEmployeeSelectedDisp = null;
+
+    function openAdminLiveQAModal(scenario, durationSecs) {
+        currentLiveQATarget = scenario;
+        currentEmployeeSelectedDisp = null;
+
+        const modal = document.getElementById('admin-live-qa-modal');
+        if (!modal) return;
+
+        const agentNameEl = document.getElementById('qa-agent-name');
+        const callTypeEl = document.getElementById('qa-call-type');
+        const callDurEl = document.getElementById('qa-call-duration');
+        const supNameEl = document.getElementById('qa-supervisor-name');
+        const dispTrackerEl = document.getElementById('qa-employee-selected-disp');
+        const applyBtn = document.getElementById('btn-qa-apply-disp-score');
+
+        const user = currentUser || window.currentUser || JSON.parse(sessionStorage.getItem('zain_cash_user') || '{}');
+
+        if (agentNameEl) agentNameEl.textContent = scenario.customerName || 'الموظف';
+        if (callTypeEl) callTypeEl.textContent = scenario.type === 'outbound' ? 'صادرة (Outbound Live)' : 'واردة (Inbound Live)';
+        if (callDurEl) callDurEl.textContent = formatTimeMMSS(durationSecs || 0);
+        if (supNameEl) supNameEl.textContent = `${user.name || 'المشرف'} (${user.code || user.id || 'Admin'})`;
+
+        if (dispTrackerEl) {
+            dispTrackerEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:#16a34a;"></i> بانتظار قيام الموظف باختيار وتأكيد التصنيف في Ameyo...`;
+        }
+        if (applyBtn) applyBtn.style.display = 'none';
+
+        // Reset sliders to default values (15, 20, 35, 20, 10) -> total 100
+        const defaults = [15, 20, 35, 20, 10];
+        for (let i = 1; i <= 5; i++) {
+            const slider = document.getElementById(`qa-score-${i}`);
+            const valEl = document.getElementById(`qa-score-${i}-val`);
+            const max = defaults[i - 1];
+            if (slider && valEl) {
+                slider.value = max;
+                valEl.textContent = `${max} / ${max}`;
+            }
+        }
+
+        const notesEl = document.getElementById('qa-supervisor-feedback');
+        if (notesEl) notesEl.value = '';
+
+        updateQATotalScoreDisplay();
+        modal.style.display = 'flex';
+    }
+
+    function handleLiveDispositionReceived(sig) {
+        currentEmployeeSelectedDisp = `${sig.mainDisp} ⬅️ ${sig.subDisp}`;
+        const dispTrackerEl = document.getElementById('qa-employee-selected-disp');
+        const applyBtn = document.getElementById('btn-qa-apply-disp-score');
+
+        if (dispTrackerEl) {
+            dispTrackerEl.innerHTML = `<span style="color:#16a34a; font-weight:800;"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(sig.mainDisp)} &rarr; ${escapeHtml(sig.subDisp)}</span>`;
+        }
+        if (applyBtn) {
+            applyBtn.style.display = 'inline-block';
+            applyBtn.onclick = () => {
+                const s5 = document.getElementById('qa-score-5');
+                const s5Val = document.getElementById('qa-score-5-val');
+                if (s5) s5.value = 10;
+                if (s5Val) s5Val.textContent = '10 / 10';
+                updateQATotalScoreDisplay();
+                showToast("✅ تم اعتماد درجة التصنيف الكاملة للموظف (+10)", "success");
+            };
+        }
+        showToast(`📋 قام الموظف (${sig.agentName || 'الموظف'}) بحفظ التصنيف: ${sig.mainDisp} / ${sig.subDisp}`, "info");
+    }
+
+    function updateQATotalScoreDisplay() {
+        const s1 = parseInt(document.getElementById('qa-score-1')?.value || '0');
+        const s2 = parseInt(document.getElementById('qa-score-2')?.value || '0');
+        const s3 = parseInt(document.getElementById('qa-score-3')?.value || '0');
+        const s4 = parseInt(document.getElementById('qa-score-4')?.value || '0');
+        const s5 = parseInt(document.getElementById('qa-score-5')?.value || '0');
+
+        const total = s1 + s2 + s3 + s4 + s5;
+        const totalEl = document.getElementById('qa-total-score-badge');
+        const ratingEl = document.getElementById('qa-rating-label');
+
+        if (totalEl) totalEl.textContent = `${total}%`;
+        if (ratingEl) {
+            if (total >= 90) {
+                ratingEl.textContent = 'ممتاز (ناجح) 🏆';
+                ratingEl.style.background = '#22c55e';
+            } else if (total >= 75) {
+                ratingEl.textContent = 'جيد جداً (ناجح) 🥈';
+                ratingEl.style.background = '#0284c7';
+            } else if (total >= 50) {
+                ratingEl.textContent = 'متوسط (يحتاج تدريب) ⚠️';
+                ratingEl.style.background = '#eab308';
+            } else {
+                ratingEl.textContent = 'دون المستوى (راسب) ❌';
+                ratingEl.style.background = '#ef4444';
+            }
+        }
+    }
+
+    async function submitAdminQAResult() {
+        if (!currentLiveQATarget) return;
+
+        const s1 = parseInt(document.getElementById('qa-score-1')?.value || '0');
+        const s2 = parseInt(document.getElementById('qa-score-2')?.value || '0');
+        const s3 = parseInt(document.getElementById('qa-score-3')?.value || '0');
+        const s4 = parseInt(document.getElementById('qa-score-4')?.value || '0');
+        const s5 = parseInt(document.getElementById('qa-score-5')?.value || '0');
+        const total = s1 + s2 + s3 + s4 + s5;
+
+        const feedback = document.getElementById('qa-supervisor-feedback')?.value.trim() || 'لا توجد ملاحظات إضافية';
+        const user = currentUser || window.currentUser || JSON.parse(sessionStorage.getItem('zain_cash_user') || '{}');
+
+        const targetId = currentLiveQATarget.targetUserId || currentLiveQATarget.fromUserId || 'ZC262';
+        const targetName = currentLiveQATarget.customerName || 'الموظف';
+
+        const resultObj = {
+            userId: targetId,
+            userName: targetName,
+            role: 'Inbound',
+            testType: 'call-simulator',
+            score: total,
+            totalQuestions: 100,
+            percentage: `${total}%`,
+            status: total >= 75 ? 'ناجح' : 'راسب',
+            supervisor: user.name || 'Amr Nasr (Admin)',
+            detailsHtml: `
+                <div style="font-family:var(--font-ar); direction:rtl; text-align:right;">
+                    <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:12px; border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 6px 0; color:#1e1b4b;">📋 تقرير تقييم جودة المكالمة الصوتية (QA Assessment Report)</h4>
+                        <p style="margin:0; font-size:0.85rem; color:#64748b;">المقيم: <strong>${user.name || 'المشرف'}</strong> | نوع المكالمة: <strong>${currentLiveQATarget.type === 'outbound' ? 'صادرة' : 'واردة'}</strong></p>
+                    </div>
+                    <table style="width:100%; border-collapse:collapse; font-size:0.88rem; margin-bottom:14px;">
+                        <tr style="background:#f1f5f9;"><th style="padding:8px; text-align:right; border:1px solid #e2e8f0;">المعيار</th><th style="padding:8px; text-align:center; border:1px solid #e2e8f0; width:90px;">الدرجة</th></tr>
+                        <tr><td style="padding:8px; border:1px solid #e2e8f0;">1. الترحيب والافتتاحية الرسمية (Opening & Greeting)</td><td style="padding:8px; text-align:center; font-weight:bold; border:1px solid #e2e8f0;">${s1} / 15</td></tr>
+                        <tr><td style="padding:8px; border:1px solid #e2e8f0;">2. التحقق من هوية المشترك (KYC & Verification)</td><td style="padding:8px; text-align:center; font-weight:bold; border:1px solid #e2e8f0;">${s2} / 20</td></tr>
+                        <tr><td style="padding:8px; border:1px solid #e2e8f0;">3. دقة الإجراء والحل المالي (Procedure & Resolution)</td><td style="padding:8px; text-align:center; font-weight:bold; border:1px solid #e2e8f0;">${s3} / 35</td></tr>
+                        <tr><td style="padding:8px; border:1px solid #e2e8f0;">4. اللباقة ونبرة الصوت والتعامل (Soft Skills & Tone)</td><td style="padding:8px; text-align:center; font-weight:bold; border:1px solid #e2e8f0;">${s4} / 20</td></tr>
+                        <tr><td style="padding:8px; border:1px solid #e2e8f0;">5. إنهاء المكالمة والتصنيف (Wrap-up & Disposition)</td><td style="padding:8px; text-align:center; font-weight:bold; border:1px solid #e2e8f0;">${s5} / 10</td></tr>
+                    </table>
+                    <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:10px 14px; border-radius:8px; margin-bottom:10px; font-size:0.85rem;">
+                        <strong>📌 التصنيف الذي اختاره الموظف في Ameyo:</strong> ${escapeHtml(currentEmployeeSelectedDisp || 'تم التصنيف')}
+                    </div>
+                    <div style="background:#fffbeb; border:1px solid #fde68a; padding:10px 14px; border-radius:8px; font-size:0.85rem;">
+                        <strong>📝 ملاحظات المشرف والتغذية الراجعة:</strong><br>${escapeHtml(feedback)}
+                    </div>
+                </div>
+            `,
+            date: new Date().toISOString().replace('T', ' ').substring(0, 19)
+        };
+
+        const submitBtn = document.getElementById('btn-submit-qa-scorecard');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...`;
+        }
+
+        try {
+            await apiCall('/api/results', 'POST', resultObj);
+            showToast(`✅ تم اعتماد وحفظ نتيجة التقييم للموظف (${targetName}) بنجاح!`, "success");
+            const modal = document.getElementById('admin-live-qa-modal');
+            if (modal) modal.style.display = 'none';
+            if (typeof openAdminPanel === 'function') {
+                openAdminPanel();
+            }
+        } catch(err) {
+            console.error("Error submitting QA result:", err);
+            showToast("⚠️ حدث خطأ أثناء حفظ النتيجة، يرجى المحاولة ثانية.", "error");
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-check-double"></i> <span>اعتماد النتيجة وحفظها في Test Results</span>`;
+            }
+        }
+    }
+
     function endActiveCall() {
         clearInterval(callDurationInterval);
         clearInterval(holdDurationInterval);
@@ -6479,7 +6654,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const liveWave = document.getElementById('ameyo-live-transcript-box');
         if (liveWave) liveWave.classList.add('hidden');
 
-        // Switch to Disposition view
+        const user = currentUser || window.currentUser || JSON.parse(sessionStorage.getItem('zain_cash_user') || localStorage.getItem('zain_cash_user') || '{}');
+        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin' || user.id === 'ZC000';
+
+        // If Admin finished a live assessment call: Return phone to idle and open Live QA Scorecard modal
+        if (isAdmin && activeCallScenario && activeCallScenario.isLiveCall) {
+            switchAmeyoPhoneView('idle');
+            openAdminLiveQAModal(activeCallScenario, callDurationSeconds);
+            return;
+        }
+
+        // Switch to Disposition view for candidates
         switchAmeyoPhoneView('disposition');
 
         // Populate Dispositions according to Inbound vs Outbound
@@ -7039,7 +7224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnSaveDisp = document.getElementById('btn-save-and-dispose');
         const dispOverlay = document.getElementById('disp-success-overlay');
         if (btnSaveDisp) {
-            btnSaveDisp.onclick = () => {
+            btnSaveDisp.onclick = async () => {
                 clearInterval(acwDurationInterval);
                 playBeep(800, 0.2);
 
@@ -7047,6 +7232,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mainVal = document.getElementById('call-disp-main-select')?.value || '';
 
                 if (dispOverlay) dispOverlay.classList.remove('hidden');
+
+                // If this is a live call, send disposition to supervisor in real-time
+                if (activeCallScenario && activeCallScenario.isLiveCall) {
+                    const toUserId = activeCallScenario.fromUserId || activeCallScenario.targetUserId;
+                    if (toUserId) {
+                        await apiCall('/api/call-signal', 'POST', {
+                            toUserId: toUserId,
+                            fromUserId: user.id,
+                            type: 'disposition_submitted',
+                            mainDisp: mainVal,
+                            subDisp: subVal,
+                            agentName: user.name || 'الموظف'
+                        }).catch(console.warn);
+                    }
+                }
 
                 // Save call session log
                 const callRecord = {
@@ -7072,6 +7272,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 1400);
             };
         }
+
+        // Bind QA Modal Sliders and Actions
+        for (let i = 1; i <= 5; i++) {
+            const slider = document.getElementById(`qa-score-${i}`);
+            const valEl = document.getElementById(`qa-score-${i}-val`);
+            if (slider && valEl) {
+                slider.oninput = () => {
+                    valEl.textContent = `${slider.value} / ${slider.getAttribute('max')}`;
+                    updateQATotalScoreDisplay();
+                };
+            }
+        }
+
+        const btnSubmitQA = document.getElementById('btn-submit-qa-scorecard');
+        if (btnSubmitQA) {
+            btnSubmitQA.onclick = submitAdminQAResult;
+        }
+
+        const btnCloseQA = document.getElementById('btn-close-qa-modal');
+        const btnCancelQA = document.getElementById('btn-cancel-qa-modal');
+        if (btnCloseQA) btnCloseQA.onclick = () => { document.getElementById('admin-live-qa-modal').style.display = 'none'; };
+        if (btnCancelQA) btnCancelQA.onclick = () => { document.getElementById('admin-live-qa-modal').style.display = 'none'; };
 
         // Agent Status Dropdown
         const statusToggle = document.getElementById('ameyo-agent-status-toggle');
@@ -7127,6 +7349,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             triggerIncomingCall(liveIncoming);
                         } else if (sig.type === 'call_answered') {
                             showToast("🟢 تم الرد وبدء المحادثة الصوتية المباشرة!", "success");
+                        } else if (sig.type === 'disposition_submitted') {
+                            handleLiveDispositionReceived(sig);
                         } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
                             stopLocalAudioStream();
                             if (currentCallState === 'ringing') {
