@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v28_peerjs_single_answer_and_audio_flow_fix';
+    const STOCKS_DISP_VERSION = 'v29_webaudio_hardware_speaker_bridge';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for PeerJS Single Answer & Audio Flow update!");
+        console.log("Purged legacy localStorage cache for Web Audio Hardware Speaker Bridge update!");
     }
 
     // Global Dispositions Catalog
@@ -6064,13 +6064,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 remoteAudioEl.autoplay = true;
                 remoteAudioEl.playsInline = true;
                 remoteAudioEl.controls = false;
-                remoteAudioEl.style.display = 'none';
+                remoteAudioEl.style.cssText = 'position:fixed; bottom:-999px; left:-999px; width:1px; height:1px; opacity:0.01; pointer-events:none;';
                 document.body.appendChild(remoteAudioEl);
             }
         }
         remoteAudioEl.muted = false;
         remoteAudioEl.volume = 1.0;
         return remoteAudioEl;
+    }
+
+    let remoteAudioSourceNode = null;
+
+    function playRemoteAudioStream(remoteStream) {
+        if (!remoteStream) return;
+        console.log("🔊 Attaching remote audio stream for direct speaker output:", remoteStream);
+
+        // Channel 1: Native HTML5 Audio Element in DOM
+        const el = ensureRemoteAudioElement();
+        el.srcObject = remoteStream;
+        el.muted = false;
+        el.volume = 1.0;
+        el.play().catch(e => console.warn("HTML5 Audio play() error:", e));
+
+        // Channel 2: Direct Web Audio API Hardware Speaker Bridge
+        try {
+            const ctx = getAudioContext();
+            if (ctx) {
+                if (ctx.state === 'suspended') {
+                    ctx.resume().catch(() => {});
+                }
+                if (remoteAudioSourceNode) {
+                    try { remoteAudioSourceNode.disconnect(); } catch(e){}
+                }
+                remoteAudioSourceNode = ctx.createMediaStreamSource(remoteStream);
+                const gain = ctx.createGain();
+                gain.gain.value = 1.0;
+                remoteAudioSourceNode.connect(gain);
+                gain.connect(ctx.destination);
+                console.log("✅ Direct Web Audio API speaker bridge active and outputting audio!");
+            }
+        } catch(err) {
+            console.warn("Direct Web Audio bridge warning:", err);
+        }
     }
 
     function createFallbackAudioStream() {
@@ -6092,7 +6127,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function startLocalAudioStream() {
         if (localStream && localStream.active && localStream.getAudioTracks().length > 0) {
-            return localStream;
+            const tr = localStream.getAudioTracks()[0];
+            if (tr.label !== 'carrier_fallback' && tr.readyState === 'live') {
+                return localStream;
+            }
         }
 
         try {
@@ -6104,11 +6142,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 video: false
             });
+            console.log("🎙️ Live microphone stream captured successfully:", localStream.getAudioTracks()[0].label);
+
+            // If active call exists, upgrade its sender tracks to real mic
+            if (activePeerCall && activePeerCall.peerConnection) {
+                const senders = activePeerCall.peerConnection.getSenders();
+                const realTrack = localStream.getAudioTracks()[0];
+                senders.forEach(s => {
+                    if (s.track && s.track.kind === 'audio') {
+                        s.replaceTrack(realTrack).then(() => console.log("✅ Upgraded PeerJS sender to real microphone track!")).catch(console.warn);
+                    }
+                });
+            }
+
             return localStream;
         } catch (err1) {
             console.warn("Standard audio constraints failed, trying basic audio...", err1);
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                console.log("🎙️ Basic microphone stream captured:", localStream.getAudioTracks()[0].label);
                 return localStream;
             } catch (err2) {
                 console.warn("Microphone access unavailable or denied, creating silent carrier track:", err2);
@@ -6144,11 +6196,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 incomingCall.on('stream', (remoteStream) => {
                     console.log("🔊 PeerJS remote audio stream received on answerer:", remoteStream);
-                    const el = ensureRemoteAudioElement();
-                    el.srcObject = remoteStream;
-                    el.muted = false;
-                    el.volume = 1.0;
-                    el.play().catch(e => console.warn("Audio play() blocked:", e));
+                    playRemoteAudioStream(remoteStream);
                     startAudioVisualizers(currentAnswerStream || localStream, remoteStream);
                     showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
                 });
@@ -6191,6 +6239,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (remoteAudioEl) {
             remoteAudioEl.srcObject = null;
+        }
+        if (remoteAudioSourceNode) {
+            try { remoteAudioSourceNode.disconnect(); } catch(e){}
+            remoteAudioSourceNode = null;
         }
         if (visualizerAnimId) {
             cancelAnimationFrame(visualizerAnimId);
@@ -6760,11 +6812,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 activePeerCall = call;
                                 call.on('stream', (remoteStream) => {
                                     console.log("🔊 PeerJS remote audio stream received on caller:", remoteStream);
-                                    const el = ensureRemoteAudioElement();
-                                    el.srcObject = remoteStream;
-                                    el.muted = false;
-                                    el.volume = 1.0;
-                                    el.play().catch(e => console.warn("Audio play() blocked:", e));
+                                    playRemoteAudioStream(remoteStream);
                                     startAudioVisualizers(stream, remoteStream);
                                     showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
                                 });
