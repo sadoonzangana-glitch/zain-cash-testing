@@ -12,13 +12,13 @@ const dbPath = path.join(__dirname, 'db.json');
 
 // 1. OWASP Security Headers Middleware
 app.use((req, res, next) => {
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:;");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https: wss: ws:;");
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+    res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=(self)');
     next();
 });
 
