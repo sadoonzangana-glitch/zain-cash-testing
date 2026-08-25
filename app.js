@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v27_peerjs_silent_carrier_fallback';
+    const STOCKS_DISP_VERSION = 'v28_peerjs_single_answer_and_audio_flow_fix';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for PeerJS Silent Carrier Fallback update!");
+        console.log("Purged legacy localStorage cache for PeerJS Single Answer & Audio Flow update!");
     }
 
     // Global Dispositions Catalog
@@ -6118,6 +6118,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    let isCallAnswerPending = false;
+    let currentAnswerStream = null;
+
     function initPeerSession(userId) {
         if (!userId || typeof Peer === 'undefined') return null;
         if (peerInstance && !peerInstance.destroyed) return peerInstance;
@@ -6135,14 +6138,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (badgeText) badgeText.textContent = 'WebRTC Audio Online 🎙️';
             });
 
-            peerInstance.on('call', async (incomingCall) => {
+            peerInstance.on('call', (incomingCall) => {
                 console.log("📞 Incoming PeerJS call from:", incomingCall.peer);
                 activePeerCall = incomingCall;
-
-                let stream = await startLocalAudioStream();
-                if (!stream) stream = createFallbackAudioStream();
-
-                incomingCall.answer(stream);
 
                 incomingCall.on('stream', (remoteStream) => {
                     console.log("🔊 PeerJS remote audio stream received on answerer:", remoteStream);
@@ -6151,8 +6149,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     el.muted = false;
                     el.volume = 1.0;
                     el.play().catch(e => console.warn("Audio play() blocked:", e));
-                    startAudioVisualizers(stream, remoteStream);
-                    showToast("🎙️ تم اتصال الصوت المباشر بنجاح (Voice Connected)", "success");
+                    startAudioVisualizers(currentAnswerStream || localStream, remoteStream);
+                    showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
                 });
 
                 incomingCall.on('close', () => {
@@ -6162,6 +6160,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 incomingCall.on('error', (err) => {
                     console.warn("PeerJS call error:", err);
                 });
+
+                // If user already clicked Answer, answer immediately
+                if (isCallAnswerPending && currentAnswerStream) {
+                    console.log("Answering incoming call from pending click queue");
+                    incomingCall.answer(currentAnswerStream);
+                    isCallAnswerPending = false;
+                }
             });
 
             peerInstance.on('error', (err) => {
@@ -6191,6 +6196,8 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelAnimationFrame(visualizerAnimId);
             visualizerAnimId = null;
         }
+        isCallAnswerPending = false;
+        currentAnswerStream = null;
     }
 
     let localAnalyser = null;
@@ -6818,23 +6825,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
                     let stream = await startLocalAudioStream();
                     if (!stream) stream = createFallbackAudioStream();
+                    currentAnswerStream = stream;
 
                     if (activePeerCall) {
                         try {
+                            console.log("Answering activePeerCall directly on Answer button click");
                             activePeerCall.answer(stream);
-                            activePeerCall.on('stream', (remoteStream) => {
-                                console.log("🔊 PeerJS remote audio stream received on answerer click:", remoteStream);
-                                const el = ensureRemoteAudioElement();
-                                el.srcObject = remoteStream;
-                                el.muted = false;
-                                el.volume = 1.0;
-                                el.play().catch(e => console.warn("Audio play() blocked:", e));
-                                startAudioVisualizers(stream, remoteStream);
-                                showToast("🎙️ تم تدفق الصوت المباشر بنجاح!", "success");
-                            });
+                            isCallAnswerPending = false;
                         } catch(e) {
                             console.warn("PeerJS answer error:", e);
                         }
+                    } else {
+                        console.log("activePeerCall not yet ready, setting isCallAnswerPending = true");
+                        isCallAnswerPending = true;
                     }
 
                     await apiCall('/api/call-signal', 'POST', {
@@ -7036,14 +7039,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             triggerIncomingCall(liveIncoming);
                         } else if (sig.type === 'call_answered') {
-                            if (sig.sdp) {
-                                await handleWebRTCAnswer(sig.sdp).catch(console.warn);
-                            }
                             showToast("🟢 تم الرد وبدء المحادثة الصوتية المباشرة!", "success");
-                        } else if (sig.type === 'ice_candidate') {
-                            if (sig.candidate) {
-                                await handleRemoteIceCandidate(sig.candidate).catch(console.warn);
-                            }
                         } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
                             stopLocalAudioStream();
                             if (currentCallState === 'ringing') {
