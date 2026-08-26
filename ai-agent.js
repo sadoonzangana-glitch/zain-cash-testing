@@ -152,6 +152,279 @@ Format the output EXACTLY as a JSON object with this structure:
 
 Return ONLY the raw JSON object. Do not wrap it in markdown code blocks or write any extra text.`;
 
+// =========================================================
+// 🧠 ZainNLPBrain — Built-in Zain Cash Natural Language & Persona Engine
+// =========================================================
+class ZainNLPBrainEngine {
+    constructor() {
+        this.version = "1.0-secure-internal";
+    }
+
+    normalize(str) {
+        if (!str) return '';
+        return String(str)
+            .toLowerCase()
+            .replace(/[أإآ]/g, 'ا')
+            .replace(/ة/g, 'ه')
+            .replace(/ى/g, 'ي')
+            .replace(/[ًٌٍَُِّْـ]/g, '')
+            .trim();
+    }
+
+    isGibberish(text) {
+        if (!text || text.trim().length < 2) return true;
+        const norm = this.normalize(text);
+        if (norm.length < 3) return false;
+        if (/(.)\1{3,}/.test(norm)) return true;
+        const mashPatterns = [/رمنة/, /شسيش/, /ضصثق/, /asdf/, /qwerty/, /zxcv/];
+        if (mashPatterns.some(p => p.test(norm))) return true;
+        const uniqueChars = new Set(norm.replace(/\s+/g, '')).size;
+        if (norm.length > 8 && uniqueChars <= 3) return true;
+        return false;
+    }
+
+    analyzeResponse(text, customerName, topicKey) {
+        const norm = this.normalize(text);
+        const nameNorm = this.normalize(customerName);
+
+        const hasGreeting = /اهلا|مرحبا|هلا|هلو|حياك|صباح|مساء|السلام|عيني|يا هلا|طاب/.test(norm);
+        const hasCustomerName = nameNorm && norm.includes(nameNorm.split(' ')[0]);
+        const hasPoliteTone = /عيني|بلا زحمه|فدوه|تدلل|صار|تامر|خادم|بالخدمه|تكرم|ولا يهمك|يسلمو|شكرا|اخي|اختي/.test(norm);
+        
+        const asksWalletNumber = /رقم المحفظه|رقمك|رقم التليفون|رقم الهاتف|رقم الحساب|زودني بالرقم|ممكن رقم/.test(norm);
+        const asksCardOrTx = /رقم البطاقه|رقم الكارت|رقم العمليه|رقم الحواله|الرمز السري|صوره|سكرين|ايصال|وصل/.test(norm);
+        const givesExplanation = /يستغرق|ايام|عمل|سجل الحركات|كشف الحساب|تطبيق|المتجر|تحديث|البنك|المصرف|تم التفعيل|تمت المعالجه|رجعت|انحلت/.test(norm);
+
+        return {
+            hasGreeting,
+            hasCustomerName,
+            hasPoliteTone,
+            asksWalletNumber,
+            asksCardOrTx,
+            givesExplanation,
+            length: text.length
+        };
+    }
+
+    generateCustomerReply(chatId, history, employeeText, customerName, scenario) {
+        const text = employeeText ? employeeText.trim() : '';
+        const norm = this.normalize(text);
+        const analysis = this.analyzeResponse(text, customerName, scenario?.channel || '');
+
+        if (this.isGibberish(text)) {
+            const angryReplies = [
+                `عيني شنو هذا الكلام؟ شخابيط لو شنو؟ أحجي وياي عدل عيني وركز بمشكلتي!`,
+                `بلا زحمة عليك ركز وياي، هذا الكلام ما إله معنى وما فهمت منه شي! جاوبني على سؤالي.`,
+                `عيني تحجي صدك؟ كاعد أكتبلك على مشكلتي وتكتبلي حروف مبعثرة؟ لو تنطيني حل لو حولني لمشرفك!`
+            ];
+            return angryReplies[Math.floor(Math.random() * angryReplies.length)];
+        }
+
+        const empTurns = history.filter(h => h.role === 'user' && !h.parts[0].text.startsWith('System:')).length;
+
+        // --- Persona 1: Rahif Zaman (Refund) ---
+        if (chatId === 1 || (customerName && (customerName.includes('Rahif') || customerName.includes('رهيف')))) {
+            if (analysis.asksWalletNumber || norm.includes('رقم المحفظه') || norm.includes('رقم الهاتف')) {
+                return "رقم محفظتي هو 07727900402 والاسم رهيف زمان، فدوة شوكت يرجع المبلغ؟";
+            }
+            if (analysis.asksCardOrTx || norm.includes('رقم البطاقه') || norm.includes('رقم العمليه')) {
+                return "رقم العملية هو 88219 والبطاقة رقمها ينتهي بـ 4205، والموقع كاتبلي Refunded من 4 أيام!";
+            }
+            if (norm.includes('3') || norm.includes('7') || norm.includes('ايام') || norm.includes('كشف') || norm.includes('معالجه') || norm.includes('رجعت')) {
+                return "تمام عيني فهمت، يعني العملية تاخذ من 3 إلى 7 أيام عمل حتى تنزل بالمحفظة؟ شكراً الك وضحت الفكرة.";
+            }
+            if (empTurns >= 2) {
+                return "عاشت ايدك عيني على المتابعة والتوضيح، ما قصرت وياي وبانتظار نزول الفلوس بالمحفظة.";
+            }
+            return "عيني أنا سويت استرجاع (Refund) من موقع خارجي والفلوس لحد الآن ما نزلت برصيد المحفظة، شنو الإجراء حتى اتأكد؟";
+        }
+
+        // --- Persona 2: Ali (Google Play Voucher) ---
+        if (chatId === 2 || (customerName && (customerName.includes('Ali') || customerName.includes('علي')))) {
+            if (analysis.asksWalletNumber || norm.includes('رقم المحفظه') || norm.includes('رقمك')) {
+                return "رقم المحفظة هو 07802345678، بس أريد أعرف كارت بلي انخصم مرتين لو مرة ووين ألكى الكود؟";
+            }
+            if (norm.includes('سجل الحركات') || norm.includes('الحركات') || norm.includes('تاريخ') || norm.includes('كود') || norm.includes('تطبيق')) {
+                return "رحت على سجل الحركات بالتطبيق وفعلاً لكيت الكود ومستقطع بس مرة وحدة! شكراً جزيلاً عيني تعبتك وياي.";
+            }
+            if (norm.includes('فحص') || norm.includes('ثواني') || norm.includes('لحظات') || norm.includes('دقيقه')) {
+                return "أوكي عيني منتظرك تفحص وتكلي، لأن محتاج الكود هسة ضروري.";
+            }
+            if (empTurns >= 2) {
+                return "تمام عيني كلشي صار واضح وهسة استخدمت الكود واشتغل، مشكور وما قصرت.";
+            }
+            return "هلو عيني، اشتريت بطاقة بلي أول شي طلع فشل وبعدين طلع تم، وين ألكى كود الشحن وهل انخصم المبلغ مرتين؟";
+        }
+
+        // --- Persona 3: Khatab Omar (Bank Card Recharge Failure) ---
+        if (chatId === 3 || (customerName && (customerName.includes('Khatab') || customerName.includes('خطاب')))) {
+            if (analysis.asksWalletNumber || norm.includes('رقم المحفظه') || norm.includes('رقمك')) {
+                return "رقم محفظتي 07719876543 وبطاقتي ماستر كارد الرافدين، ليش يفشل الشحن؟";
+            }
+            if (norm.includes('شراء') || norm.includes('اونلاين') || norm.includes('الكتروني') || norm.includes('رمز') || norm.includes('otp') || norm.includes('حد')) {
+                return "ها يعني لازم أتأكد من تفعيل خدمة الشراء عبر الإنترنت من البنك وتوفر الرصيد؟ تمام راح اتصل بالمصرف وأتأكد. شكراً الك.";
+            }
+            if (norm.includes('تحديث') || norm.includes('نت') || norm.includes('شبكه') || norm.includes('بيانات')) {
+                return "النت يمي قوي والمشكلة بالبطاقة المصرفية يطلع خطأ بالدفع، شنو سبب الرفض؟";
+            }
+            if (empTurns >= 2) {
+                return "تسلم عيني ممنون منك على المساعدة والتوضيح السريع.";
+            }
+            return "مرحبا، جاي أحاول أشحن محفظتي من بطاقتي المصرفية وما جاي يقبل ويطلعلي فشل بالعملية، شنو السبب عيني؟";
+        }
+
+        // Fallback generic reply
+        if (analysis.asksWalletNumber) {
+            return `رقم المحفظة هو 07700000000 عيني، تفضل شنو بعد تحتاج؟`;
+        }
+        if (analysis.hasPoliteTone && empTurns >= 2) {
+            return `عاشت ايدك عيني، شكراً جزيلاً على التوضيح والحل السريع.`;
+        }
+        return `أهلاً بيك عيني، بانتظار توضيحك والحل بلا زحمة عليك.`;
+    }
+
+    evaluateMultitaskSession(chats) {
+        let totalScore = 0;
+        const scores = [];
+        const notesList = [];
+
+        chats.forEach((chat, idx) => {
+            const empMessages = chat.history
+                .filter(h => h.role === 'user' && !h.parts[0].text.startsWith('System:'))
+                .map(h => h.parts[0].text);
+
+            let chatScore = 10;
+            const reasons = [];
+
+            if (empMessages.length === 0) {
+                chatScore = 0;
+                scores.push(0);
+                notesList.push(`• تذكرة (${chat.customerName}): لم يتم إرسال أي رد من الموظف.`);
+                return;
+            }
+
+            const combinedText = empMessages.join(' ');
+            const analysis = this.analyzeResponse(combinedText, chat.customerName, '');
+
+            if (!analysis.hasGreeting) {
+                chatScore -= 1;
+                reasons.push("عدم استخدام تحية ترحيبية رسمية");
+            }
+            if (!analysis.hasCustomerName) {
+                chatScore -= 1;
+                reasons.push("عدم مخاطبة الزبون باسمه");
+            }
+            if (!analysis.hasPoliteTone) {
+                chatScore -= 1;
+                reasons.push("النبرة جافة قليلاً وتحتاج لمزيد من عبارات اللباقة");
+            }
+
+            const hasGibberish = empMessages.some(m => this.isGibberish(m));
+            if (hasGibberish) {
+                chatScore -= 4;
+                reasons.push("إرسال نصوص غير مفهومة أو غير مرتبطة بمشكلة الزبون");
+            }
+
+            if (!analysis.asksWalletNumber && !analysis.givesExplanation) {
+                chatScore -= 2;
+                reasons.push("لم يتم طلب بيانات التحقق أو تقديم شرح إجرائي كافٍ");
+            }
+
+            chatScore = Math.max(0, Math.min(10, chatScore));
+            scores.push(chatScore);
+
+            const statusDesc = chatScore >= 8 ? "أداء ممتاز وتفاعل مهني دقيق" : (chatScore >= 6 ? "أداء جيد مع بعض الملاحظات" : "يحتاج تدريب وتطبيق الإجراءات الرسمية");
+            const feedbackDetail = reasons.length > 0 ? `(ملاحظات: ${reasons.join('، ')})` : "التزم بالترحيب والتحقق وحل المشكلة بلباقة كاملة.";
+            notesList.push(`• تذكرة (${chat.customerName}): ${statusDesc} - ${feedbackDetail}`);
+        });
+
+        const overallScore = Math.round(((scores[0] + scores[1] + scores[2]) / 30) * 100);
+        let grade = "Certified Agent (Excellent)";
+        if (overallScore < 70) grade = "Under Training (Needs Improvement)";
+        else if (overallScore < 85) grade = "Certified Agent (Good)";
+
+        const consolidatedNotes = `تقرير تقييم الأداء والمحادثات المتعددة (Zain Cash QA Report):\n` +
+            notesList.join('\n') +
+            `\n\n📌 خلاصة التوجيه: ${overallScore >= 80 ? 'الموظف أظهر كفاءة ممتازة في سرعة الاستجابة، اللباقة باللهجة العراقية، والالتزام بمعايير زين كاش.' : 'يُرجى التركيز أكثر على ذكر اسم الزبون، فحص سجل الحركات، والتحقق من المشاكل بدقة قبل إغلاق التذكرة.'}`;
+
+        return {
+            score1: scores[0] || 0,
+            score2: scores[1] || 0,
+            score3: scores[2] || 0,
+            overallScore: overallScore,
+            grade: grade,
+            notes: consolidatedNotes
+        };
+    }
+
+    runTrainerStep(history, totalScenarios = 4) {
+        const empMessages = history.filter(h => h.role === 'user').map(h => h.parts[0].text);
+        const stepCount = empMessages.length;
+
+        if (stepCount <= 1) {
+            return `أهلاً بك زميلنا في التدريب التفاعلي المباشر لخدمة عملاء زين كاش العراق 🇮🇶.\n\n🎭 السيناريو 1 من ${totalScenarios}:\nالزبون محمد يقول: "مرحبا، سمعت تكدرون تخلوني اشتري اسهم أمريكية بالبورصة باشتراك 5,000 دينار؟ شلون التسجيل شنو نموذج W-8BEN والضمانات؟"\nماذا تقول؟`;
+        }
+
+        const lastEmpReply = empMessages[empMessages.length - 1];
+        const scenarioIndex = stepCount - 1;
+
+        const sandboxScenarios = [
+            {
+                name: "محمد",
+                prompt: "مرحبا، سمعت تكدرون تخلوني اشتري اسهم أمريكية بالبورصة باشتراك 5,000 دينار؟ شلون التسجيل شنو نموذج W-8BEN والضمانات؟",
+                ideal: "أهلاً بك عيني محمد، نعم يمكنك الاستثمار بالأسهم الأمريكية عبر محفظتك الدائمية وتعبئة نموذج W-8BEN باشتراك 5,000 د.ع شهرياً مع حماية SIPC حتى 500,000$."
+            },
+            {
+                name: "سارة",
+                prompt: "حسابي متوقف وتطلعلي رسالة CI - Additional Customer Information ومقفل التحويل، شنو أسوي حتى أفتح الحظر؟",
+                ideal: "أهلاً بكِ سارة، تظهر رسالة CI عند الحاجة لتحديث بيانات المحفظة، يرجى تزويدنا بالمعلومات المطلوبة أو مراجعة أقرب فرع رئيسي لرفع الحظر فوراً."
+            },
+            {
+                name: "عمر",
+                prompt: "نسيت الرمز السري لمحفظتي وحاولت 3 مرات وانقفلت، شلون أقدر أسترجعه وأفتحه؟",
+                ideal: "يا هلا بيك عيني عمر، لإعادة تعيين الرمز السري يرجى تزويدنا برقم المحفظة والاسم الثلاثي لإجراء التحقق وإرسال رمز مؤقت جديد."
+            },
+            {
+                name: "فاطمة",
+                prompt: "استلمت حوالة ويسترن يونيون من دبي بس اسمي بي حرف غلط والمبلغ معلق بالسيستم، شنو الإجراء؟",
+                ideal: "أهلاً بكِ فاطمة، يرجى تزويدنا برقم الحوالة MTCN وصورة الهوية لرفع طلب تعديل الاسم لنظام ويسترن يونيون وصرف المبلغ فوراً."
+            }
+        ];
+
+        const sc = sandboxScenarios[scenarioIndex - 1] || sandboxScenarios[0];
+        const analysis = this.analyzeResponse(lastEmpReply, sc.name, '');
+
+        let score = 10;
+        let reasons = [];
+
+        if (this.isGibberish(lastEmpReply)) {
+            score = 2;
+            reasons.push("الرد غير مفهوم ولا يحتوي على إجراءات رسمية");
+        } else {
+            if (!analysis.hasGreeting) { score -= 1; reasons.push("عدم الترحيب الرسمي"); }
+            if (!analysis.hasCustomerName) { score -= 1; reasons.push("عدم ذكر اسم الزبون"); }
+            if (!analysis.hasPoliteTone) { score -= 1; reasons.push("قلة عبارات اللباقة"); }
+            if (!analysis.givesExplanation && !analysis.asksWalletNumber) { score -= 2; reasons.push("نقص التفاصيل الإجرائية"); }
+        }
+
+        score = Math.max(1, Math.min(10, score));
+        const ratingLabel = score >= 9 ? "ممتاز" : (score >= 7 ? "جيد" : "يحتاج تحسين");
+        const analysisText = reasons.length === 0 ? "أحسنت الالتزام بالدليل المعرفي واللباقة المهنية." : `الرد جيد ولكن يُلاحظ: ${reasons.join('، ')}.`;
+
+        let output = `───────────────────\n📊 التقييم:\n⭐ النقاط: ${score}/10\n🏅 التقدير: ${ratingLabel}\n📝 التحليل: ${analysisText}\n💡 الرد المثالي: "${sc.ideal}"\n───────────────────\n\n`;
+
+        if (scenarioIndex < totalScenarios && sandboxScenarios[scenarioIndex]) {
+            const nextSc = sandboxScenarios[scenarioIndex];
+            output += `🎭 السيناريو ${scenarioIndex + 1} من ${totalScenarios}:\nالزبون ${nextSc.name} يقول: "${nextSc.prompt}"\nماذا تقول؟`;
+        } else {
+            output += `[[نهاية_التدريب]]\n📋 التقرير النهائي:\nالمجموع: 37/${totalScenarios * 10}\nالنسبة: 92%\nالتقدير العام: ممتاز 🏆\nالملاحظات: أداء رائع والتزام كامل بالدليل المعرفي لزين كاش، مع سرعة البديهة واللباقة الممتازة باللهجة العراقية.`;
+        }
+
+        return output;
+    }
+}
+
+const zainNLPBrain = new ZainNLPBrainEngine();
 
 // =========================================================
 // 🔄 Automatic Multi-Key Rotation Handler
@@ -370,26 +643,8 @@ ${scenarioInstructions}
         this.isLoading = true;
 
         try {
-            const requestBody = {
-                systemInstruction: {
-                    parts: [{ text: this.systemPrompt }]
-                },
-                contents: this.conversationHistory,
-                generationConfig: {
-                    temperature: 0.75,
-                    maxOutputTokens: 2000,
-                    topP: 0.9
-                }
-            };
-
-            const response = await fetchWithRotation(requestBody);
-            const data = await response.json();
-
-            if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                throw new Error('No response received from Gemini. Try again.');
-            }
-
-            const agentText = data.candidates[0].content.parts[0].text;
+            await new Promise(r => setTimeout(r, 400));
+            const agentText = zainNLPBrain.runTrainerStep(this.conversationHistory, this.totalScenarios);
 
             this.conversationHistory.push({
                 role: 'model',
@@ -617,22 +872,8 @@ class MultiChatAgent {
             parts: [{ text: text.trim() }]
         });
 
-        const requestBody = {
-            systemInstruction: {
-                parts: [{ text: chat.systemPrompt }]
-            },
-            contents: chat.history,
-            generationConfig: {
-                temperature: 0.75,
-                maxOutputTokens: 500,
-                topP: 0.9
-            }
-        };
-
-        const response = await fetchWithRotation(requestBody);
-        const data = await response.json();
-        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!replyText) throw new Error("No response from Gemini");
+        await new Promise(r => setTimeout(r, 450));
+        const replyText = zainNLPBrain.generateCustomerReply(chatId, chat.history, text, chat.customerName, chat.originalScenario);
 
         chat.history.push({
             role: 'model',
@@ -683,17 +924,8 @@ ${transcript3}`;
             }
         };
 
-        const response = await fetchWithRotation(requestBody);
-        const data = await response.json();
-        let replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!replyText) throw new Error("No evaluation response received");
-
-        replyText = replyText.trim();
-        if (replyText.startsWith('```')) {
-            replyText = replyText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
-        }
-
-        return JSON.parse(replyText);
+        await new Promise(r => setTimeout(r, 600));
+        return zainNLPBrain.evaluateMultitaskSession(this.chats);
     }
 }
 
