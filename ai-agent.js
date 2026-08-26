@@ -1106,11 +1106,16 @@ ${transcript3}`;
         });
 
         bindClick('btn-save-ai-settings', handleSaveAISettings);
-        bindClick('btn-test-api-key', handleTestAPIKey);
         bindClick('btn-reset-ai-prompt', handleResetPrompt);
         bindClick('btn-clear-ai-sessions', handleClearSessions);
+        bindClick('btn-run-nlp-test', handleRunNLPTest);
 
-        bindClick('btn-toggle-api-key', handleToggleKeyVisibility);
+        const testInput = document.getElementById('ai-test-input-msg');
+        if (testInput) {
+            testInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleRunNLPTest();
+            });
+        }
 
         loadAISettingsIntoAdminForm();
     }
@@ -1125,10 +1130,6 @@ ${transcript3}`;
     // ─────────────────────────────────────────────
     async function handleStartSession() {
         agent.loadSettings();
-        if (!agent.apiKey) {
-            showAIToast('Please configure Gemini API Key in the Admin Panel first', 'error');
-            return;
-        }
 
         // Fetch custom AI scenarios from server!
         let aiSc = null;
@@ -1421,14 +1422,7 @@ ${transcript3}`;
     // Admin Settings Manager
     // ─────────────────────────────────────────────
     function loadAISettingsIntoAdminForm() {
-        const keyInput = document.getElementById('ai-settings-api-key');
         const promptTextarea = document.getElementById('ai-settings-system-prompt');
-
-        if (keyInput) {
-            const savedKey = localStorage.getItem('amyo_gemini_api_key') || '';
-            keyInput.value = savedKey;
-            keyInput.dataset.changed = 'false';
-        }
         if (promptTextarea) {
             promptTextarea.value = localStorage.getItem('amyo_gemini_system_prompt') || DEFAULT_AI_SYSTEM_PROMPT;
         }
@@ -1436,84 +1430,62 @@ ${transcript3}`;
     }
 
     function handleSaveAISettings() {
-        const keyInput = document.getElementById('ai-settings-api-key');
         const promptTextarea = document.getElementById('ai-settings-system-prompt');
-
-        let saved = false;
-
-        if (keyInput && keyInput.dataset.changed === 'true') {
-            const val = keyInput.value.trim();
-            agent.saveApiKey(val);
-            keyInput.dataset.changed = 'false';
-            saved = true;
-        }
-
         if (promptTextarea && promptTextarea.value.trim()) {
             agent.saveSystemPrompt(promptTextarea.value.trim());
-            saved = true;
-        }
-
-        if (saved) {
-            showAIToast('✅ Settings saved successfully!', 'success');
+            showAIToast('✅ تم حفظ قواعد وتوجيهات الذكاء الاصطناعي بنجاح!', 'success');
         } else {
-            showAIToast('No changes detected. Enter a new API Key or edit the System Prompt.', 'info');
+            showAIToast('يرجى كتابة التوجيهات والقواعد قبل الحفظ.', 'info');
         }
     }
 
-    async function handleTestAPIKey() {
-        const keyInput = document.getElementById('ai-settings-api-key');
-        const testBtn = document.getElementById('btn-test-api-key');
-        const resultEl = document.getElementById('api-test-result');
+    function handleRunNLPTest() {
+        const inputEl = document.getElementById('ai-test-input-msg');
+        const selectEl = document.getElementById('ai-test-persona-select');
+        const outputBox = document.getElementById('ai-test-output-box');
+        const replyEl = document.getElementById('ai-test-customer-reply');
+        const badgesEl = document.getElementById('ai-test-criteria-badges');
 
-        let keyStr = keyInput ? keyInput.value.trim() : '';
-        if (!keyStr || keyStr.includes('●')) {
-            keyStr = localStorage.getItem('amyo_gemini_api_key') || '';
-        }
-
-        const keys = keyStr.split(',').map(k => k.trim()).filter(Boolean);
-        if (keys.length === 0) {
-            if (resultEl) { resultEl.textContent = '❌ Enter API Key first'; resultEl.className = 'api-test-result error-result'; }
+        if (!inputEl || !inputEl.value.trim()) {
+            showAIToast('يرجى كتابة رسالة تجريبية أولاً', 'error');
             return;
         }
 
-        if (testBtn) { testBtn.disabled = true; testBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...'; }
-        if (resultEl) { resultEl.textContent = '⏳ Testing ' + keys.length + ' API key(s)...'; resultEl.className = 'api-test-result loading-result'; }
+        const msg = inputEl.value.trim();
+        const personaVal = selectEl ? selectEl.value : '1';
 
-        let successCount = 0;
-        let errors = [];
+        let customerName = 'رهيف زمان';
+        let chatId = 1;
+        if (personaVal === '2') { customerName = 'علي'; chatId = 2; }
+        else if (personaVal === '3') { customerName = 'خطاب عمر'; chatId = 3; }
+        else if (personaVal === 'sandbox') { customerName = 'محمد'; chatId = 1; }
 
-        for (let i = 0; i < keys.length; i++) {
-            try {
-                const testUrl = GEMINI_API_BASE + '?key=' + encodeURIComponent(keys[i]);
-                const res = await fetch(testUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ role: 'user', parts: [{ text: 'Say hello.' }] }],
-                        generationConfig: { maxOutputTokens: 10 }
-                    })
-                });
+        const reply = zainNLPBrain.generateCustomerReply(chatId, [], msg, customerName, null);
+        const analysis = zainNLPBrain.analyzeResponse(msg, customerName, '');
+        const isGibberish = zainNLPBrain.isGibberish(msg);
 
-                if (res.ok) {
-                    successCount++;
-                } else {
-                    const errData = await res.json().catch(() => ({}));
-                    const msg = errData.error?.message || ('Error status: ' + res.status);
-                    errors.push('Key #' + (i+1) + ': ' + msg);
-                }
-            } catch (e) {
-                errors.push('Key #' + (i+1) + ': Connection failed');
-            }
+        if (replyEl) replyEl.textContent = reply;
+        if (outputBox) outputBox.classList.remove('hidden');
+
+        if (badgesEl) {
+            badgesEl.innerHTML = `
+                <span class="disp-badge ${analysis.hasGreeting ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
+                    ${analysis.hasGreeting ? '✅ ترحيب رسمي' : '❌ بدون ترحيب'}
+                </span>
+                <span class="disp-badge ${analysis.hasCustomerName ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
+                    ${analysis.hasCustomerName ? '✅ ذكر اسم الزبون (' + customerName + ')' : '❌ لم يذكر اسم الزبون'}
+                </span>
+                <span class="disp-badge ${analysis.hasPoliteTone ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
+                    ${analysis.hasPoliteTone ? '✅ لهجة عراقية ولباقة' : '⚠️ لهجة جافة'}
+                </span>
+                <span class="disp-badge ${(analysis.asksWalletNumber || analysis.givesExplanation) ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
+                    ${(analysis.asksWalletNumber || analysis.givesExplanation) ? '✅ تحقق وإجراء مهني' : '⚠️ لم يطلب بيانات'}
+                </span>
+                <span class="disp-badge ${isGibberish ? 'disp-badge-complaint' : 'disp-badge-inquiry'}" style="font-size:0.8rem; padding:4px 10px;">
+                    ${isGibberish ? '🚨 تم كشف نصوص عشوائية / شخابيط' : '✅ نص مفهوم'}
+                </span>
+            `;
         }
-
-        if (successCount === keys.length) {
-            if (resultEl) { resultEl.textContent = '✅ All ' + keys.length + ' API keys are valid and working perfectly!'; resultEl.className = 'api-test-result success-result'; }
-        } else if (successCount > 0) {
-            if (resultEl) { resultEl.textContent = '⚠️ Partials: ' + successCount + '/' + keys.length + ' keys are valid. Errors: ' + errors.join(', '); resultEl.className = 'api-test-result error-result'; }
-        } else {
-            if (resultEl) { resultEl.textContent = '❌ All keys failed: ' + errors.join(' | '); resultEl.className = 'api-test-result error-result'; }
-        }
-        if (testBtn) { testBtn.disabled = false; testBtn.innerHTML = '<i class="fa-solid fa-plug-circle-check"></i> Test Connection'; }
     }
 
     function handleResetPrompt() {

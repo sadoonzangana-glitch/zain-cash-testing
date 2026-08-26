@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v33_internal_zain_nlp_engine';
+    const STOCKS_DISP_VERSION = 'v34_zain_ai_control_center';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Zain Internal NLP Engine update!");
+        console.log("Purged legacy localStorage cache for Zain AI Control Center update!");
     }
 
     // Global Dispositions Catalog

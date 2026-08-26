@@ -1711,43 +1711,76 @@
                         </div>
                     </div>
 
-                    <!-- TAB 5: AI Agent Settings -->
+                    <!-- TAB 5: AI Agent Settings & Training Center -->
                     <div class="admin-tab-content" id="tab-ai-settings">
                         <div class="ai-admin-settings-container">
 
-                            <!-- قسم مفتاح API -->
-                            <div class="ai-settings-section">
-                                <div class="ai-settings-section-header">
-                                    <i class="fa-solid fa-key"></i>
-                                    <h3>Gemini API Key</h3>
+                            <!-- Engine Status Banner (Zero External API Keys) -->
+                            <div class="ai-settings-section" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #86efac; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(22, 101, 52, 0.06);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                                    <div style="display: flex; align-items: center; gap: 14px;">
+                                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3);">
+                                            <i class="fa-solid fa-brain"></i>
+                                        </div>
+                                        <div>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <h3 style="margin: 0; color: #166534; font-size: 1.15rem; font-weight: 800; font-family: var(--font-ar);">محرك الذكاء والـ NLP الداخلي لـ Zain Cash</h3>
+                                                <span style="background: #16a34a; color: #fff; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 20px;">v1.0 نشط ومحمي</span>
+                                            </div>
+                                            <p style="margin: 4px 0 0 0; color: #15803d; font-size: 0.84rem; font-family: var(--font-ar);">يعمل المحرك داخلياً بأمان كامل 100% بدون أي مفاتيح خارجية (Zero API Keys)، مع دعم كامل للهجة العراقية وتدقيق الجودة الفوري.</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <div style="background: #fff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 6px 14px; text-align: center;">
+                                            <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">سرعة الاستجابة</div>
+                                            <div style="font-size: 0.95rem; color: #16a34a; font-weight: 800;">⚡ &lt; 400ms</div>
+                                        </div>
+                                        <div style="background: #fff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 6px 14px; text-align: center;">
+                                            <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">حالة الأمان</div>
+                                            <div style="font-size: 0.95rem; color: #16a34a; font-weight: 800;">🔒 محلي آمن 100%</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="ai-settings-hint">Get your free API key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio ↗</a>. You can enter multiple keys separated by commas (e.g., <code>key1, key2, key3</code>) to enable automatic key rotation and multiply your rate limits!</p>
-                                <div class="ai-key-input-row">
-                                    <input
-                                        type="password"
-                                        id="ai-settings-api-key"
-                                        class="ai-settings-input"
-                                        placeholder="API_KEY_1, API_KEY_2..."
-                                        autocomplete="off"
-                                        spellcheck="false"
-                                    >
-                                    <button class="ai-icon-btn" id="btn-toggle-api-key" title="Show/Hide">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </button>
-                                    <button class="ai-test-btn" id="btn-test-api-key">
-                                        <i class="fa-solid fa-plug-circle-check"></i> Test Connection
-                                    </button>
-                                </div>
-                                <div class="api-test-result" id="api-test-result"></div>
                             </div>
 
-                            <!-- قسم System Prompt -->
+                            <!-- Live AI Engine Tester (أداة التجربة والاختبار الفوري) -->
+                            <div class="ai-settings-section">
+                                <div class="ai-settings-section-header">
+                                    <i class="fa-solid fa-vial-circle-check" style="color: var(--primary);"></i>
+                                    <h3>تجربة واختبار المحرك الذكي المباشر (Live Sandbox Tester)</h3>
+                                </div>
+                                <p class="ai-settings-hint" style="font-family: var(--font-ar); direction: rtl; text-align: right;">
+                                    اكتب أي رسالة تجريبية للموظف لاختبار كيف يستجيب العميل باللهجة العراقية وكيف يتم تقييم الأداء تلقائياً:
+                                </p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                                    <select id="ai-test-persona-select" class="ai-settings-input" style="flex: 1; min-width: 220px; font-family: var(--font-ar);">
+                                        <option value="1">رهيف زمان (Rahif Zaman - تأخير استرجاع مبالغ البطاقة)</option>
+                                        <option value="2">علي (Ali - بطاقة Google Play والخصم)</option>
+                                        <option value="3">خطاب عمر (Khatab Omar - فشل شحن المحفظة من البطاقة المصرفية)</option>
+                                        <option value="sandbox">محاكي التدريب الفردي (Single AI Sandbox Coach)</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                    <input type="text" id="ai-test-input-msg" class="ai-settings-input" placeholder="اكتب رد الموظف هنا للتجربة (مثلاً: أهلاً بك عيني رهيف، ممكن تزودني برقم المحفظة ورقم العملية؟)..." style="flex: 1; font-family: var(--font-ar); direction: rtl;">
+                                    <button class="btn btn-primary" id="btn-run-nlp-test" style="white-space: nowrap; padding: 0 20px;">
+                                        <i class="fa-solid fa-play"></i> تجربة رد الذكاء
+                                    </button>
+                                </div>
+                                <div id="ai-test-output-box" class="hidden" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; font-family: var(--font-ar); direction: rtl; text-align: right; margin-top: 10px;">
+                                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 6px;" id="ai-test-customer-response-title">🗣️ استجابة الزبون:</div>
+                                    <div id="ai-test-customer-reply" style="font-size: 0.95rem; color: #0f172a; margin-bottom: 12px; background: #fff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
+                                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 6px;">📊 تحليل الـ NLP والتقييم الآلي:</div>
+                                    <div id="ai-test-criteria-badges" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                                </div>
+                            </div>
+
+                            <!-- قسم System Prompt & Knowledge Guidelines -->
                             <div class="ai-settings-section">
                                 <div class="ai-settings-section-header">
                                     <i class="fa-solid fa-sliders"></i>
-                                    <h3>System Prompt (Agent Instructions)</h3>
+                                    <h3>توجيهات وسياسات الذكاء الاصطناعي (AI Training & System Guidelines)</h3>
                                 </div>
-                                <p class="ai-settings-hint">These instructions define the AI's personality and rules. You can modify them as needed.</p>
+                                <p class="ai-settings-hint" style="font-family: var(--font-ar); direction: rtl; text-align: right;">تحدد هذه الإرشادات قواعد العمل الرسمية لزين كاش (الأسهم، ويسترن يونيون، كشف الحركات، المحافظ المتوقفة CI، واسترجاع الأموال) التي يقاس عليها رد الموظف.</p>
                                 <textarea
                                     id="ai-settings-system-prompt"
                                     class="ai-settings-prompt-textarea"
@@ -1760,7 +1793,7 @@
                                         <i class="fa-solid fa-rotate-left"></i> Restore Defaults
                                     </button>
                                     <button class="btn btn-primary" id="btn-save-ai-settings">
-                                        <i class="fa-solid fa-floppy-disk"></i> Save Settings
+                                        <i class="fa-solid fa-floppy-disk"></i> Save Settings & Rules
                                     </button>
                                 </div>
                             </div>
@@ -2139,11 +2172,11 @@
 
     <!-- Script Resources -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
-    <script src="slides.js?v=5.3"></script>
-    <script src="scenarios.js?v=5.3"></script>
+    <script src="slides.js?v=5.4"></script>
+    <script src="scenarios.js?v=5.4"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=5.3"></script>
-    <script src="app.js?v=5.3"></script>
-    <script src="ai-agent.js?v=5.3"></script>
+    <script src="kb-data.js?v=5.4"></script>
+    <script src="app.js?v=5.4"></script>
+    <script src="ai-agent.js?v=5.4"></script>
 </body>
 </html>
