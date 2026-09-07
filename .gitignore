@@ -2,3 +2,10 @@ node_modules/
 .netlify/
 db.json
 scratch/
+.env
+*.db
+*.db-*
+*.db-shm
+*.db-wal
+db.backup.json
+audit_log.json

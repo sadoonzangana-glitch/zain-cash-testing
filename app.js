@@ -477,8 +477,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabPanes = document.querySelectorAll('.amy-tab-pane');
 
     function switchTab(tabId) {
-        if (currentUser && currentUser.role !== 'Admin') {
-            if (isCallTestAssigned) {
+        const user = currentUser || window.currentUser;
+        if (user && user.role !== 'Admin') {
+            if (window.isCallTestAssigned) {
                 if (!window.isTestSessionActive) {
                     if (tabId !== 'tab-slides') {
                         showToast('⚠️ يرجى قراءة السلايدات أولاً ثم بدء الاختبار!', 'error');
@@ -490,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                 }
-            } else if (isAiTestAssigned) {
+            } else if (window.isAiTestAssigned) {
                 if (!window.isTestSessionActive) {
                     if (tabId !== 'tab-slides') {
                         showToast('⚠️ يرجى قراءة السلايدات أولاً ثم بدء الاختبار!', 'error');
@@ -502,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                 }
-            } else if (isTestAssigned) {
+            } else if (window.isTestAssigned) {
                 if (!window.isTestSessionActive) {
                     if (tabId !== 'tab-slides') {
                         showToast('⚠️ يرجى قراءة السلايدات أولاً ثم بدء الاختبار!', 'error');
@@ -549,6 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    window.switchTab = switchTab;
 
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -3219,31 +3221,87 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Pre-fill remembered credentials if exists
+        try {
+            const remembered = JSON.parse(localStorage.getItem('zain_cash_remember') || 'null');
+            if (remembered && remembered.username) {
+                if (loginUsernameInput) loginUsernameInput.value = remembered.username;
+                const pInput = document.getElementById('login-password');
+                if (pInput && remembered.password) pInput.value = remembered.password;
+                const rememberCheck = document.getElementById('login-remember-me');
+                if (rememberCheck) rememberCheck.checked = true;
+            }
+        } catch (e) {}
+
         if (loginScreen) {
             loginScreen.classList.remove('hidden');
             loginScreen.style.display = 'flex';
         }
     }
 
+    // Toggle Password Visibility
+    const btnTogglePass = document.getElementById('btn-toggle-login-pass');
+    const passInput = document.getElementById('login-password');
+    const eyeIcon = document.getElementById('pass-eye-icon');
+    if (btnTogglePass && passInput) {
+        btnTogglePass.addEventListener('click', () => {
+            const isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            if (eyeIcon) {
+                eyeIcon.className = isPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+            }
+        });
+    }
+
+    // Auto-fill password as username when username changes if password is empty or was auto-filled
+    if (loginUsernameInput && passInput) {
+        loginUsernameInput.addEventListener('input', () => {
+            const val = loginUsernameInput.value.trim().toUpperCase();
+            if (!passInput.dataset.manualEdited) {
+                passInput.value = val;
+            }
+        });
+        passInput.addEventListener('input', () => {
+            passInput.dataset.manualEdited = 'true';
+        });
+    }
+
     const doLogin = async () => {
         let username = '';
-        if (loginUsernameInput) username = loginUsernameInput.value.trim();
+        if (loginUsernameInput) username = loginUsernameInput.value.trim().toUpperCase();
         if (!username) {
             if (loginErrorMsg) {
-                loginErrorMsg.textContent = 'Please enter your ZC employee code.';
+                loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> يرجى إدخال رمز الموظف (ZC Code).';
                 loginErrorMsg.classList.remove('hidden');
             }
             return;
         }
 
+        const passwordInput = document.getElementById('login-password');
+        let password = passwordInput ? passwordInput.value.trim() : '';
+        if (!password) {
+            password = username; // Default: password is the same as username
+            if (passwordInput) passwordInput.value = password;
+        }
+
+        const rememberCheckbox = document.getElementById('login-remember-me');
+        const shouldRemember = rememberCheckbox ? rememberCheckbox.checked : true;
+
         const submitBtn = document.getElementById('login-submit-btn');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.querySelector('span').textContent = 'Checking...'; }
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.querySelector('span').textContent = 'جارٍ التحقق...'; }
         if (loginErrorMsg) loginErrorMsg.classList.add('hidden');
 
         try {
-            const user = await apiCall('/api/login', 'POST', { username: username });
+            const user = await apiCall('/api/login', 'POST', { username, password });
             sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
             currentUser = user;
+
+            // Handle Remember Me persistence
+            if (shouldRemember) {
+                localStorage.setItem('zain_cash_remember', JSON.stringify({ username, password }));
+            } else {
+                localStorage.removeItem('zain_cash_remember');
+            }
 
             if (loginScreen) {
                 loginScreen.classList.add('hidden');
@@ -3257,12 +3315,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             if (loginErrorMsg) {
-                loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Invalid ZC code. Please check and try again.';
+                const msg = err.message || 'رمز الموظف أو كلمة المرور غير صحيحة';
+                loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${msg}`;
                 loginErrorMsg.classList.remove('hidden');
             }
-            if (loginUsernameInput) { loginUsernameInput.value = ''; loginUsernameInput.focus(); }
+            if (passwordInput) passwordInput.focus();
         } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.querySelector('span').textContent = 'Login'; }
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.querySelector('span').textContent = 'تسجيل الدخول / Login'; }
         }
     };
 
@@ -6163,6 +6222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isCallAnswerPending = false;
     let currentAnswerStream = null;
+    let remoteAudioSourceNode = null;
 
     function initPeerSession(userId) {
         if (!userId || typeof Peer === 'undefined') return null;

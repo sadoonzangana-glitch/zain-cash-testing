@@ -1993,18 +1993,44 @@
                 </div>
                 <form id="login-form">
                     <div class="form-group">
-                        <label for="login-username" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:8px; display:block;">Employee ZC Code</label>
-                        <div class="input-with-icon">
-                            <i class="fa-solid fa-id-badge"></i>
-                            <input type="text" id="login-username" required placeholder="e.g. ZC700" autocomplete="username">
+                        <label for="login-username" class="login-field-label">
+                            <span>رمز الموظف (Employee ZC Code)</span>
+                        </label>
+                        <div class="input-with-icon login-input-wrap">
+                            <i class="fa-solid fa-id-badge input-icon-start"></i>
+                            <input type="text" id="login-username" required placeholder="مثال: ZC700 أو ZC000" autocomplete="username" spellcheck="false" style="text-transform: uppercase;">
                         </div>
                     </div>
-                    <div class="error-msg hidden" id="login-error-msg">
-                        <i class="fa-solid fa-circle-exclamation"></i> Invalid ZC code. Please check and try again.
+                    <div class="form-group" id="login-password-group">
+                        <label for="login-password" class="login-field-label">
+                            <span>كلمة المرور (Password)</span>
+                            <span class="sub-label-hint">الافتراضي: نفس رمز ZC</span>
+                        </label>
+                        <div class="input-with-icon login-input-wrap">
+                            <i class="fa-solid fa-lock input-icon-start"></i>
+                            <input type="password" id="login-password" required placeholder="أدخل كلمة المرور" autocomplete="current-password">
+                            <button type="button" class="btn-toggle-pass" id="btn-toggle-login-pass" title="إظهار / إخفاء كلمة المرور" tabindex="-1">
+                                <i class="fa-solid fa-eye" id="pass-eye-icon"></i>
+                            </button>
+                        </div>
                     </div>
+
+                    <div class="login-options-row">
+                        <label class="remember-me-checkbox" for="login-remember-me">
+                            <input type="checkbox" id="login-remember-me" checked>
+                            <span class="custom-check"><i class="fa-solid fa-check"></i></span>
+                            <span class="remember-text">تذكرني على هذا الجهاز (Remember Me)</span>
+                        </label>
+                    </div>
+
+                    <div class="error-msg hidden" id="login-error-msg">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="login-error-text">يرجى إدخال البيانات بشكل صحيح</span>
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-login" id="login-submit-btn">
-                        <span>Login</span>
-                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>تسجيل الدخول / Login</span>
+                        <i class="fa-solid fa-arrow-left"></i>
                     </button>
                 </form>
                 <p style="text-align:center; font-size:0.72rem; color:#94a3b8; margin-top:12px;">

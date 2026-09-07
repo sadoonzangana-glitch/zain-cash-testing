@@ -239,7 +239,7 @@ async function writeDb(db) {
 }
 
 app.post('/api/login', async (req, res) => {
-    const { username } = req.body;
+    const { username, password } = req.body;
     if (!username || !username.trim()) return res.status(400).json({ error: "Username is required" });
     
     const inputClean = username.trim();
@@ -253,11 +253,23 @@ app.post('/api/login', async (req, res) => {
         (u.name && u.name.toUpperCase() === inputUpper)
     );
 
-    if (user) {
-        return res.json(user);
+    if (!user) {
+        return res.status(401).json({ error: "ZC code or username not registered. Access denied." });
     }
 
-    return res.status(401).json({ error: "ZC code or username not registered. Access denied." });
+    // If password provided, verify it matches the user ID (ZC code) or admin master password
+    if (password !== undefined && password !== null && String(password).trim() !== '') {
+        const cleanPass = String(password).trim();
+        const expectedId = (user.id || '').toUpperCase();
+        const isAdmin = user.role === 'Admin';
+        const isMatch = (cleanPass.toUpperCase() === expectedId) || 
+                        (isAdmin && (cleanPass === 'ZainAdmin2026!' || cleanPass.toUpperCase() === 'ZC000'));
+        if (!isMatch) {
+            return res.status(401).json({ error: "كلمة المرور غير صحيحة (الافتراضي: نفس رمز ZC)." });
+        }
+    }
+
+    return res.json(user);
 });
 
 app.get('/api/users', async (req, res) => {
@@ -515,12 +527,13 @@ app.post('/api/call-signal', async (req, res) => {
     const { toUserId, fromUserId, fromUserName, type, sdp, candidate, campaign, phone } = req.body;
     if (!toUserId) return res.status(400).json({ error: 'toUserId required' });
     
-    if (!Array.isArray(db.callSignals[toUserId])) {
-        db.callSignals[toUserId] = [];
+    const targetKey = String(toUserId).trim().toUpperCase();
+    if (!Array.isArray(db.callSignals[targetKey])) {
+        db.callSignals[targetKey] = [];
     }
     
-    db.callSignals[toUserId].push({
-        toUserId,
+    db.callSignals[targetKey].push({
+        toUserId: targetKey,
         fromUserId,
         fromUserName,
         type,
@@ -538,17 +551,22 @@ app.post('/api/call-signal', async (req, res) => {
 app.get('/api/call-signal', async (req, res) => {
     const db = await readDb();
     const userId = req.query.userId;
-    if (!userId || !db.callSignals || !db.callSignals[userId]) {
+    if (!userId || !db.callSignals) {
         return res.json({ signals: [], signal: null });
     }
     
-    let rawSignals = db.callSignals[userId];
+    const userKey = String(userId).trim().toUpperCase();
+    if (!db.callSignals[userKey]) {
+        return res.json({ signals: [], signal: null });
+    }
+    
+    let rawSignals = db.callSignals[userKey];
     let signalsArray = Array.isArray(rawSignals) ? rawSignals : [rawSignals];
     
     const now = Date.now();
     signalsArray = signalsArray.filter(s => s && (now - s.timestamp <= 30000));
     
-    delete db.callSignals[userId];
+    delete db.callSignals[userKey];
     await writeDb(db);
     
     res.json({
@@ -560,8 +578,9 @@ app.get('/api/call-signal', async (req, res) => {
 app.delete('/api/call-signal', async (req, res) => {
     const db = await readDb();
     const userId = req.query.userId;
-    if (userId && db.callSignals && db.callSignals[userId]) {
-        delete db.callSignals[userId];
+    if (userId && db.callSignals) {
+        const userKey = String(userId).trim().toUpperCase();
+        delete db.callSignals[userKey];
         await writeDb(db);
     }
     res.json({ success: true });
