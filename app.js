@@ -3239,17 +3239,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Toggle Password Visibility
+    // Global & Local Toggle Password Visibility
+    window.toggleLoginPasswordVisibility = function(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const pInput = document.getElementById('login-password');
+        const eye = document.getElementById('pass-eye-icon');
+        if (!pInput) return;
+        const isPass = pInput.type === 'password';
+        pInput.type = isPass ? 'text' : 'password';
+        if (eye) {
+            eye.className = isPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+        }
+    };
+
     const btnTogglePass = document.getElementById('btn-toggle-login-pass');
     const passInput = document.getElementById('login-password');
-    const eyeIcon = document.getElementById('pass-eye-icon');
     if (btnTogglePass && passInput) {
-        btnTogglePass.addEventListener('click', () => {
-            const isPass = passInput.type === 'password';
-            passInput.type = isPass ? 'text' : 'password';
-            if (eyeIcon) {
-                eyeIcon.className = isPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
-            }
+        btnTogglePass.addEventListener('click', (e) => {
+            window.toggleLoginPasswordVisibility(e);
         });
     }
 
@@ -3271,7 +3281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (loginUsernameInput) username = loginUsernameInput.value.trim().toUpperCase();
         if (!username) {
             if (loginErrorMsg) {
-                loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> يرجى إدخال رمز الموظف (ZC Code).';
+                loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Please enter your Employee Code (ZC ID).';
                 loginErrorMsg.classList.remove('hidden');
             }
             return;
@@ -3288,7 +3298,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const shouldRemember = rememberCheckbox ? rememberCheckbox.checked : true;
 
         const submitBtn = document.getElementById('login-submit-btn');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.querySelector('span').textContent = 'جارٍ التحقق...'; }
+        if (submitBtn) { 
+            submitBtn.disabled = true; 
+            const spanText = submitBtn.querySelector('span');
+            if (spanText) spanText.textContent = 'Authenticating...'; 
+        }
         if (loginErrorMsg) loginErrorMsg.classList.add('hidden');
 
         try {
@@ -3315,13 +3329,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             if (loginErrorMsg) {
-                const msg = err.message || 'رمز الموظف أو كلمة المرور غير صحيحة';
+                const msg = err.message || 'Invalid employee code or password. Please try again.';
                 loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${msg}`;
                 loginErrorMsg.classList.remove('hidden');
             }
             if (passwordInput) passwordInput.focus();
         } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.querySelector('span').textContent = 'تسجيل الدخول / Login'; }
+            if (submitBtn) { 
+                submitBtn.disabled = false; 
+                const spanText = submitBtn.querySelector('span');
+                if (spanText) spanText.textContent = 'Sign In to System'; 
+            }
         }
     };
 

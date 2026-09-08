@@ -1602,128 +1602,163 @@ body::after {
     border-radius: 14px;
     color: #ffffff;
     padding: 15px 20px;
-    font-size: 1.05rem;
-    font-weight: 800;
-    font-family: var(--font-ar);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    box-shadow: 0 6px 24px rgba(12, 79, 138, 0.35);
-    transition: all 0.3s ease;
-    letter-spacing: 0.5px;
+    box-shadow: 0 8px 24px rgba(12, 79, 138, 0.35);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: 0.3px;
 }
 
 .btn-login:hover {
     background-position: right center;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(12, 79, 138, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 181, 226, 0.4);
+}
+
+.btn-login:hover i {
+    transform: translateX(4px);
+}
+
+.btn-login i {
+    transition: transform 0.25s ease;
 }
 
 .login-field-label {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.84rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: #475569;
+    color: #334155;
     margin-bottom: 8px;
-    direction: rtl;
+    direction: ltr;
+    text-align: left;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .login-field-label .sub-label-hint {
     font-size: 0.72rem;
-    font-weight: 500;
+    font-weight: 600;
     color: #0284c7;
     background: #e0f2fe;
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 6px;
+    letter-spacing: 0.02em;
 }
 
 .login-input-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
 }
 
-.login-input-wrap .input-icon-start {
-    position: absolute;
-    right: 16px;
-    color: #94a3b8;
-    font-size: 1.1rem;
-    transition: color 0.25s ease;
-    pointer-events: none;
-    z-index: 2;
+.login-input-wrap .input-icon-start,
+.login-input-wrap .input-icon-left {
+    position: absolute !important;
+    left: 18px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #94a3b8 !important;
+    font-size: 1.1rem !important;
+    transition: color 0.25s ease !important;
+    pointer-events: none !important;
+    z-index: 4 !important;
 }
 
 .login-input-wrap input {
-    width: 100%;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
-    border-radius: 14px;
-    color: #0f1b2d;
-    padding: 13px 46px 13px 44px;
-    font-family: inherit;
-    font-size: 0.98rem;
-    font-weight: 600;
-    outline: none;
-    transition: all 0.25s ease;
-    text-align: right;
-    direction: rtl;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    width: 100% !important;
+    background: #f8fafc !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    color: #0f1b2d !important;
+    padding: 14px 50px 14px 54px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    outline: none !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    text-align: left !important;
+    direction: ltr !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02) !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    z-index: 1 !important;
 }
 
 .login-input-wrap input:focus {
-    border-color: #00B5E2;
-    background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(0, 181, 226, 0.15), inset 0 2px 4px rgba(0,0,0,0.02);
+    border-color: #00B5E2 !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 4px rgba(0, 181, 226, 0.15), inset 0 1px 2px rgba(0,0,0,0.02) !important;
 }
 
-.login-input-wrap input:focus ~ .input-icon-start {
-    color: #00B5E2;
+.login-input-wrap input:focus ~ .input-icon-start,
+.login-input-wrap input:focus ~ .input-icon-left {
+    color: #00B5E2 !important;
 }
 
 .btn-toggle-pass {
-    position: absolute;
-    left: 12px;
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    z-index: 2;
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    font-size: 1.15rem !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    z-index: 10 !important;
+    pointer-events: auto !important;
 }
 
 .btn-toggle-pass:hover {
-    color: #0c4f8a;
-    background: #f1f5f9;
+    color: #00B5E2 !important;
+    background: #e2e8f0 !important;
+}
+
+.btn-toggle-pass:active {
+    transform: translateY(-50%) scale(0.92) !important;
+}
+
+.btn-toggle-pass i {
+    pointer-events: none !important;
 }
 
 .login-options-row {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    margin: -4px 0 4px 0;
-    direction: rtl;
+    margin: -2px 0 6px 0;
+    direction: ltr;
+    text-align: left;
 }
 
 .remember-me-checkbox {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
     cursor: pointer;
-    font-size: 0.84rem;
-    font-weight: 600;
+    font-size: 0.86rem;
+    font-weight: 500;
     color: #475569;
+    direction: ltr;
+    text-align: left;
     user-select: none;
     transition: color 0.2s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .remember-me-checkbox:hover {
@@ -1743,9 +1778,10 @@ body::after {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     color: #ffffff;
-    font-size: 0.68rem;
+    font-size: 0.7rem;
 }
 
 .remember-me-checkbox input[type="checkbox"]:checked ~ .custom-check {

@@ -11,38 +11,38 @@
     <!-- FontAwesome for professional icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css?v=3.4">
+    <link rel="stylesheet" href="styles.css?v=5.6">
 </head>
 <body>
 
     <!-- Locked Screen Modal Overlay (Single-Use Link Enforcement) -->
-    <div id="test-locked-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 10000; direction: rtl; text-align: center; color: #ffffff;">
+    <div id="test-locked-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 10000; direction: ltr; text-align: center; color: #ffffff; font-family: 'Inter', sans-serif;">
         <div style="background: #ffffff; color: #0f172a; padding: 35px 30px; border-radius: 24px; max-width: 500px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.25); border: 1px solid #e2e8f0;">
             <div style="width: 70px; height: 70px; border-radius: 50%; background: #fef2f2; border: 2px solid #fecdd3; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: #e11d48; font-size: 2rem;">
                 <i class="fa-solid fa-lock"></i>
             </div>
-            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 12px;">تم إكمال هذا الاختبار سابقاً / انتهت الصلاحية</h2>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 12px;">Test Session Completed / Expired</h2>
             <p id="test-locked-desc" style="font-size: 0.92rem; color: #475569; line-height: 1.6; margin-bottom: 25px;">
-                شكراً لك! لقد قمت بإكمال هذا الاختبار مسبقاً، أو انتهت مدة الساعة المحددة للاختبار. تم حفظ نتائجك بنجاح وتسليمها للإدارة.
+                Thank you! You have already completed this evaluation test or the 1-hour session duration has expired. Your results were successfully submitted to management.
             </p>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 25px; text-align: right; font-size: 0.85rem; color: #64748b;">
-                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <strong>الحالة:</strong> تم تسليم إجاباتك واعتمادها برمجياً. لا يمكنك إعادة الدخول مجدداً للاختبار.
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 25px; text-align: left; font-size: 0.85rem; color: #64748b;">
+                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <strong>Status:</strong> Your answers have been recorded and locked. Re-entry is restricted.
             </div>
-            <button id="btn-locked-ok" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700; border-radius: 12px; cursor: pointer;">حسناً، فهمت</button>
+            <button id="btn-locked-ok" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700; border-radius: 12px; cursor: pointer;">Understood</button>
         </div>
     </div>
 
     <div class="app-container">
         <!-- Sticky Top 1-Hour Timer Banner -->
-        <div id="test-timer-banner" class="hidden" style="width: 100%; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 10px 20px; border-bottom: 3px solid #ff9900; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); direction: rtl; text-align: right; z-index: 9999;">
+        <div id="test-timer-banner" class="hidden" style="width: 100%; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 10px 20px; border-bottom: 3px solid #ff9900; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); direction: ltr; text-align: left; z-index: 9999; font-family: 'Inter', sans-serif;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="background: rgba(255, 153, 0, 0.2); color: #ff9900; border: 1px solid rgba(255, 153, 0, 0.4); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 800;">
-                    <i class="fa-solid fa-clock-rotate-left"></i> جلسة اختبار تقييمي مباشرة (ساعة واحدة)
+                    <i class="fa-solid fa-clock-rotate-left"></i> Live Evaluation Session (1 Hour)
                 </span>
-                <span id="test-timer-title" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">اختبار تقييم خدمة الزبائن</span>
+                <span id="test-timer-title" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">Customer Care Evaluation Test</span>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">الوقت المتبقي للاختبار:</span>
+                <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">Remaining Time:</span>
                 <span id="test-timer-display" style="font-family: monospace; font-size: 1.25rem; font-weight: 900; color: #38bdf8; background: rgba(15, 23, 42, 0.85); padding: 4px 14px; border-radius: 8px; border: 1px solid #334155;">
                     60:00
                 </span>
@@ -1988,28 +1988,28 @@
             <div class="login-form-section">
                 <div class="login-rainbow-bar"></div>
                 <div class="login-header">
-                    <h2>Agent Login</h2>
-                    <p>Enter your ZC employee code to access the system</p>
+                    <h2>Agent Sign In</h2>
+                    <p>Enter your ZC employee credentials to access the system</p>
                 </div>
                 <form id="login-form">
                     <div class="form-group">
                         <label for="login-username" class="login-field-label">
-                            <span>رمز الموظف (Employee ZC Code)</span>
+                            <span>Employee Code (ZC ID)</span>
                         </label>
-                        <div class="input-with-icon login-input-wrap">
+                        <div class="login-input-wrap">
                             <i class="fa-solid fa-id-badge input-icon-start"></i>
-                            <input type="text" id="login-username" required placeholder="مثال: ZC700 أو ZC000" autocomplete="username" spellcheck="false" style="text-transform: uppercase;">
+                            <input type="text" id="login-username" required placeholder="e.g. ZC700 or AMR NASR" autocomplete="username" spellcheck="false" style="text-transform: uppercase;">
                         </div>
                     </div>
                     <div class="form-group" id="login-password-group">
                         <label for="login-password" class="login-field-label">
-                            <span>كلمة المرور (Password)</span>
-                            <span class="sub-label-hint">الافتراضي: نفس رمز ZC</span>
+                            <span>Password</span>
+                            <span class="sub-label-hint">Default: Same as ZC ID</span>
                         </label>
-                        <div class="input-with-icon login-input-wrap">
+                        <div class="login-input-wrap">
                             <i class="fa-solid fa-lock input-icon-start"></i>
-                            <input type="password" id="login-password" required placeholder="أدخل كلمة المرور" autocomplete="current-password">
-                            <button type="button" class="btn-toggle-pass" id="btn-toggle-login-pass" title="إظهار / إخفاء كلمة المرور" tabindex="-1">
+                            <input type="password" id="login-password" required placeholder="Enter your password" autocomplete="current-password">
+                            <button type="button" class="btn-toggle-pass" id="btn-toggle-login-pass" onclick="window.toggleLoginPasswordVisibility(event)" title="Show / Hide Password" tabindex="-1">
                                 <i class="fa-solid fa-eye" id="pass-eye-icon"></i>
                             </button>
                         </div>
@@ -2019,23 +2019,23 @@
                         <label class="remember-me-checkbox" for="login-remember-me">
                             <input type="checkbox" id="login-remember-me" checked>
                             <span class="custom-check"><i class="fa-solid fa-check"></i></span>
-                            <span class="remember-text">تذكرني على هذا الجهاز (Remember Me)</span>
+                            <span class="remember-text">Remember me on this device</span>
                         </label>
                     </div>
 
                     <div class="error-msg hidden" id="login-error-msg">
                         <i class="fa-solid fa-circle-exclamation"></i>
-                        <span id="login-error-text">يرجى إدخال البيانات بشكل صحيح</span>
+                        <span id="login-error-text">Please enter a valid employee code and password</span>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-login" id="login-submit-btn">
-                        <span>تسجيل الدخول / Login</span>
-                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Sign In to System</span>
+                        <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </form>
-                <p style="text-align:center; font-size:0.72rem; color:#94a3b8; margin-top:12px;">
+                <p style="text-align:center; font-size:0.75rem; color:#94a3b8; margin-top:14px; font-family:'Inter', sans-serif;">
                     <i class="fa-solid fa-shield-halved" style="color:#00B5E2;"></i>
-                    Secured System &mdash; ZainCash Customer Care &copy; 2025
+                    Secured System &bull; ZainCash Customer Care &copy; 2026
                 </p>
             </div>
         </div>
@@ -2201,8 +2201,8 @@
     <script src="slides.js?v=5.4"></script>
     <script src="scenarios.js?v=5.4"></script>
     <!-- Embedded data for offline/file:// mode -->
-    <script src="kb-data.js?v=5.4"></script>
-    <script src="app.js?v=5.4"></script>
-    <script src="ai-agent.js?v=5.4"></script>
+    <script src="kb-data.js?v=5.5"></script>
+    <script src="app.js?v=5.5"></script>
+    <script src="ai-agent.js?v=5.5"></script>
 </body>
 </html>
