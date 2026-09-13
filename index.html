@@ -244,45 +244,25 @@
                         <p style="font-size: 0.95rem; color: #64748b;">اختر أحد مسارات التدريب والتقييم المتاحة لتطوير مهاراتك وقياس أدائك الحواري.</p>
                     </div>
                     
-                    <div class="tc-pathways-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                        <!-- Card 1: Interactive Slides -->
-                        <div class="tc-path-card" id="btn-start-slides" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
-                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #fff8e8; color: #ff9900; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #ffeeba;">
-                                <i class="fa-solid fa-graduation-cap"></i>
-                            </div>
-                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">التدريب التفاعلي (Slides)</h3>
-                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">تعلم القواعد الأساسية واللهجة العراقية لخدمة المشتركين من خلال جولات تفاعلية سريعة.</p>
-                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0;">ابدأ التعلم الآن</span>
-                        </div>
-
-                        <!-- Card 2: Multitask Simulator -->
-                        <div class="tc-path-card" id="btn-start-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
-                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #eff6ff; color: #1e40af; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #bfdbfe;">
+                    <div class="tc-pathways-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 780px; margin: 0 auto;">
+                        <!-- Card 1: Multitask Chat Simulator -->
+                        <div class="tc-path-card" id="btn-start-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 30px 24px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <div class="path-icon-wrapper" style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37,99,235,0.15);">
                                 <i class="fa-solid fa-comments"></i>
                             </div>
-                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">محاكي الدردشة (Chat)</h3>
-                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">تدرب على إدارة 3 محادثات خدمة عملاء متزامنة في نفس الوقت مع التقييم والتصنيف الفوري.</p>
-                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0;">ابدأ المحاكاة</span>
+                            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">محاكي الدردشة (Chat)</h3>
+                            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 22px; flex: 1;">تدرب على إدارة 3 محادثات خدمة عملاء متزامنة في نفس الوقت مع التقييم والتصنيف المعتمد للتذاكر.</p>
+                            <span class="btn btn-primary" style="font-size: 0.88rem; font-weight: 800; width: 100%; padding: 10px 0; border-radius: 12px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">ابدأ محاكي الدردشة</span>
                         </div>
 
-                        <!-- Card 3: AI Agent Coach -->
-                        <div class="tc-path-card" id="btn-start-ai-agent" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
-                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #f0fdf4; color: #166534; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #dcfce7;">
-                                <i class="fa-solid fa-robot"></i>
-                            </div>
-                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">مقيّم الذكاء الاصطناعي (AI)</h3>
-                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">أجرِ محادثة حرة مع زبون ذكي وخذ تقييماً تفصيلياً صارماً لأدائك وتصنيفك للتذاكر.</p>
-                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0;">ابدأ التقييم الذكي</span>
-                        </div>
-
-                        <!-- Card 4: Voice Call Simulator -->
-                        <div class="tc-path-card" id="btn-start-call-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px 18px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center;">
-                            <div class="path-icon-wrapper" style="width: 54px; height: 54px; border-radius: 50%; background: #fdf2f8; color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 15px; border: 1px solid #fbcfe8;">
+                        <!-- Card 2: Voice Call Simulator -->
+                        <div class="tc-path-card" id="btn-start-call-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 30px 24px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <div class="path-icon-wrapper" style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #fbcfe8; box-shadow: 0 4px 12px rgba(219,39,119,0.15);">
                                 <i class="fa-solid fa-headset"></i>
                             </div>
-                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">محاكي المكالمات (Call)</h3>
-                            <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4; margin-bottom: 16px; flex: 1;">تدرب على استقبال وإجراء المكالمات الهاتفية بنظام Ameyo مع التحكم بالـ Hold والتصنيف المعتمد.</p>
-                            <span class="btn btn-primary" style="font-size: 0.78rem; font-weight: bold; width: 100%; padding: 7px 0; background: linear-gradient(135deg, #db2777 0%, #be185d 100%);">ابدأ تدريب المكالمات</span>
+                            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">محاكي المكالمات (Call)</h3>
+                            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 22px; flex: 1;">تدرب على استقبال وإجراء المكالمات الهاتفية بنظام Ameyo مع التحكم بالـ Hold والتصنيف الفوري.</p>
+                            <span class="btn btn-primary" style="font-size: 0.88rem; font-weight: 800; width: 100%; padding: 10px 0; border-radius: 12px; background: linear-gradient(135deg, #db2777 0%, #be185d 100%);">ابدأ تدريب المكالمات</span>
                         </div>
                     </div>
                 </div>
