@@ -480,6 +480,42 @@ app.get('/api/ai-scenarios', async (req, res) => {
     res.json(dbStorage.getConfig('aiScenarios', defaultAiScenarios));
 });
 
+app.get('/api/ai/config', async (req, res) => {
+    const key = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || '');
+    res.json({ hasKey: !!key, maskedKey: key ? key.substring(0, 6) + '...' : '' });
+});
+
+app.post('/api/ai/config', requireAdminRole, async (req, res) => {
+    const { apiKey } = req.body || {};
+    if (typeof apiKey === 'string') {
+        dbStorage.setConfig('geminiApiKey', apiKey.trim());
+    }
+    res.json({ success: true });
+});
+
+app.post('/api/ai/generate', async (req, res) => {
+    const apiKey = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || req.headers['x-gemini-key'] || '');
+    const { requestBody } = req.body || {};
+    if (!requestBody) return res.status(400).json({ error: 'Request body required' });
+    
+    if (!apiKey) {
+        return res.status(400).json({ error: 'No Gemini API key configured on server' });
+    }
+
+    try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const resp = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        const data = await resp.json();
+        return res.json(data);
+    } catch(err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 
 
 app.get('/api/call-scenarios', async (req, res) => {

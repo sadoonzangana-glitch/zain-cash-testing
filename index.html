@@ -13,7 +13,7 @@
     <!-- DOMPurify for enterprise-grade XSS Sanitization -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css?v=3.4">
+    <link rel="stylesheet" href="styles.css?v=3.5">
 </head>
 <body>
 
@@ -1994,39 +1994,39 @@
                 <p class="login-tagline">Customer Care Training System</p>
             </div>
             <!-- Form Section -->
-            <div class="login-form-section">
+            <div class="login-form-section" style="direction:ltr !important; text-align:left !important; width:100%; box-sizing:border-box;">
                 <div class="login-rainbow-bar"></div>
-                <div class="login-header">
-                    <h2>Agent Login</h2>
-                    <p>Enter your ZC employee code to access the system</p>
+                <div class="login-header" style="text-align:center; display:flex; flex-direction:column; align-items:center;">
+                    <h2 style="font-size:1.6rem; font-weight:800; color:#0c4f8a; margin:0;">Agent Login</h2>
+                    <p style="font-size:0.88rem; color:#64748b; margin:6px 0 0 0;">Enter your ZC employee code to access the system</p>
                 </div>
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="login-username" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:8px; display:block;">Employee ZC Code / Username</label>
-                        <div class="input-with-icon">
-                            <i class="fa-solid fa-id-badge"></i>
-                            <input type="text" id="login-username" required placeholder="e.g. ZC700, ZC000 or Amr Nasr" autocomplete="username">
+                <form id="login-form" style="margin-top:14px; display:flex; flex-direction:column; gap:14px;">
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
+                        <label for="login-username" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:2px; display:block; text-align:left; direction:ltr;">Employee ZC Code / Username</label>
+                        <div class="input-with-icon" style="position:relative; width:100%; display:flex; align-items:center;">
+                            <i class="fa-solid fa-id-badge" style="position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:1.1rem; pointer-events:none; z-index:2;"></i>
+                            <input type="text" id="login-username" required placeholder="e.g. ZC700, ZC000 or Amr Nasr" autocomplete="username" style="width:100%; box-sizing:border-box; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; color:#0f172a; padding:13px 16px 13px 46px; font-size:0.95rem; font-weight:500; outline:none; text-align:left !important; direction:ltr !important; unicode-bidi:isolate !important;">
                         </div>
                     </div>
-                    <div class="form-group" style="margin-top: 14px;">
-                        <label for="login-password" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:8px; display:block;">Password</label>
-                        <div class="input-with-icon">
-                            <i class="fa-solid fa-lock"></i>
-                            <input type="password" id="login-password" required placeholder="Enter password" autocomplete="current-password">
-                            <button type="button" id="toggle-login-password" title="Toggle Password Visibility">
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
+                        <label for="login-password" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:2px; display:block; text-align:left; direction:ltr;">Password</label>
+                        <div class="input-with-icon" style="position:relative; width:100%; display:flex; align-items:center;">
+                            <i class="fa-solid fa-lock" style="position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:1.1rem; pointer-events:none; z-index:2;"></i>
+                            <input type="password" id="login-password" required placeholder="Enter password" autocomplete="current-password" style="width:100%; box-sizing:border-box; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; color:#0f172a; padding:13px 44px 13px 46px; font-size:0.95rem; font-weight:500; outline:none; text-align:left !important; direction:ltr !important; unicode-bidi:isolate !important;">
+                            <button type="button" id="toggle-login-password" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; padding:6px; border-radius:6px; display:flex; align-items:center; justify-content:center; z-index:3;" title="Toggle Password Visibility">
                                 <i class="fa-solid fa-eye" id="toggle-pwd-icon"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="error-msg hidden" id="login-error-msg" style="margin-top: 12px;">
+                    <div class="error-msg hidden" id="login-error-msg" style="margin-top: 4px;">
                         <i class="fa-solid fa-circle-exclamation"></i> Invalid credentials. Please check and try again.
                     </div>
-                    <button type="submit" class="btn btn-primary btn-login" id="login-submit-btn" style="margin-top: 14px;">
+                    <button type="submit" class="btn btn-primary btn-login" id="login-submit-btn" style="margin-top: 8px;">
                         <span>Login</span>
                         <i class="fa-solid fa-right-to-bracket"></i>
                     </button>
                 </form>
-                <p style="text-align:center; font-size:0.72rem; color:#94a3b8; margin-top:12px;">
+                <p style="text-align:center; font-size:0.72rem; color:#94a3b8; margin-top:8px;">
                     <i class="fa-solid fa-shield-halved" style="color:#00B5E2;"></i>
                     Secured System &mdash; ZainCash Customer Care &copy; 2025
                 </p>
