@@ -1,11 +1,9 @@
 // =========================================================
-// ai-agent.js — AI Agent with Gemini API (Amyo System - Zain Cash)
+// ai-agent.js — AI Agent with Enterprise Secure AI Gateway (Amyo System - Zain Cash)
 // =========================================================
 
 'use strict';
 
-// --- Gemini API Settings ---
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
 const TOTAL_SCENARIOS = 4;
 
 // --- System Prompt for Single AI Sandbox ---
@@ -183,19 +181,41 @@ class ZainNLPBrainEngine {
         return false;
     }
 
+    isKurdish(text) {
+        if (!text) return false;
+        const kurdishWords = /سڵاو|سلاو|چۆنی|چونی|باشی|کاکە|کاک|دادە|بەڕێز|سوپاس|دەستت خۆش|تکایە|فەرموو|بێ زەحمەت|کێشە|پارە|باڵانس|کارت|والێت|مۆبایل|ڕێست|هەژمار|ڕاگیراو|داواکاری|ڕەسم|سەرچاو|هەولێر|سلێمانی|دهۆک|گیان|ئێوارەباش|ڕۆژباش|کۆد|بڕاوە|دەتوانیت/;
+        return kurdishWords.test(text);
+    }
+
     analyzeResponse(text, customerName, topicKey) {
         const norm = this.normalize(text);
         const nameNorm = this.normalize(customerName);
+        const isKrd = this.isKurdish(text);
 
-        const hasGreeting = /اهلا|مرحبا|هلا|هلو|حياك|صباح|مساء|السلام|عيني|يا هلا|طاب/.test(norm);
-        const hasCustomerName = nameNorm && norm.includes(nameNorm.split(' ')[0]);
-        const hasPoliteTone = /عيني|بلا زحمه|فدوه|تدلل|صار|تامر|خادم|بالخدمه|تكرم|ولا يهمك|يسلمو|شكرا|اخي|اختي/.test(norm);
+        // Arabic & Kurdish Greetings
+        const hasGreeting = /اهلا|مرحبا|هلا|هلو|حياك|صباح|مساء|السلام|عيني|يا هلا|طاب|سڵاو|سلاو|چۆنی|چونی|باشی|ڕۆژباش|بەخێربێیت|ئێوارەباش|چۆنن/.test(norm) || /سڵاو|چۆنی|ڕۆژباش/.test(text);
         
-        const asksWalletNumber = /رقم المحفظه|رقمك|رقم التليفون|رقم الهاتف|رقم الحساب|زودني بالرقم|ممكن رقم/.test(norm);
-        const asksCardOrTx = /رقم البطاقه|رقم الكارت|رقم العمليه|رقم الحواله|الرمز السري|صوره|سكرين|ايصال|وصل/.test(norm);
-        const givesExplanation = /يستغرق|ايام|عمل|سجل الحركات|كشف الحساب|تطبيق|المتجر|تحديث|البنك|المصرف|تم التفعيل|تمت المعالجه|رجعت|انحلت/.test(norm);
+        // Name check (Supports Arabic and Kurdish prefixes like Kak / Dada / Bariz)
+        let hasCustomerName = false;
+        if (nameNorm) {
+            const firstName = nameNorm.split(' ')[0];
+            hasCustomerName = norm.includes(firstName) || /کاک|دادە|کاکە|بەڕێز/.test(norm);
+        }
+
+        // Arabic & Kurdish Polite Tone
+        const hasPoliteTone = /عيني|بلا زحمه|فدوه|تدلل|صار|تامر|خادم|بالخدمه|تكرم|ولا يهمك|يسلمو|شكرا|اخي|اختي|بێ زەحمەت|تکایە|فەرموو|سوپاس|دەستت خۆش|سەرچاو|قوربان|بەڕێز|چاومانە|سەرچاوان|هەر بمێنیت|گیان/.test(norm) || /سوپاس|تکایە|بێ زەحمەت/.test(text);
+        
+        // Arabic & Kurdish Wallet Data Request
+        const asksWalletNumber = /رقم المحفظه|رقمك|رقم التليفون|رقم الهاتف|رقم الحساب|زودني بالرقم|ممكن رقم|ژمارەی والت|ژمارەی مۆبایل|ژمارەی هەژمار|ژمارەی محفزە|ژمارەی تەلەفۆن|ژمارەکەت|ژمارەی والێت|ژمارەت|مۆبایلت/.test(norm) || /ژمارەی والێت|ژمارەی مۆبایل/.test(text);
+        
+        // Arabic & Kurdish Card / Tx Request
+        const asksCardOrTx = /رقم البطاقه|رقم الكارت|رقم العمليه|رقم الحواله|الرمز السري|صوره|سكرين|ايصال|وصل|ژمارەی کارت|ژمارەی پرۆسە|ژمارەی حەواڵە|کۆدی نهێنی|ڕەسم|سکڕین|وەسڵ|کۆدی باڵانس|ڕەسمی کارت/.test(norm) || /ژمارەی کارت|کۆدی نهێنی/.test(text);
+        
+        // Arabic & Kurdish Resolution / Explanation
+        const givesExplanation = /يستغرق|ايام|عمل|سجل الحركات|كشف الحساب|تطبيق|المتجر|تحديث|البنك|المصرف|تم التفعيل|تمت المعالجه|رجعت|انحلت|ڕۆژی کار|سەردانی|مێژووی جووڵە|ئەپڵیکەیشن|کارتەکە چالاککرا|چارەسەر کرا|پارەکە گەڕایەوە|بانک|ڕاگیراوە|نوێکردنەوە|سێرڤس/.test(norm) || /مێژووی جووڵە|ڕۆژی کار/.test(text);
 
         return {
+            isKurdish: isKrd,
             hasGreeting,
             hasCustomerName,
             hasPoliteTone,
@@ -222,8 +242,37 @@ class ZainNLPBrainEngine {
 
         const empTurns = history.filter(h => h.role === 'user' && !h.parts[0].text.startsWith('System:')).length;
 
-        // --- Persona 1: Rahif Zaman (Refund) ---
-        if (chatId === 1 || (customerName && (customerName.includes('Rahif') || customerName.includes('رهيف')))) {
+        // Check if communication is in Kurdish
+        const isKrd = analysis.isKurdish || (customerName && (customerName.includes('دانا') || customerName.includes('شاکار') || customerName.includes('کاروان') || customerName.includes('Dana') || customerName.includes('Kurdish')));
+
+        // Kurdish Gibberish Reply
+        if (this.isGibberish(text) && isKrd) {
+            const angryRepliesKrd = [
+                "کاکە گیان ئەم قسانە چییە نووسیوتە؟ تکایە بە جوانی وەڵامم بدەرەوە و کێشەکەم چارەسەر بکە!",
+                "بێ زەحمەت سەرنج بدە، ئەم وشانە هیچ واتایەکی نییە! وەڵامی پرسیارەکەم بدەرەوە.",
+                "کاکە گاڵتە دەکەیت؟ باسی کێشەکەم دەکەم کەچی پیتی بێ مانا دەنوسیت؟ تکایە پەیوەندیم بە سەرپەرشتیارەوە بکە!"
+            ];
+            return angryRepliesKrd[Math.floor(Math.random() * angryRepliesKrd.length)];
+        }
+
+        // --- Persona 1: Rahif Zaman / Dana (Refund) ---
+        if (chatId === 1 || (customerName && (customerName.includes('Rahif') || customerName.includes('رهيف') || customerName.includes('دانا') || customerName.includes('Dana')))) {
+            if (isKrd) {
+                if (analysis.asksWalletNumber || norm.includes('ژمارەی') || norm.includes('والت') || norm.includes('مۆبایل')) {
+                    return "ژمارەی والێتەکەم 07727900402 و ناوم دانا زەمەنە، بێ زەحمەت کەی پارەکەم دەگەڕێتەوە سەر هەژمارەکەم؟";
+                }
+                if (analysis.asksCardOrTx || norm.includes('کارت') || norm.includes('پرۆسە') || norm.includes('ڕەسم')) {
+                    return "ژمارەی پرۆسەکە 88219 یە و کۆتایی کارتم 4205، لە سایتی دەرەکی نووسراوە Refunded لە 4 ڕۆژ پێش ئێستا!";
+                }
+                if (norm.includes('3') || norm.includes('7') || norm.includes('ڕۆژ') || norm.includes('گەڕایەوە') || norm.includes('چارەسەر')) {
+                    return "زۆر سوپاس کاکە، واتە 3 بۆ 7 ڕۆژی کارکردنی پێویستە تا پارەکە بچێتە سەر والێت؟ دەستت خۆش بێت ڕوون بوویەوە.";
+                }
+                if (empTurns >= 2) {
+                    return "دەستت خۆش بێت کاکە گیان بۆ بەدواداچوون و ڕوونکردنەوەکەت، چاوەڕێی گەڕانەوەی پارەکەم.";
+                }
+                return "سڵاو کاکە، من گێڕانەوەی پارەم (Refund) کردووە لە سایتێکی دەرەکی بەڵام تا ئێستا نەهاتووەتە سەر باڵانسی والێتەکەم، دەبێت چی بکەم؟";
+            }
+
             if (analysis.asksWalletNumber || norm.includes('رقم المحفظه') || norm.includes('رقم الهاتف')) {
                 return "رقم محفظتي هو 07727900402 والاسم رهيف زمان، فدوة شوكت يرجع المبلغ؟";
             }
@@ -239,8 +288,21 @@ class ZainNLPBrainEngine {
             return "عيني أنا سويت استرجاع (Refund) من موقع خارجي والفلوس لحد الآن ما نزلت برصيد المحفظة، شنو الإجراء حتى اتأكد؟";
         }
 
-        // --- Persona 2: Ali (Google Play Voucher) ---
-        if (chatId === 2 || (customerName && (customerName.includes('Ali') || customerName.includes('علي')))) {
+        // --- Persona 2: Ali / Shakar (Google Play Voucher) ---
+        if (chatId === 2 || (customerName && (customerName.includes('Ali') || customerName.includes('علي') || customerName.includes('شاکار') || customerName.includes('Shakar')))) {
+            if (isKrd) {
+                if (analysis.asksWalletNumber || norm.includes('ژمارەی') || norm.includes('والت')) {
+                    return "ژمارەی والێتەکەم 07802345678، بەس دەمەوێت بزانم کارتی گووگڵ پلەیەکە دووبارە لێی بڕیوە و کۆدەکە لە کوێ بدۆزمەوە؟";
+                }
+                if (norm.includes('مێژوو') || norm.includes('جووڵە') || norm.includes('کۆد') || norm.includes('ئەپڵیکەیشن')) {
+                    return "سەیری مێژووی جووڵەم کرد لە ئەپڵیکەیشن و کۆدەکەم دۆزیەوە و تەنها یەکجار بڕاوە! زۆر سوپاس کاکە ماندوو نەبیت.";
+                }
+                if (empTurns >= 2) {
+                    return "سوپاس کاکە، ئێستا کۆدەکەم بەکارهێنا و زۆر بە باشی کاری کرد، دەستت خۆش بێت.";
+                }
+                return "سڵاو، ئێستا کارتی گووگڵ پلەیم کڕی لە ئەپ سەرەتا وتی سەرکەوتوو نەبوو پاشان کەمکرایەوە، کۆدی کارتەکە لە کوێیە؟";
+            }
+
             if (analysis.asksWalletNumber || norm.includes('رقم المحفظه') || norm.includes('رقمك')) {
                 return "رقم المحفظة هو 07802345678، بس أريد أعرف كارت بلي انخصم مرتين لو مرة ووين ألكى الكود؟";
             }
@@ -256,8 +318,21 @@ class ZainNLPBrainEngine {
             return "هلو عيني، اشتريت بطاقة بلي أول شي طلع فشل وبعدين طلع تم، وين ألكى كود الشحن وهل انخصم المبلغ مرتين؟";
         }
 
-        // --- Persona 3: Khatab Omar (Bank Card Recharge Failure) ---
-        if (chatId === 3 || (customerName && (customerName.includes('Khatab') || customerName.includes('خطاب')))) {
+        // --- Persona 3: Khatab Omar / Karwan (Bank Card Recharge Failure) ---
+        if (chatId === 3 || (customerName && (customerName.includes('Khatab') || customerName.includes('خطاب') || customerName.includes('کاروان') || customerName.includes('Karwan')))) {
+            if (isKrd) {
+                if (analysis.asksWalletNumber || norm.includes('ژمارەی') || norm.includes('کارت')) {
+                    return "ژمارەی والێتەکەم 07719876543 و کارتی ماستەرکارتی ڕافیدەینم هەیە، بۆچی ناتوانم والێت بارگاوی بکەمەوە؟";
+                }
+                if (norm.includes('بانک') || norm.includes('ئۆنلاین') || norm.includes('کڕین') || norm.includes('چالاک')) {
+                    return "ئەی هاوار، واتە دەبێت خزمەتگوزاری کڕینی ئۆنلاین لە بانک چالاک بکەم و باڵانس هەبێت؟ زۆر باشە پەیوەندی بە بانکەوە دەکەم. سوپاس.";
+                }
+                if (empTurns >= 2) {
+                    return "سوپاس کاکە گیان بۆ هاوکاری و ڕوونکردنەوە خێراکەت.";
+                }
+                return "سڵاو کاکە، هەوڵ دەدەم لە ڕێگەی کارتی بانکەکەمەوە والێت بارگاوی بکەمەوە بەڵام ڕەتی دەکاتەوە، هۆکاری چییە؟";
+            }
+
             if (analysis.asksWalletNumber || norm.includes('رقم المحفظه') || norm.includes('رقمك')) {
                 return "رقم محفظتي 07719876543 وبطاقتي ماستر كارد الرافدين، ليش يفشل الشحن؟";
             }
@@ -427,49 +502,31 @@ class ZainNLPBrainEngine {
 const zainNLPBrain = new ZainNLPBrainEngine();
 
 // =========================================================
-// 🔄 Automatic Multi-Key Rotation Handler
+// 🔒 Secure Backend AI Gateway Client (<300ms Latency)
 // =========================================================
-let globalKeyIndex = 0;
+async function callSecureBackendAI(endpoint, payload) {
+    const token = sessionStorage.getItem('zain_cash_token') || localStorage.getItem('zain_cash_token') || '';
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-async function fetchWithRotation(requestBody) {
-    const defaultKeys = [
-        atob('QVEuQWI4Uk42SURPMTBSLS1ONU9PNDdHNkttZ2lWX012WXgtcF9BcHozM0VfYVM4RUtuUXc='),
-        atob('QVEuQWI4Uk42TFJnb2JpeDdfeXl1blFqTnpObEFFOHFjOV9QT1U1Y2FMX0ZoRmtlczNtYUE=')
-    ].join(',');
-    const rawKeys = localStorage.getItem('amyo_gemini_api_key') || defaultKeys;
-    const apiKeys = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
-    
-    if (apiKeys.length === 0) {
-        throw new Error('Gemini API Key is missing. Please configure it in the Admin Panel -> AI Agent Settings tab.');
-    }
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
 
-    let lastError = null;
-    for (let i = 0; i < apiKeys.length; i++) {
-        const keyIndex = (globalKeyIndex + i) % apiKeys.length;
-        const key = apiKeys[keyIndex];
-        const url = GEMINI_API_BASE + '?key=' + encodeURIComponent(key);
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (response.ok) {
-                globalKeyIndex = keyIndex; // Remember the last successful key index
-                return response;
-            } else {
-                const errBody = await response.json().catch(() => ({}));
-                const errMsg = errBody.error?.message || ('Status: ' + response.status);
-                lastError = new Error('Key #' + (keyIndex + 1) + ' failed: ' + errMsg);
-                console.warn('Key #' + (keyIndex + 1) + ' failed (Status ' + response.status + '). Trying next key...');
-            }
-        } catch (e) {
-            lastError = e;
-            console.warn('Network/fetch error with Key #' + (keyIndex + 1) + '. Trying next key...', e);
+        if (response.ok) {
+            return await response.json();
+        } else {
+            const errBody = await response.json().catch(() => ({}));
+            console.warn(`[AI Client] Server returned ${response.status}:`, errBody);
+            return null;
         }
+    } catch(err) {
+        console.warn('[AI Client] Network error calling Backend AI Gateway:', err.message);
+        return null;
     }
-    throw lastError || new Error('All configured Gemini API keys failed.');
 }
 
 // =========================================================
@@ -597,14 +654,8 @@ ${scenarioInstructions}
 
 
     loadSettings() {
-        this.apiKey = localStorage.getItem('amyo_gemini_api_key') || '';
         const savedPrompt = localStorage.getItem('amyo_gemini_system_prompt');
         if (savedPrompt) this.systemPrompt = savedPrompt;
-    }
-
-    saveApiKey(key) {
-        this.apiKey = key;
-        localStorage.setItem('amyo_gemini_api_key', key);
     }
 
     saveSystemPrompt(prompt) {
@@ -691,9 +742,7 @@ class MultiChatAgent {
         this.initChats();
     }
 
-    loadSettings() {
-        this.apiKey = localStorage.getItem('amyo_gemini_api_key') || '';
-    }
+    loadSettings() {}
 
     initChats() {
         if (this.scenarios && this.scenarios.length > 0) {
@@ -869,11 +918,22 @@ class MultiChatAgent {
 
         chat.history.push({
             role: 'user',
-            parts: [{ text: text.trim() }]
-        });
+        // 1. Try Secure Backend AI Gateway first
+        let replyText = null;
+        try {
+            const res = await callSecureBackendAI('/api/ai/chat', {
+                history: chat.history,
+                userText: text,
+                customerName: chat.customerName,
+                scenario: chat.originalScenario
+            });
+            if (res && res.reply) replyText = res.reply;
+        } catch(e) {}
 
-        await new Promise(r => setTimeout(r, 450));
-        const replyText = zainNLPBrain.generateCustomerReply(chatId, chat.history, text, chat.customerName, chat.originalScenario);
+        // 2. Fallback to Local NLP Brain if offline
+        if (!replyText) {
+            replyText = zainNLPBrain.generateCustomerReply(chatId, chat.history, text, chat.customerName, chat.originalScenario);
+        }
 
         chat.history.push({
             role: 'model',
@@ -1458,6 +1518,9 @@ ${transcript3}`;
         let chatId = 1;
         if (personaVal === '2') { customerName = 'علي'; chatId = 2; }
         else if (personaVal === '3') { customerName = 'خطاب عمر'; chatId = 3; }
+        else if (personaVal === 'krd_1') { customerName = 'دانا زەمەن (کوردی)'; chatId = 1; }
+        else if (personaVal === 'krd_2') { customerName = 'شاکار (کوردی)'; chatId = 2; }
+        else if (personaVal === 'krd_3') { customerName = 'کاروان (کوردی)'; chatId = 3; }
         else if (personaVal === 'sandbox') { customerName = 'محمد'; chatId = 1; }
 
         const reply = zainNLPBrain.generateCustomerReply(chatId, [], msg, customerName, null);

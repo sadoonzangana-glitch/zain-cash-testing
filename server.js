@@ -1,14 +1,75 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const xss = require('xss');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const dbStorage = require('./database');
 const { encryptData, decryptData, logSecurityEvent } = require('./crypto-security');
+const aiGateway = require('./ai-gateway');
+const compression = require('compression');
+
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+
+// 0. High-Performance Gzip/Deflate Response Compression
+app.use(compression({
+    level: 6,
+    threshold: 1024,
+    filter: (req, res) => {
+        if (req.headers['x-no-compression']) return false;
+        return compression.filter(req, res);
+    }
+}));
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+    }
+});
+
 const PORT = process.env.PORT || 8888;
-const dbPath = path.join(__dirname, 'db.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'ZainCash_Secure_JWT_Secret_Token_2026_Key';
+
+const DEFAULT_ADMIN_HASH = '$2a$10$o4FTwCioUmAuKx0JRs9w5.CsbhEg2ja5uHexlVxJektlWXLw3WqI6'; // Admin@2026
+const DEFAULT_AGENT_HASH = '$2a$10$lWmIfNcNohSWKG9FFIkv3.GT5yK8CPXh2vkSA77jyqeT3ptp7XcP.'; // Zain@2026
+
+// Real-Time WebSockets Engine for Call Signaling (<30ms Latency)
+io.on('connection', (socket) => {
+    let currentUserId = null;
+
+    socket.on('join_user_room', (userId) => {
+        if (!userId) return;
+        currentUserId = String(userId).trim().toUpperCase();
+        socket.join(`user_${currentUserId}`);
+        console.log(`[Socket.io] User ${currentUserId} connected and joined room user_${currentUserId}`);
+    });
+
+    socket.on('send_call_signal', (signalData) => {
+        if (!signalData || !signalData.toUserId) return;
+        const targetUserId = String(signalData.toUserId).trim().toUpperCase();
+        
+        // Save in DB for backup resilience
+        dbStorage.addCallSignal(signalData.toUserId, signalData);
+
+        // Instantly push signal to target user via WebSocket room
+        io.to(`user_${targetUserId}`).emit('incoming_call_signal', signalData);
+    });
+
+    socket.on('disconnect', () => {
+        if (currentUserId) {
+            console.log(`[Socket.io] User ${currentUserId} disconnected`);
+        }
+    });
+});
 
 // 1. OWASP Security Headers Middleware
 app.use((req, res, next) => {
@@ -48,37 +109,84 @@ app.use('/api/login', (req, res, next) => applyRateLimit(req, res, next, 15, 15 
 app.use('/api/send-invite', (req, res, next) => applyRateLimit(req, res, next, 30, 15 * 60 * 1000, 'Too many invitation requests. Please wait 15 minutes.'));
 app.use('/api/', (req, res, next) => applyRateLimit(req, res, next, 250, 15 * 60 * 1000, 'Rate limit exceeded. Please slow down.'));
 
-// 3. Recursive Input Sanitization & Anti-XSS Payload Filter
+// 3. Recursive Input Sanitization & Anti-XSS Payload Filter using xss library
+const xssOptions = {
+    whiteList: {
+        p: [], span: ['style', 'class'], strong: [], b: [], em: [], i: ['class'],
+        ul: [], ol: [], li: [], br: [], hr: [], h1: [], h2: [], h3: [], h4: [], h5: [], h6: [],
+        table: ['class'], thead: [], tbody: [], tr: [], th: ['style'], td: ['style'],
+        div: ['class', 'style'], small: []
+    },
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script', 'style', 'xml', 'iframe', 'object', 'embed']
+};
+
 function sanitizeValue(val, key = '') {
     if (typeof val === 'string') {
-        let clean = val
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-            .replace(/javascript:/gi, '')
-            .replace(/on\w+\s*=/gi, '');
-        if (key !== 'detailsHtml') {
-            clean = clean.replace(/<[^>]*>/g, '');
+        if (key === 'detailsHtml' || key === 'content' || key === 'htmlContent') {
+            return xss(val, xssOptions);
         }
-        return clean;
+        // Strict text sanitization for general fields
+        return xss(val, { whiteList: {}, stripIgnoreTag: true });
     }
     if (typeof val === 'object' && val !== null) {
-        for (let k in val) {
-            val[k] = sanitizeValue(val[k], k);
+        if (Array.isArray(val)) {
+            return val.map(item => sanitizeValue(item, key));
         }
+        const cleaned = {};
+        for (let k in val) {
+            if (Object.prototype.hasOwnProperty.call(val, k)) {
+                cleaned[k] = sanitizeValue(val[k], k);
+            }
+        }
+        return cleaned;
     }
     return val;
 }
 
-// 4. Server-Side Strict RBAC Authorization Middleware
-function requireAdminRole(req, res, next) {
-    const userRole = req.headers['x-user-role'];
-    const userId = req.headers['x-user-id'];
+// 4. Server-Side Strict JWT Authentication & RBAC Authorization Middleware
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
 
-    if (userRole !== 'Admin') {
-        logSecurityEvent('UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', userId, clientIp, { path: req.path });
-        return res.status(403).json({ error: 'Access denied: Admin role required.' });
+    if (!token) {
+        logSecurityEvent('UNAUTHENTICATED_ACCESS_ATTEMPT', 'anonymous', clientIp, { path: req.path });
+        return res.status(401).json({ error: 'Authentication required. Please log in.' });
     }
-    next();
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+            logSecurityEvent('INVALID_TOKEN_ATTEMPT', 'anonymous', clientIp, { path: req.path, error: err.message });
+            return res.status(403).json({ error: 'Invalid or expired session. Please log in again.' });
+        }
+        req.user = decoded;
+        next();
+    });
+}
+
+function requireAdminRole(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+
+    if (!token) {
+        logSecurityEvent('UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', 'anonymous', clientIp, { path: req.path, reason: 'missing_token' });
+        return res.status(401).json({ error: 'Authentication required. Please log in as Admin.' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) {
+            logSecurityEvent('INVALID_ADMIN_TOKEN_ATTEMPT', 'anonymous', clientIp, { path: req.path, error: err.message });
+            return res.status(403).json({ error: 'Invalid or expired session. Please log in again.' });
+        }
+        if (!decoded || decoded.role !== 'Admin') {
+            logSecurityEvent('UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', decoded ? decoded.id : 'unknown', clientIp, { path: req.path });
+            return res.status(403).json({ error: 'Access denied: Admin role required.' });
+        }
+        req.user = decoded;
+        next();
+    });
 }
 
 app.use(cors());
@@ -89,7 +197,21 @@ app.use('/api/', (req, res, next) => {
     }
     next();
 });
-app.use(express.static(__dirname));
+// Static assets with enterprise caching strategy
+app.use(express.static(__dirname, {
+    maxAge: '7d',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            // No-cache for HTML to ensure instant updates
+            res.setHeader('Cache-Control', 'no-cache');
+        } else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$/)) {
+            // Aggressive long-term caching for static assets
+            res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+        }
+    }
+}));
 
 const defaultUsers = [
     { id: "ZC000", name: "Amr Nasr", role: "Admin" },
@@ -186,130 +308,12 @@ const defaultAiScenarios = [
 const defaultSmtp = {
     brevoKey: process.env.BREVO_API_KEY || "",
     resendKey: process.env.RESEND_API_KEY || "",
-    server: "smtp.gmail.com",
-    port: 465,
-    enableSsl: true,
-    username: "zaincash.testexam@gmail.com",
-    password: "kqnh huof iekb sqcm"
+    server: process.env.SMTP_SERVER || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT, 10) || 465,
+    enableSsl: process.env.SMTP_SSL === 'false' ? false : true,
+    username: process.env.SMTP_USER || "zaincash.testexam@gmail.com",
+    password: process.env.SMTP_PASS || ""
 };
-
-async function readDb() {
-    try {
-        const raw = await fs.readFile(dbPath, 'utf8');
-        const clean = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
-        const db = JSON.parse(clean.trim());
-        db.aiScenarios = db.aiScenarios && db.aiScenarios.length > 0 ? db.aiScenarios : defaultAiScenarios;
-        db.knowledgeBase = db.knowledgeBase || defaultKb;
-        db.smtp = (db.smtp && db.smtp.username) ? db.smtp : defaultSmtp;
-        
-        // Self-heal/migration check: if assignments exist but meta is missing, set to current time
-        let migrated = false;
-        if (db.assignments && db.assignments.length > 0 && !db.assignmentsMeta) {
-            db.assignmentsMeta = { assignedAt: Date.now() };
-            migrated = true;
-        }
-        if (db.aiAssignments && db.aiAssignments.length > 0 && !db.aiAssignmentsMeta) {
-            db.aiAssignmentsMeta = { assignedAt: Date.now() };
-            migrated = true;
-        }
-        if (migrated) {
-            await fs.writeFile(dbPath, JSON.stringify(db, null, 4), 'utf8');
-        }
-        
-        return db;
-    } catch (e) {
-        const initial = {
-            users: defaultUsers,
-            assignments: [],
-            aiAssignments: [],
-            results: [],
-            scenarios: null,
-            aiScenarios: defaultAiScenarios,
-            knowledgeBase: defaultKb,
-            smtp: defaultSmtp,
-            aiResults: []
-        };
-        await fs.writeFile(dbPath, JSON.stringify(initial, null, 4), 'utf8');
-        return initial;
-    }
-}
-
-async function writeDb(db) {
-    await fs.writeFile(dbPath, JSON.stringify(db, null, 4), 'utf8');
-}
-
-app.post('/api/login', async (req, res) => {
-    const { username } = req.body;
-    if (!username || !username.trim()) return res.status(400).json({ error: "Username is required" });
-    
-    const inputClean = username.trim();
-    const inputUpper = inputClean.toUpperCase();
-    const db = await readDb();
-    
-    // Strict exact match by ID, Email, or Full Name
-    let user = (db.users || []).find(u => 
-        (u.id && u.id.toUpperCase() === inputUpper) || 
-        (u.email && u.email.toUpperCase() === inputUpper) ||
-        (u.name && u.name.toUpperCase() === inputUpper)
-    );
-
-    if (user) {
-        return res.json(user);
-    }
-
-    return res.status(401).json({ error: "ZC code or username not registered. Access denied." });
-});
-
-app.get('/api/users', async (req, res) => {
-    const db = await readDb();
-    res.json(db.users || []);
-});
-
-app.post('/api/users/update-email', async (req, res) => {
-    const { id, email } = req.body;
-    const db = await readDb();
-    const user = db.users.find(u => u.id === id);
-    if (user) {
-        user.email = email;
-        await writeDb(db);
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ error: "User not found" });
-    }
-});
-
-app.get('/api/smtp', async (req, res) => {
-    const db = await readDb();
-    const smtpObj = { ...(db.smtp || defaultSmtp) };
-    if (smtpObj.password) {
-        smtpObj.password = '••••••••••••';
-    }
-    res.json(smtpObj);
-});
-
-app.post('/api/smtp', async (req, res) => {
-    const db = await readDb();
-    db.smtp = req.body;
-    await writeDb(db);
-    res.json({ success: true });
-});
-
-app.get('/api/scenarios', async (req, res) => {
-    const db = await readDb();
-    res.json(db.scenarios);
-});
-
-app.post('/api/scenarios', requireAdminRole, async (req, res) => {
-    const db = await readDb();
-    db.scenarios = req.body;
-    await writeDb(db);
-    res.json({ success: true });
-});
-
-app.get('/api/ai-scenarios', async (req, res) => {
-    const db = await readDb();
-    res.json(db.aiScenarios || []);
-});
 
 const defaultCallScenarios = [
     {
@@ -374,303 +378,339 @@ const defaultCallScenarios = [
     }
 ];
 
+// Auto-migrate from db.json if database.sqlite is empty
+dbStorage.autoMigrateFromJson(defaultUsers, defaultKb, defaultAiScenarios, defaultSmtp, defaultCallScenarios);
+
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body || {};
+    if (!username || !username.trim()) {
+        return res.status(400).json({ error: "Username or employee code is required." });
+    }
+    
+    const inputClean = username.trim();
+    const user = dbStorage.findUser(inputClean);
+
+    if (!user) {
+        return res.status(401).json({ error: "ZC code or username not registered. Access denied." });
+    }
+
+    if (!password || typeof password !== 'string' || !password.trim()) {
+        return res.status(400).json({ error: "Password is required." });
+    }
+
+    const targetHash = user.passwordHash || (user.role === 'Admin' ? DEFAULT_ADMIN_HASH : DEFAULT_AGENT_HASH);
+    const isPasswordValid = bcrypt.compareSync(password.trim(), targetHash);
+
+    if (!isPasswordValid) {
+        const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+        logSecurityEvent('FAILED_LOGIN_PASSWORD', user.id, clientIp);
+        return res.status(401).json({ error: "Invalid password. Access denied." });
+    }
+
+    const tokenPayload = {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email || ''
+    };
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '8h' });
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    logSecurityEvent('SUCCESSFUL_LOGIN', user.id, clientIp);
+
+    return res.json({
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email || '',
+        token: token
+    });
+});
+
+app.get('/api/users', async (req, res) => {
+    res.json(dbStorage.getUsers(true));
+});
+
+app.post('/api/users/update-email', authenticateToken, async (req, res) => {
+    const { id, email } = req.body;
+    if (req.user.role !== 'Admin' && req.user.id !== id) {
+        return res.status(403).json({ error: "Access denied. Cannot update another user's email." });
+    }
+    const user = dbStorage.getUserById(id);
+    if (user) {
+        dbStorage.updateUserEmail(id, email);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: "User not found" });
+    }
+});
+
+app.get('/api/smtp', requireAdminRole, async (req, res) => {
+    const smtpObj = { ...(dbStorage.getConfig('smtp', defaultSmtp)) };
+    if (smtpObj.password) {
+        smtpObj.password = '••••••••••••';
+    }
+    res.json(smtpObj);
+});
+
+app.post('/api/smtp', requireAdminRole, async (req, res) => {
+    dbStorage.setConfig('smtp', req.body);
+    res.json({ success: true });
+});
+
+app.get('/api/scenarios', async (req, res) => {
+    res.json(dbStorage.getConfig('scenarios', null));
+});
+
+app.post('/api/scenarios', requireAdminRole, async (req, res) => {
+    dbStorage.setConfig('scenarios', req.body);
+    res.json({ success: true });
+});
+
+app.get('/api/ai-scenarios', async (req, res) => {
+    res.json(dbStorage.getConfig('aiScenarios', defaultAiScenarios));
+});
+
+
+
 app.get('/api/call-scenarios', async (req, res) => {
-    const db = await readDb();
-    res.json(db.callScenarios || defaultCallScenarios);
+    res.json(dbStorage.getConfig('callScenarios', defaultCallScenarios));
 });
 
 app.post('/api/call-scenarios', requireAdminRole, async (req, res) => {
-    const db = await readDb();
-    db.callScenarios = req.body;
-    await writeDb(db);
+    dbStorage.setConfig('callScenarios', req.body);
     res.json({ success: true });
 });
 
 app.get('/api/kb', async (req, res) => {
-    const db = await readDb();
-    res.json(db.knowledgeBase || defaultKb);
+    const { query, category, page, limit } = req.query || {};
+    if (query !== undefined || category !== undefined || page !== undefined || limit !== undefined) {
+        res.json(dbStorage.queryKnowledgeBase({ query, category, page, limit }));
+    } else {
+        res.json(dbStorage.getConfig('knowledgeBase', defaultKb));
+    }
 });
 
 app.post('/api/kb', requireAdminRole, async (req, res) => {
-    const db = await readDb();
-    db.knowledgeBase = req.body;
-    await writeDb(db);
+    dbStorage.setConfig('knowledgeBase', req.body);
     res.json({ success: true });
 });
 
 app.get('/api/slides', async (req, res) => {
-    const db = await readDb();
-    res.json(db.slides);
+    res.json(dbStorage.getConfig('slides', null));
 });
 
 app.post('/api/slides', requireAdminRole, async (req, res) => {
-    const db = await readDb();
-    db.slides = req.body;
-    await writeDb(db);
+    dbStorage.setConfig('slides', req.body);
     res.json({ success: true });
 });
 
 app.get('/api/assignments', async (req, res) => {
-    const db = await readDb();
-    res.json(db.assignments || []);
+    res.json(dbStorage.getAssignments('simulator'));
 });
 
 app.post('/api/assignments', requireAdminRole, async (req, res) => {
-    const db = await readDb();
-    db.assignments = req.body;
-    db.assignmentsMeta = {
-        assignedAt: Date.now()
-    };
-    
-    // Clear old test sessions for newly assigned users to allow fresh start
-    db.testSessions = db.testSessions || {};
+    dbStorage.setAssignments('simulator', req.body || [], Date.now());
     const targetUserIds = req.body || [];
     if (targetUserIds.includes('all')) {
-        // Clear all simulator sessions
-        Object.keys(db.testSessions).forEach(key => {
-            if (key.endsWith('_simulator')) {
-                delete db.testSessions[key];
-            }
-        });
+        dbStorage.clearSessionsByType('simulator');
     } else {
-        targetUserIds.forEach(uId => {
-            const key = `${uId}_simulator`;
-            if (db.testSessions[key]) {
-                delete db.testSessions[key];
-            }
-        });
+        targetUserIds.forEach(uId => dbStorage.deleteTestSession(`${uId}_simulator`));
     }
-    
-    await writeDb(db);
     res.json({ success: true });
 });
 
 app.get('/api/ai-assignments', async (req, res) => {
-    const db = await readDb();
-    res.json(db.aiAssignments || []);
+    res.json(dbStorage.getAssignments('ai-agent'));
 });
 
 app.post('/api/ai-assignments', requireAdminRole, async (req, res) => {
-    const db = await readDb();
-    db.aiAssignments = req.body;
-    db.aiAssignmentsMeta = {
-        assignedAt: Date.now()
-    };
-    
-    // Clear old test sessions for newly assigned users to allow fresh start
-    db.testSessions = db.testSessions || {};
+    dbStorage.setAssignments('ai-agent', req.body || [], Date.now());
     const targetUserIds = req.body || [];
     if (targetUserIds.includes('all')) {
-        // Clear all ai-agent sessions
-        Object.keys(db.testSessions).forEach(key => {
-            if (key.endsWith('_ai-agent')) {
-                delete db.testSessions[key];
-            }
-        });
+        dbStorage.clearSessionsByType('ai-agent');
     } else {
-        targetUserIds.forEach(uId => {
-            const key = `${uId}_ai-agent`;
-            if (db.testSessions[key]) {
-                delete db.testSessions[key];
-            }
-        });
+        targetUserIds.forEach(uId => dbStorage.deleteTestSession(`${uId}_ai-agent`));
     }
-    
-    await writeDb(db);
     res.json({ success: true });
 });
 
-// Voice Call Assignments API
 app.get('/api/call-assignments', async (req, res) => {
-    const db = await readDb();
-    res.json(db.callAssignments || []);
+    res.json(dbStorage.getAssignments('call-simulator'));
 });
 
 app.post('/api/call-assignments', requireAdminRole, async (req, res) => {
-    const db = await readDb();
-    db.callAssignments = req.body;
-    db.callAssignmentsMeta = {
-        assignedAt: Date.now()
-    };
-    db.testSessions = db.testSessions || {};
+    dbStorage.setAssignments('call-simulator', req.body || [], Date.now());
     const targetUserIds = req.body || [];
     if (targetUserIds.includes('all')) {
-        Object.keys(db.testSessions).forEach(key => {
-            if (key.endsWith('_call-simulator')) delete db.testSessions[key];
-        });
+        dbStorage.clearSessionsByType('call-simulator');
     } else {
-        targetUserIds.forEach(uId => {
-            const key = `${uId}_call-simulator`;
-            if (db.testSessions[key]) delete db.testSessions[key];
-        });
+        targetUserIds.forEach(uId => dbStorage.deleteTestSession(`${uId}_call-simulator`));
     }
-    await writeDb(db);
     res.json({ success: true });
 });
 
-// Live Voice Call Signaling (WebRTC Signaling Queue)
+// Live Voice Call Signaling (WebRTC Signaling Queue + Real-Time WebSocket Push)
 app.post('/api/call-signal', async (req, res) => {
-    const db = await readDb();
-    db.callSignals = db.callSignals || {};
-    const { toUserId, fromUserId, fromUserName, type, sdp, candidate, campaign, phone } = req.body;
+    const { toUserId } = req.body;
     if (!toUserId) return res.status(400).json({ error: 'toUserId required' });
-    
-    if (!Array.isArray(db.callSignals[toUserId])) {
-        db.callSignals[toUserId] = [];
-    }
-    
-    db.callSignals[toUserId].push({
-        toUserId,
-        fromUserId,
-        fromUserName,
-        type,
-        sdp,
-        candidate,
-        campaign,
-        phone,
-        timestamp: Date.now()
-    });
-    
-    await writeDb(db);
+    dbStorage.addCallSignal(toUserId, req.body);
+    const targetUserId = String(toUserId).trim().toUpperCase();
+    io.to(`user_${targetUserId}`).emit('incoming_call_signal', req.body);
     res.json({ success: true });
 });
 
 app.get('/api/call-signal', async (req, res) => {
-    const db = await readDb();
     const userId = req.query.userId;
-    if (!userId || !db.callSignals || !db.callSignals[userId]) {
-        return res.json({ signals: [], signal: null });
-    }
-    
-    let rawSignals = db.callSignals[userId];
-    let signalsArray = Array.isArray(rawSignals) ? rawSignals : [rawSignals];
-    
-    const now = Date.now();
-    signalsArray = signalsArray.filter(s => s && (now - s.timestamp <= 30000));
-    
-    delete db.callSignals[userId];
-    await writeDb(db);
-    
+    if (!userId) return res.json({ signals: [], signal: null });
+    const signals = dbStorage.getAndConsumeCallSignals(userId);
     res.json({
-        signals: signalsArray,
-        signal: signalsArray.length > 0 ? signalsArray[0] : null
+        signals: signals,
+        signal: signals.length > 0 ? signals[0] : null
     });
 });
 
 app.delete('/api/call-signal', async (req, res) => {
-    const db = await readDb();
     const userId = req.query.userId;
-    if (userId && db.callSignals && db.callSignals[userId]) {
-        delete db.callSignals[userId];
-        await writeDb(db);
-    }
+    if (userId) dbStorage.deleteCallSignalsByUserId(userId);
     res.json({ success: true });
 });
 
-app.get('/api/assignments/meta', async (req, res) => {
-    const db = await readDb();
+// Secure Backend AI Gateway Endpoints with Guardrails & Score Enforcing
+app.post('/api/ai/chat', authenticateToken, async (req, res) => {
+    const { history, userText, customerName, scenario } = req.body || {};
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    
+    if (!userText || typeof userText !== 'string') {
+        return res.status(400).json({ error: 'userText is required' });
+    }
+
+    const response = await aiGateway.generateChatTurn({
+        history,
+        userText,
+        customerName,
+        scenario,
+        userId: req.user ? req.user.id : 'unknown',
+        clientIp
+    });
+
+    res.json(response);
+});
+
+app.post('/api/ai/evaluate', authenticateToken, async (req, res) => {
+    const { userText, scenario, rubric } = req.body || {};
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+
+    if (!userText || typeof userText !== 'string') {
+        return res.status(400).json({ error: 'userText is required' });
+    }
+
+    const evaluation = await aiGateway.evaluateTraineeResponse({
+        userText,
+        scenario,
+        rubric,
+        userId: req.user ? req.user.id : 'unknown',
+        clientIp
+    });
+
+    res.json(evaluation);
+});
+
+app.post('/api/ai/test', requireAdminRole, async (req, res) => {
+    const { userText, personaId } = req.body || {};
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+
+    const evaluation = await aiGateway.evaluateTraineeResponse({
+        userText: userText || '',
+        scenario: { id: personaId },
+        userId: req.user.id,
+        clientIp
+    });
+
+    const chatResponse = await aiGateway.generateChatTurn({
+        userText: userText || '',
+        customerName: 'تجربة الفحص',
+        userId: req.user.id,
+        clientIp
+    });
+
     res.json({
-        assignmentsMeta: db.assignmentsMeta || { assignedAt: 0 },
-        aiAssignmentsMeta: db.aiAssignmentsMeta || { assignedAt: 0 },
-        callAssignmentsMeta: db.callAssignmentsMeta || { assignedAt: 0 }
+        evaluation,
+        customerReply: chatResponse.reply
     });
 });
 
+app.get('/api/assignments/meta', async (req, res) => {
+    res.json(dbStorage.getAssignmentsMeta());
+});
+
 app.get('/api/results', async (req, res) => {
-    const db = await readDb();
-    res.json(db.results || []);
+    res.json(dbStorage.getResults());
 });
 
 app.post('/api/results', async (req, res) => {
-    const db = await readDb();
     const newResult = req.body;
     if (!newResult.date) {
         newResult.date = new Date().toISOString().replace('T', ' ').substring(0, 19);
     }
-    db.results = db.results || [];
-    db.results.push(newResult);
-
+    dbStorage.addResult(newResult);
     if (newResult.userId) {
-        db.testSessions = db.testSessions || {};
-        const key = `${newResult.userId}_simulator`;
-        db.testSessions[key] = db.testSessions[key] || { userId: newResult.userId, testType: 'simulator', startTime: Date.now() };
-        db.testSessions[key].completed = true;
-        db.testSessions[key].completedAt = newResult.date;
+        dbStorage.saveTestSession({
+            userId: newResult.userId,
+            testType: 'simulator',
+            startTime: Date.now(),
+            completed: true,
+            completedAt: newResult.date
+        });
     }
-
-    await writeDb(db);
     res.json({ success: true });
 });
 
 app.get('/api/ai-results', async (req, res) => {
-    const db = await readDb();
-    res.json(db.aiResults || []);
+    res.json(dbStorage.getAiResults());
 });
 
 app.post('/api/ai-results', async (req, res) => {
-    const db = await readDb();
     const newResult = req.body;
     if (!newResult.date) {
         newResult.date = new Date().toISOString().replace('T', ' ').substring(0, 19);
     }
-    db.aiResults = db.aiResults || [];
-    db.aiResults.push(newResult);
-
+    dbStorage.addAiResult(newResult);
     if (newResult.userId) {
-        db.testSessions = db.testSessions || {};
-        const key = `${newResult.userId}_ai-agent`;
-        db.testSessions[key] = db.testSessions[key] || { userId: newResult.userId, testType: 'ai-agent', startTime: Date.now() };
-        db.testSessions[key].completed = true;
-        db.testSessions[key].completedAt = newResult.date;
+        dbStorage.saveTestSession({
+            userId: newResult.userId,
+            testType: 'ai-agent',
+            startTime: Date.now(),
+            completed: true,
+            completedAt: newResult.date
+        });
     }
-
-    await writeDb(db);
     res.json({ success: true });
 });
 
-app.delete('/api/results', async (req, res) => {
+app.delete('/api/results', requireAdminRole, async (req, res) => {
     const { userId, date } = req.body;
-    const db = await readDb();
-    db.results = (db.results || []).filter(r => !(r.userId === userId && r.date === date));
-    
-    db.testSessions = db.testSessions || {};
-    const key = `${userId}_simulator`;
-    if (db.testSessions[key]) {
-        delete db.testSessions[key];
-    }
-    
-    await writeDb(db);
+    dbStorage.deleteResult(userId, date);
+    dbStorage.deleteTestSession(`${userId}_simulator`);
     res.json({ success: true });
 });
 
-app.delete('/api/ai-results', async (req, res) => {
+app.delete('/api/ai-results', requireAdminRole, async (req, res) => {
     const { userId, date } = req.body;
-    const db = await readDb();
-    db.aiResults = (db.aiResults || []).filter(r => !(r.userId === userId && r.date === date));
-    
-    db.testSessions = db.testSessions || {};
-    const key = `${userId}_ai-agent`;
-    if (db.testSessions[key]) {
-        delete db.testSessions[key];
-    }
-    
-    await writeDb(db);
+    dbStorage.deleteAiResult(userId, date);
+    dbStorage.deleteTestSession(`${userId}_ai-agent`);
     res.json({ success: true });
 });
 
 // Test Session Timers and Expiration Locking Endpoints
 app.get('/api/test-sessions', async (req, res) => {
-    const db = await readDb();
-    res.json(db.testSessions || {});
+    res.json(dbStorage.getAllTestSessions());
 });
 
 app.get('/api/test-session', async (req, res) => {
     const userId = req.query.userId;
     const testType = req.query.testType || 'simulator';
-    const db = await readDb();
-    db.testSessions = db.testSessions || {};
     const key = `${userId}_${testType}`;
-    const session = db.testSessions[key];
+    const session = dbStorage.getTestSession(key);
 
     if (!session) {
         return res.json({ status: 'not_started' });
@@ -683,7 +723,7 @@ app.get('/api/test-session', async (req, res) => {
     if (elapsed >= duration) {
         session.completed = true;
         session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
-        await writeDb(db);
+        dbStorage.saveTestSession(session);
         return res.json({ status: 'expired', duration, completedAt: session.completedAt });
     }
     const remainingSeconds = Math.max(0, Math.floor((duration - elapsed) / 1000));
@@ -697,13 +737,11 @@ app.get('/api/test-session', async (req, res) => {
 
 app.post('/api/test-session/start', async (req, res) => {
     const { userId, testType } = req.body;
-    const db = await readDb();
-    db.testSessions = db.testSessions || {};
     const tType = testType || 'simulator';
     const key = `${userId}_${tType}`;
     const duration = 3600000; // 60 minutes (1 hour)
 
-    let session = db.testSessions[key];
+    let session = dbStorage.getTestSession(key);
     if (!session) {
         session = {
             userId,
@@ -713,8 +751,7 @@ app.post('/api/test-session/start', async (req, res) => {
             completed: false,
             completedAt: null
         };
-        db.testSessions[key] = session;
-        await writeDb(db);
+        dbStorage.saveTestSession(session);
     } else if (session.completed) {
         return res.json({ status: 'completed', completedAt: session.completedAt });
     } else {
@@ -722,7 +759,7 @@ app.post('/api/test-session/start', async (req, res) => {
         if (elapsed >= duration) {
             session.completed = true;
             session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
-            await writeDb(db);
+            dbStorage.saveTestSession(session);
             return res.json({ status: 'expired', completedAt: session.completedAt });
         }
     }
@@ -739,40 +776,28 @@ app.post('/api/test-session/start', async (req, res) => {
 
 app.post('/api/test-session/complete', async (req, res) => {
     const { userId, testType } = req.body;
-    const db = await readDb();
-    db.testSessions = db.testSessions || {};
     const key = `${userId}_${testType || 'simulator'}`;
-
-    let session = db.testSessions[key] || { userId, testType: testType || 'simulator', startTime: Date.now() };
+    let session = dbStorage.getTestSession(key) || { userId, testType: testType || 'simulator', startTime: Date.now() };
     session.completed = true;
     session.completedAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    db.testSessions[key] = session;
-    await writeDb(db);
+    dbStorage.saveTestSession(session);
     res.json({ success: true, status: 'completed' });
 });
 
-app.post('/api/send-invite', async (req, res) => {
+app.post('/api/send-invite', requireAdminRole, async (req, res) => {
     const { userId, email, testType } = req.body;
-    const db = await readDb();
-    
-    const user = db.users.find(u => u.id === userId);
+    const user = dbStorage.getUserById(userId);
     const employeeName = user ? user.name : "Employee";
-    if (user) {
-        user.email = email;
+    if (user && email) {
+        dbStorage.updateUserEmail(userId, email);
     }
 
-    if (testType === 'ai-agent') {
-        db.aiAssignments = db.aiAssignments || [];
-        if (!db.aiAssignments.includes(userId)) {
-            db.aiAssignments.push(userId);
-        }
-    } else {
-        db.assignments = db.assignments || [];
-        if (!db.assignments.includes(userId)) {
-            db.assignments.push(userId);
-        }
+    const targetType = testType === 'ai-agent' ? 'ai-agent' : 'simulator';
+    const targetAssignments = dbStorage.getAssignments(targetType);
+    if (!targetAssignments.includes(userId)) {
+        targetAssignments.push(userId);
+        dbStorage.setAssignments(targetType, targetAssignments);
     }
-    await writeDb(db);
     
     const hostHeader = req.get('host') || 'localhost:8888';
     const protocol = req.protocol || 'http';
@@ -785,7 +810,7 @@ app.post('/api/send-invite', async (req, res) => {
     const activeTestDesc = testType === 'ai-agent' ? "تقييم الأيجنت الذكي المباشر (AI Agent Coach)" : "محاكي دردشة خدمة العملاء (Chat Simulator)";
     const subjectLine = `📋 تنبيه: يوجد اختبار تدريبي جديد مستحق لك في منصة زين كاش!`;
     
-    const smtpSettings = db.smtp || defaultSmtp;
+    const smtpSettings = dbStorage.getConfig('smtp', defaultSmtp);
     
     const htmlEmailTemplate = `
 <!DOCTYPE html>
@@ -993,7 +1018,11 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running successfully on port ${PORT}!`);
-    console.log(`Access locally: http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    server.listen(PORT, () => {
+        console.log(`Server is running successfully on port ${PORT}!`);
+        console.log(`Access locally: http://localhost:${PORT}`);
+    });
+}
+
+module.exports = { app, server, io };

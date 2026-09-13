@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 const https = require('https');
 
-const BLOB_URL = 'https://extendsclass.com/api/json-storage/bin/cdfabaa';
+const BLOB_URL = process.env.BLOB_URL || '';
 
 // Load static assets directly from committed repository files
 const defaultKb = require('../../kb-data.js');
@@ -240,11 +240,11 @@ const defaultAiScenarios = [
 const defaultSmtp = {
     brevoKey: process.env.BREVO_API_KEY || "",
     resendKey: process.env.RESEND_API_KEY || "",
-    server: "smtp.gmail.com",
-    port: 465,
-    enableSsl: true,
-    username: "zaincash.testexam@gmail.com",
-    password: "kqnh huof iekb sqcm"
+    server: process.env.SMTP_SERVER || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT, 10) || 465,
+    enableSsl: process.env.SMTP_SSL === 'false' ? false : true,
+    username: process.env.SMTP_USER || "zaincash.testexam@gmail.com",
+    password: process.env.SMTP_PASS || ""
 };
 
 async function getDb() {

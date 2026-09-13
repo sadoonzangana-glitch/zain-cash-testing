@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for professional icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DOMPurify for enterprise-grade XSS Sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css?v=3.4">
 </head>
@@ -1754,10 +1756,17 @@
                                 </p>
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
                                     <select id="ai-test-persona-select" class="ai-settings-input" style="flex: 1; min-width: 220px; font-family: var(--font-ar);">
-                                        <option value="1">رهيف زمان (Rahif Zaman - تأخير استرجاع مبالغ البطاقة)</option>
-                                        <option value="2">علي (Ali - بطاقة Google Play والخصم)</option>
-                                        <option value="3">خطاب عمر (Khatab Omar - فشل شحن المحفظة من البطاقة المصرفية)</option>
-                                        <option value="sandbox">محاكي التدريب الفردي (Single AI Sandbox Coach)</option>
+                                        <optgroup label="العربية (اللهجة العراقية)">
+                                            <option value="1">رهيف زمان (Rahif Zaman - تأخير استرجاع مبالغ البطاقة)</option>
+                                            <option value="2">علي (Ali - بطاقة Google Play والخصم)</option>
+                                            <option value="3">خطاب عمر (Khatab Omar - فشل شحن المحفظة من البطاقة المصرفية)</option>
+                                            <option value="sandbox">محاكي التدريب الفردي (Single AI Sandbox Coach)</option>
+                                        </optgroup>
+                                        <optgroup label="کوردی (Kurdish Sorani)">
+                                            <option value="krd_1">دانا زەمەن (Dana Zaman - کێشەی گێڕانەوەی پارە / Refund)</option>
+                                            <option value="krd_2">شاکار (Shakar - کارتی گووگڵ پلەی و کۆد)</option>
+                                            <option value="krd_3">کاروان (Karwan - کێشەی بارگاوی کردنی والێت لە بانکەوە)</option>
+                                        </optgroup>
                                     </select>
                                 </div>
                                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -1993,16 +2002,26 @@
                 </div>
                 <form id="login-form">
                     <div class="form-group">
-                        <label for="login-username" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:8px; display:block;">Employee ZC Code</label>
+                        <label for="login-username" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:8px; display:block;">Employee ZC Code / Username</label>
                         <div class="input-with-icon">
                             <i class="fa-solid fa-id-badge"></i>
-                            <input type="text" id="login-username" required placeholder="e.g. ZC700" autocomplete="username">
+                            <input type="text" id="login-username" required placeholder="e.g. ZC700 or Amr Nasr" autocomplete="username">
                         </div>
                     </div>
-                    <div class="error-msg hidden" id="login-error-msg">
-                        <i class="fa-solid fa-circle-exclamation"></i> Invalid ZC code. Please check and try again.
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label for="login-password" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:8px; display:block;">Password</label>
+                        <div class="input-with-icon" style="position: relative;">
+                            <i class="fa-solid fa-lock"></i>
+                            <input type="password" id="login-password" required placeholder="Enter password" autocomplete="current-password" style="padding-right: 40px;">
+                            <button type="button" id="toggle-login-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer;" title="Toggle Password Visibility">
+                                <i class="fa-solid fa-eye" id="toggle-pwd-icon"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-login" id="login-submit-btn">
+                    <div class="error-msg hidden" id="login-error-msg" style="margin-top: 12px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> Invalid credentials. Please check and try again.
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-login" id="login-submit-btn" style="margin-top: 14px;">
                         <span>Login</span>
                         <i class="fa-solid fa-right-to-bracket"></i>
                     </button>
@@ -2171,6 +2190,7 @@
     </div>
 
     <!-- Script Resources -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
     <script src="slides.js?v=5.4"></script>
     <script src="scenarios.js?v=5.4"></script>

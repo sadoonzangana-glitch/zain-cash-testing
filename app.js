@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Automatic Cache-Busting for Ameyo Telephony & Voice Call Simulator
-    const STOCKS_DISP_VERSION = 'v34_zain_ai_control_center';
+    const STOCKS_DISP_VERSION = 'v35_zain_kurdish_nlp_support';
     if (localStorage.getItem('zain_app_data_version') !== STOCKS_DISP_VERSION) {
         localStorage.removeItem('zain_cash_scenarios');
         localStorage.removeItem('zain_cash_slides');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('zain_cash_ai_scenarios');
         localStorage.removeItem('amyo_gemini_system_prompt');
         localStorage.setItem('zain_app_data_version', STOCKS_DISP_VERSION);
-        console.log("Purged legacy localStorage cache for Zain AI Control Center update!");
+        console.log("Purged legacy localStorage cache for Kurdish NLP support update!");
     }
 
     // Global Dispositions Catalog
@@ -162,27 +162,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         try {
             let roleHeader = 'Guest';
-            let idHeader = 'Anonymous';
-            if (currentUser && currentUser.role) {
-                roleHeader = currentUser.role;
-                idHeader = currentUser.id;
-            } else {
+            let token = sessionStorage.getItem('zain_cash_token');
+            if (!token && currentUser && currentUser.token) {
+                token = currentUser.token;
+            } else if (!token) {
                 try {
                     const stored = JSON.parse(sessionStorage.getItem('zain_cash_user') || '{}');
-                    if (stored.role) {
-                        roleHeader = stored.role;
-                        idHeader = stored.id;
-                    }
+                    if (stored.token) token = stored.token;
                 } catch(e) {}
+            }
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
             }
 
             const options = {
                 method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-Role': roleHeader,
-                    'X-User-Id': idHeader
-                }
+                headers
             };
             if (data) {
                 options.body = JSON.stringify(data);
@@ -205,8 +204,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.apiCall = apiCall;
 
+    function sanitizeHtml(html, options = {}) {
+        if (typeof html !== 'string') return html;
+        if (typeof window.DOMPurify !== 'undefined') {
+            return window.DOMPurify.sanitize(html, options);
+        }
+        return escapeHtml(html);
+    }
+    window.sanitizeHtml = sanitizeHtml;
+
     function escapeHtml(str) {
         if (typeof str !== 'string') return str;
+        if (typeof window.DOMPurify !== 'undefined') {
+            return window.DOMPurify.sanitize(str, { ALLOWED_TAGS: [] });
+        }
         return str
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -421,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     port: 465,
                     enableSsl: true,
                     username: "zaincash.testexam@gmail.com",
-                    password: "kqnh huof iekb sqcm"
+                    password: ""
                 });
             }
             if (method === 'POST') {
@@ -3169,6 +3180,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginScreen = document.getElementById('login-screen');
     const loginForm = document.getElementById('login-form');
     const loginUsernameInput = document.getElementById('login-username');
+    const loginPasswordInput = document.getElementById('login-password');
+    const toggleLoginPasswordBtn = document.getElementById('toggle-login-password');
     const loginErrorMsg = document.getElementById('login-error-msg');
     
     const headerUserProfile = document.getElementById('header-user-profile');
@@ -3183,38 +3196,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let isTestSessionActive = false;
     window.isTestSessionActive = false;
     
-    async function checkUserSession() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const autoLoginZC = urlParams.get('login');
-        
-        if (autoLoginZC) {
-            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
-            
-            try {
-                const user = await apiCall('/api/login', 'POST', { username: autoLoginZC });
-                sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
-                currentUser = user;
-                await onUserLoggedIn();
-                return;
-            } catch (err) {
-                console.error("Auto-login failed:", err);
-                sessionStorage.removeItem('zain_cash_user');
+    if (toggleLoginPasswordBtn && loginPasswordInput) {
+        toggleLoginPasswordBtn.addEventListener('click', () => {
+            const currentType = loginPasswordInput.getAttribute('type');
+            const newType = currentType === 'password' ? 'text' : 'password';
+            loginPasswordInput.setAttribute('type', newType);
+            const icon = document.getElementById('toggle-pwd-icon');
+            if (icon) {
+                icon.className = newType === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
             }
-        }
+        });
+    }
 
+    async function checkUserSession() {
         const storedUserStr = sessionStorage.getItem('zain_cash_user');
-        if (storedUserStr) {
+        const storedToken = sessionStorage.getItem('zain_cash_token');
+        if (storedUserStr && storedToken) {
             try {
                 const parsed = JSON.parse(storedUserStr);
-                const user = await apiCall('/api/login', 'POST', { username: parsed.id || parsed.name });
-                sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
-                currentUser = user;
+                parsed.token = storedToken;
+                currentUser = parsed;
                 await onUserLoggedIn();
                 return;
             } catch(e) {
                 console.warn("Invalid user session cleared:", e);
                 sessionStorage.removeItem('zain_cash_user');
+                sessionStorage.removeItem('zain_cash_token');
                 currentUser = null;
             }
         }
@@ -3227,22 +3234,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const doLogin = async () => {
         let username = '';
+        let password = '';
         if (loginUsernameInput) username = loginUsernameInput.value.trim();
+        if (loginPasswordInput) password = loginPasswordInput.value.trim();
+
         if (!username) {
             if (loginErrorMsg) {
-                loginErrorMsg.textContent = 'Please enter your ZC employee code.';
+                loginErrorMsg.textContent = 'Please enter your ZC employee code or username.';
                 loginErrorMsg.classList.remove('hidden');
             }
+            if (loginUsernameInput) loginUsernameInput.focus();
+            return;
+        }
+
+        if (!password) {
+            if (loginErrorMsg) {
+                loginErrorMsg.textContent = 'Please enter your password.';
+                loginErrorMsg.classList.remove('hidden');
+            }
+            if (loginPasswordInput) loginPasswordInput.focus();
             return;
         }
 
         const submitBtn = document.getElementById('login-submit-btn');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.querySelector('span').textContent = 'Checking...'; }
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.querySelector('span').textContent = 'Authenticating...'; }
         if (loginErrorMsg) loginErrorMsg.classList.add('hidden');
 
         try {
-            const user = await apiCall('/api/login', 'POST', { username: username });
+            const user = await apiCall('/api/login', 'POST', { username, password });
             sessionStorage.setItem('zain_cash_user', JSON.stringify(user));
+            if (user.token) {
+                sessionStorage.setItem('zain_cash_token', user.token);
+            }
             currentUser = user;
 
             if (loginScreen) {
@@ -3257,10 +3280,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             if (loginErrorMsg) {
-                loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Invalid ZC code. Please check and try again.';
+                loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${escapeHtml(err.message || 'Invalid credentials. Please check and try again.')}`;
                 loginErrorMsg.classList.remove('hidden');
             }
-            if (loginUsernameInput) { loginUsernameInput.value = ''; loginUsernameInput.focus(); }
+            if (loginPasswordInput) { loginPasswordInput.value = ''; loginPasswordInput.focus(); }
         } finally {
             if (submitBtn) { submitBtn.disabled = false; submitBtn.querySelector('span').textContent = 'Login'; }
         }
@@ -3278,6 +3301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             sessionStorage.removeItem('zain_cash_user');
+            sessionStorage.removeItem('zain_cash_token');
             currentUser = null;
             window.location.reload();
         });
@@ -4725,7 +4749,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (portEl)   portEl.value   = (settings && settings.port)      || 465;
             if (sslEl)    sslEl.value    = (settings && settings.enableSsl !== false) ? 'true' : 'false';
             if (userEl)   userEl.value   = (settings && settings.username)  || 'zaincash.testexam@gmail.com';
-            if (passEl)   passEl.value   = (settings && settings.password)  || 'kqnh huof iekb sqcm';
+            if (passEl)   passEl.value   = (settings && settings.password)  || '';
         } catch (err) {
             console.error("Failed to load SMTP settings:", err);
         }
@@ -6821,7 +6845,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    let appSocket = null;
     let callSignalPollInterval = null;
+
+    function sendCallSignal(signalData) {
+        if (appSocket && appSocket.connected) {
+            appSocket.emit('send_call_signal', signalData);
+        }
+        apiCall('/api/call-signal', 'POST', signalData).catch(() => {});
+    }
+
+    function handleIncomingCallSignal(sig) {
+        if (!sig) return;
+        if (sig.type === 'call_offer' && currentCallState === 'idle') {
+            pendingOfferSdp = sig.sdp;
+            const liveIncoming = {
+                id: 'live-admin-incoming',
+                type: sig.campaign === 'Zain Cash' ? 'inbound' : 'outbound',
+                customerName: sig.customerName || `${sig.fromUserName || 'مشرف التدريب'} (Admin)`,
+                customerPhone: sig.phone || '07723065187',
+                campaign: sig.campaign || 'Zain Cash',
+                queue: 'Live_Training_Call',
+                heading: sig.heading || `📞 مكالمة تدريبية مباشرة واردة من المشرف: ${sig.fromUserName}`,
+                voiceText: sig.voiceText || `مرحباً، أنا المشرف وأقوم بإجراء اتصال تدريبي مباشر معك.`,
+                balance: sig.balance || '350,000 د.ع',
+                walletType: sig.walletType || 'دائمية موثقة (Full KYC)',
+                status: 'نشطة (Active)',
+                isLiveCall: true,
+                fromUserId: sig.fromUserId,
+                correctDisp: sig.correctDisp || 'Inquiry',
+                correctSubDisp: sig.correctSubDisp || 'Application Usage'
+            };
+
+            triggerIncomingCall(liveIncoming);
+        } else if (sig.type === 'call_answered') {
+            showToast("🟢 تم الرد وبدء المحادثة الصوتية المباشرة!", "success");
+        } else if (sig.type === 'disposition_submitted') {
+            handleLiveDispositionReceived(sig);
+        } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
+            stopLocalAudioStream();
+            if (currentCallState === 'ringing') {
+                stopRingtone();
+                switchAmeyoPhoneView('idle');
+            } else {
+                endActiveCall();
+            }
+        }
+    }
 
     window.initAmeyoCallSimulator = async function() {
         const user = currentUser || window.currentUser || JSON.parse(sessionStorage.getItem('zain_cash_user') || localStorage.getItem('zain_cash_user') || '{}');
@@ -7076,8 +7146,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const expectedDisp = (activeCallScenario && activeCallScenario.correctDisp) || 'Inquiry';
                         const expectedSubDisp = (activeCallScenario && activeCallScenario.correctSubDisp) || 'Application Usage';
 
-                        // Send Call Offer Signal to target employee (triggers UI Ringing)
-                        await apiCall('/api/call-signal', 'POST', {
+                        // Send Call Offer Signal to target employee (triggers UI Ringing via WebSocket + HTTP)
+                        sendCallSignal({
                             toUserId: targetEmpId,
                             fromUserId: user.id,
                             fromUserName: user.name || 'المشرف (Admin)',
@@ -7091,7 +7161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             balance: (activeCallScenario && activeCallScenario.balance) || '350,000 د.ع',
                             walletType: (activeCallScenario && activeCallScenario.walletType) || 'دائمية موثقة (Full KYC)',
                             customerName: (activeCallScenario && activeCallScenario.customerName) || 'Ahmad Muhammad'
-                        }).catch(console.error);
+                        });
 
                         const liveSc = {
                             id: 'live-admin-call',
@@ -7161,11 +7231,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         isCallAnswerPending = true;
                     }
 
-                    await apiCall('/api/call-signal', 'POST', {
+                    sendCallSignal({
                         toUserId: activeCallScenario.fromUserId,
                         fromUserId: user.id,
                         type: 'call_answered'
-                    }).catch(console.error);
+                    });
                 }
                 connectActiveCall();
             };
@@ -7173,11 +7243,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnReject) {
             btnReject.onclick = async () => {
                 if (activeCallScenario && activeCallScenario.isLiveCall && activeCallScenario.fromUserId) {
-                    await apiCall('/api/call-signal', 'POST', {
+                    sendCallSignal({
                         toUserId: activeCallScenario.fromUserId,
                         fromUserId: user.id,
                         type: 'call_ended'
-                    }).catch(console.error);
+                    });
                 }
                 stopLocalAudioStream();
                 stopRingtone();
@@ -7248,11 +7318,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (activeCallScenario && activeCallScenario.isLiveCall) {
                     const targetId = activeCallScenario.targetUserId || activeCallScenario.fromUserId;
                     if (targetId) {
-                        await apiCall('/api/call-signal', 'POST', {
+                        sendCallSignal({
                             toUserId: targetId,
                             fromUserId: user.id,
                             type: 'call_ended'
-                        }).catch(console.error);
+                        });
                     }
                 }
                 endActiveCall();
@@ -7286,14 +7356,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (activeCallScenario && activeCallScenario.isLiveCall) {
                     const toUserId = activeCallScenario.fromUserId || activeCallScenario.targetUserId;
                     if (toUserId) {
-                        await apiCall('/api/call-signal', 'POST', {
+                        sendCallSignal({
                             toUserId: toUserId,
                             fromUserId: user.id,
                             type: 'disposition_submitted',
                             mainDisp: mainVal,
                             subDisp: subVal,
                             agentName: user.name || 'الموظف'
-                        }).catch(console.warn);
+                        });
                     }
                 }
 
@@ -7368,52 +7438,28 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Live Call Background Signaling Polling
-        if (user.id) {
-            if (callSignalPollInterval) clearInterval(callSignalPollInterval);
-            callSignalPollInterval = setInterval(async () => {
-                try {
-                    const res = await apiCall(`/api/call-signal?userId=${user.id}`, 'GET');
-                    const signals = (res && res.signals && Array.isArray(res.signals)) ? res.signals : (res && res.signal ? [res.signal] : []);
-                    for (const sig of signals) {
-                        if (!sig) continue;
-                        if (sig.type === 'call_offer' && currentCallState === 'idle') {
-                            pendingOfferSdp = sig.sdp;
-                            const liveIncoming = {
-                                id: 'live-admin-incoming',
-                                type: sig.campaign === 'Zain Cash' ? 'inbound' : 'outbound',
-                                customerName: sig.customerName || `${sig.fromUserName || 'مشرف التدريب'} (Admin)`,
-                                customerPhone: sig.phone || '07723065187',
-                                campaign: sig.campaign || 'Zain Cash',
-                                queue: 'Live_Training_Call',
-                                heading: sig.heading || `📞 مكالمة تدريبية مباشرة واردة من المشرف: ${sig.fromUserName}`,
-                                voiceText: sig.voiceText || `مرحباً، أنا المشرف وأقوم بإجراء اتصال تدريبي مباشر معك.`,
-                                balance: sig.balance || '350,000 د.ع',
-                                walletType: sig.walletType || 'دائمية موثقة (Full KYC)',
-                                status: 'نشطة (Active)',
-                                isLiveCall: true,
-                                fromUserId: sig.fromUserId,
-                                correctDisp: sig.correctDisp || 'Inquiry',
-                                correctSubDisp: sig.correctSubDisp || 'Application Usage'
-                            };
+        // Initialize WebSockets (Socket.io) Real-Time Connection
+        if (typeof io !== 'undefined' && user && (user.id || user.code)) {
+            const activeUid = String(user.id || user.code || '').trim().toUpperCase();
+            if (!appSocket) {
+                appSocket = io({
+                    reconnection: true,
+                    reconnectionAttempts: Infinity,
+                    reconnectionDelay: 1000
+                });
 
-                            triggerIncomingCall(liveIncoming);
-                        } else if (sig.type === 'call_answered') {
-                            showToast("🟢 تم الرد وبدء المحادثة الصوتية المباشرة!", "success");
-                        } else if (sig.type === 'disposition_submitted') {
-                            handleLiveDispositionReceived(sig);
-                        } else if (sig.type === 'call_ended' && (currentCallState === 'active' || currentCallState === 'ringing')) {
-                            stopLocalAudioStream();
-                            if (currentCallState === 'ringing') {
-                                stopRingtone();
-                                switchAmeyoPhoneView('idle');
-                            } else {
-                                endActiveCall();
-                            }
-                        }
-                    }
-                } catch (e) {}
-            }, 1200);
+                appSocket.on('connect', () => {
+                    console.log("⚡ [Socket.io] Connected to server, joining room for user:", activeUid);
+                    appSocket.emit('join_user_room', activeUid);
+                });
+
+                appSocket.on('incoming_call_signal', (sig) => {
+                    console.log("⚡ [Socket.io] Received real-time signal:", sig);
+                    handleIncomingCallSignal(sig);
+                });
+            } else if (appSocket.connected) {
+                appSocket.emit('join_user_room', activeUid);
+            }
         }
     };
 

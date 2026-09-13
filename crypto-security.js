@@ -3,7 +3,17 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const ALGORITHM = 'aes-256-gcm';
-const SECRET_KEY = process.env.ENCRYPTION_SECRET || crypto.createHash('sha256').update('ZainCash_Enterprise_Security_Secret_Key_2026').digest();
+function getSecretKey() {
+    const rawSecret = process.env.ENCRYPTION_SECRET;
+    if (rawSecret && typeof rawSecret === 'string' && rawSecret.trim().length > 0) {
+        return crypto.createHash('sha256').update(rawSecret.trim()).digest();
+    }
+    // Fallback: Generate an ephemeral 32-byte key in memory if not provided
+    if (!global.__ephemeralEncryptionKey) {
+        global.__ephemeralEncryptionKey = crypto.randomBytes(32);
+    }
+    return global.__ephemeralEncryptionKey;
+}
 const AUDIT_LOG_PATH = path.join(__dirname, 'audit_log.json');
 
 /**
@@ -12,7 +22,7 @@ const AUDIT_LOG_PATH = path.join(__dirname, 'audit_log.json');
 function encryptData(text) {
     if (!text || typeof text !== 'string') return text;
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(ALGORITHM, SECRET_KEY, iv);
+    const cipher = crypto.createCipheriv(ALGORITHM, getSecretKey(), iv);
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag().toString('hex');
@@ -34,7 +44,7 @@ function decryptData(encryptedObj) {
     try {
         const decipher = crypto.createDecipheriv(
             ALGORITHM,
-            SECRET_KEY,
+            getSecretKey(),
             Buffer.from(encryptedObj.iv, 'hex')
         );
         decipher.setAuthTag(Buffer.from(encryptedObj.authTag, 'hex'));
