@@ -3815,6 +3815,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 stopResultsPolling();
                 renderAdminSlidesList();
                 selectSlide(null);
+            } else if (targetTab === 'tab-ai-settings') {
+                stopResultsPolling();
+                if (typeof window.loadAISettingsIntoAdminForm === 'function') {
+                    window.loadAISettingsIntoAdminForm();
+                }
+            } else if (targetTab === 'tab-admin-kb') {
+                stopResultsPolling();
+                if (typeof renderAdminKbList === 'function') {
+                    renderAdminKbList();
+                }
             }
         });
     });
@@ -5165,9 +5175,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBtn = document.getElementById('kb-ai-chat-btn');
     const chatPanel = document.getElementById('kb-ai-chat-panel');
     const closeBtn = document.getElementById('kb-ai-close-btn');
+    const clearBtn = document.getElementById('kb-ai-clear-btn');
     const sendBtn = document.getElementById('kb-ai-send-btn');
     const chatInput = document.getElementById('kb-ai-chat-input');
     const chatBody = document.getElementById('kb-ai-chat-body');
+    const quickChipsContainer = document.getElementById('kb-ai-quick-chips');
 
     if (chatBtn && chatPanel) {
         chatBtn.addEventListener('click', () => {
@@ -5181,6 +5193,66 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeBtn && chatPanel) {
         closeBtn.addEventListener('click', () => {
             chatPanel.classList.add('hidden');
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            kbAiHistory = [];
+            if (chatBody) {
+                chatBody.innerHTML = `
+                    <div class="chat-msg ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.6; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                        <p style="margin: 0;">تم بدء محادثة جديدة! تفضل عيني، اسألني عن أي معاملة أو خدمة بزين كاش وراح أجاوبك فوراً.</p>
+                    </div>
+                `;
+            }
+            if (chatInput) chatInput.focus();
+        });
+    }
+
+    if (quickChipsContainer) {
+        quickChipsContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.ai-chip-btn');
+            if (btn && chatInput) {
+                const query = btn.getAttribute('data-query');
+                if (query) {
+                    chatInput.value = query;
+                    handleKbAiChat();
+                }
+            }
+        });
+    }
+
+    // Typewriter streaming effect for lifelike natural pacing
+    function typewriterStream(element, fullText, speed = 12) {
+        return new Promise((resolve) => {
+            let i = 0;
+            element.innerHTML = '';
+            const cursorSpan = document.createElement('span');
+            cursorSpan.className = 'ai-typewriter-cursor';
+            element.appendChild(cursorSpan);
+
+            // Break by words or characters
+            const words = fullText.split(' ');
+            let wordIndex = 0;
+
+            function streamWord() {
+                if (wordIndex < words.length) {
+                    const currentWords = words.slice(0, wordIndex + 1).join(' ');
+                    element.innerHTML = currentWords.replace(/\n/g, '<br>');
+                    element.appendChild(cursorSpan);
+                    if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+                    wordIndex++;
+                    setTimeout(streamWord, speed + Math.floor(Math.random() * 8));
+                } else {
+                    cursorSpan.remove();
+                    element.innerHTML = fullText.replace(/\n/g, '<br>');
+                    if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+                    resolve();
+                }
+            }
+
+            streamWord();
         });
     }
 
@@ -5310,8 +5382,8 @@ ${stepsText}
         typingDiv.className = 'chat-msg';
         typingDiv.style.alignSelf = 'flex-start';
         typingDiv.innerHTML = `
-            <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #64748b; border-top-right-radius: 0;">
-                <p style="margin:0;"><i class="fa-solid fa-spinner fa-spin"></i> جاري البحث في دليل المعرفة...</p>
+            <div class="ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.5; color: #64748b; border-top-right-radius: 2px;">
+                <p style="margin:0;"><i class="fa-solid fa-spinner fa-spin"></i> جاري استشارة الذكاء الاصطناعي والبحث في دليل المعرفة...</p>
             </div>
         `;
         chatBody.appendChild(typingDiv);
@@ -5319,13 +5391,26 @@ ${stepsText}
 
         let reply = '';
         try {
-            if (typeof window.askKnowledgeBaseAI === 'function') {
+            // 1. Try server-side intelligent RAG endpoint first
+            if (window.apiCall) {
+                const res = await window.apiCall('/api/ai/chat', 'POST', {
+                    message: msg,
+                    history: kbAiHistory.slice(-8)
+                });
+                if (res && res.reply) {
+                    reply = res.reply;
+                }
+            }
+
+            // 2. Client-side askKnowledgeBaseAI
+            if (!reply && typeof window.askKnowledgeBaseAI === 'function') {
                 reply = await window.askKnowledgeBaseAI(msg, kbAiHistory, kbArticles || window.EMBEDDED_KB_DATA || []);
             }
         } catch(e) {
-            console.log("askKnowledgeBaseAI threw error, using direct NLP engine:", e.message);
+            console.log("AI Chat fallback to local NLP engine:", e.message);
         }
 
+        // 3. Fallback to Local Knowledge Base Search
         if (!reply || !reply.trim() || reply.includes('⚠️ عذراً عيني، واجهت مشكلة')) {
             reply = fallbackSearchKb(msg, kbArticles || window.EMBEDDED_KB_DATA || []);
         }
@@ -5336,12 +5421,17 @@ ${stepsText}
         aiMsgDiv.className = 'chat-msg';
         aiMsgDiv.style.alignSelf = 'flex-start';
         aiMsgDiv.innerHTML = `
-            <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #1e293b; border-top-right-radius: 0;">
-                <p style="margin:0; white-space: pre-line;">${reply}</p>
+            <div class="ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; font-size: 0.84rem; line-height: 1.65; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                <p class="ai-reply-text" style="margin:0; white-space: pre-line;"></p>
             </div>
         `;
         chatBody.appendChild(aiMsgDiv);
         chatBody.scrollTop = chatBody.scrollHeight;
+
+        const replyP = aiMsgDiv.querySelector('.ai-reply-text');
+        if (replyP) {
+            await typewriterStream(replyP, reply, 8);
+        }
 
         kbAiHistory.push({ role: 'user', text: msg });
         kbAiHistory.push({ role: 'model', text: reply });

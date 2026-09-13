@@ -918,6 +918,9 @@ class MultiChatAgent {
 
         chat.history.push({
             role: 'user',
+            parts: [{ text: text }]
+        });
+
         // 1. Try Secure Backend AI Gateway first
         let replyText = null;
         try {
@@ -1169,6 +1172,37 @@ ${transcript3}`;
         bindClick('btn-reset-ai-prompt', handleResetPrompt);
         bindClick('btn-clear-ai-sessions', handleClearSessions);
         bindClick('btn-run-nlp-test', handleRunNLPTest);
+        bindClick('btn-test-ai-key', handleTestAIKey);
+        bindClick('btn-toggle-key-visibility', handleToggleKeyVisibility);
+        bindClick('btn-run-kb-test', handleRunKBTest);
+
+        const tempSlider = document.getElementById('admin-ai-temp-slider');
+        const tempVal = document.getElementById('admin-ai-temp-val');
+        if (tempSlider && tempVal) {
+            tempSlider.addEventListener('input', () => {
+                const v = parseFloat(tempSlider.value);
+                let label = `${v.toFixed(1)} `;
+                if (v <= 0.2) label += '(صارم وإجرائي دقيق)';
+                else if (v <= 0.6) label += '(متوازن ومرن)';
+                else label += '(إبداعي وتعبيري)';
+                tempVal.textContent = label;
+            });
+        }
+
+        const modelSelect = document.getElementById('admin-gemini-model-select');
+        const activeModelLabel = document.getElementById('ai-active-model-label');
+        if (modelSelect && activeModelLabel) {
+            modelSelect.addEventListener('change', () => {
+                activeModelLabel.textContent = modelSelect.options[modelSelect.selectedIndex]?.text.split(' ')[1] || modelSelect.value;
+            });
+        }
+
+        const kbTestInput = document.getElementById('ai-test-kb-input');
+        if (kbTestInput) {
+            kbTestInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleRunKBTest();
+            });
+        }
 
         const testInput = document.getElementById('ai-test-input-msg');
         if (testInput) {
@@ -1481,105 +1515,262 @@ ${transcript3}`;
     // ─────────────────────────────────────────────
     // Admin Settings Manager
     // ─────────────────────────────────────────────
-    function loadAISettingsIntoAdminForm() {
+    async function loadAISettingsIntoAdminForm() {
         const promptTextarea = document.getElementById('ai-settings-system-prompt');
         if (promptTextarea) {
             promptTextarea.value = localStorage.getItem('amyo_gemini_system_prompt') || DEFAULT_AI_SYSTEM_PROMPT;
         }
+
+        const keyInput = document.getElementById('admin-gemini-key-input');
+        const modelSelect = document.getElementById('admin-gemini-model-select');
+        const modeSelect = document.getElementById('admin-gemini-mode-select');
+        const tempSlider = document.getElementById('admin-ai-temp-slider');
+        const tempVal = document.getElementById('admin-ai-temp-val');
+        const statusBadge = document.getElementById('ai-engine-status-badge');
+        const activeModelLabel = document.getElementById('ai-active-model-label');
+
+        // Fetch config from server
+        if (window.apiCall) {
+            try {
+                const config = await window.apiCall('/api/ai/config', 'GET');
+                if (config) {
+                    if (keyInput && config.hasKey) {
+                        keyInput.placeholder = `المفتاح محفوظ (${config.maskedKey})`;
+                    }
+                    if (modelSelect && config.model) {
+                        modelSelect.value = config.model;
+                        if (activeModelLabel) activeModelLabel.textContent = config.model;
+                    }
+                    if (modeSelect && config.mode) {
+                        modeSelect.value = config.mode;
+                    }
+                    if (tempSlider && typeof config.temperature === 'number') {
+                        tempSlider.value = config.temperature;
+                        if (tempVal) tempVal.textContent = `${config.temperature} (درجة الدقة)`;
+                    }
+                    if (promptTextarea && config.systemPrompt) {
+                        promptTextarea.value = config.systemPrompt;
+                    }
+                    if (statusBadge) {
+                        if (config.hasKey || config.mode === 'local') {
+                            statusBadge.style.background = '#10b981';
+                            statusBadge.innerHTML = '<span style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block;"></span> متصل وجاهز';
+                        } else {
+                            statusBadge.style.background = '#f59e0b';
+                            statusBadge.innerHTML = '<span style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block;"></span> بحاجة لضبط المفتاح';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("Could not load AI config from server:", err);
+            }
+        }
         loadAISessionsTable();
     }
 
-    function handleSaveAISettings() {
+    async function handleSaveAISettings() {
+        const keyInput = document.getElementById('admin-gemini-key-input');
+        const modelSelect = document.getElementById('admin-gemini-model-select');
+        const modeSelect = document.getElementById('admin-gemini-mode-select');
+        const tempSlider = document.getElementById('admin-ai-temp-slider');
         const promptTextarea = document.getElementById('ai-settings-system-prompt');
-        if (promptTextarea && promptTextarea.value.trim()) {
-            agent.saveSystemPrompt(promptTextarea.value.trim());
-            showAIToast('✅ تم حفظ قواعد وتوجيهات الذكاء الاصطناعي بنجاح!', 'success');
+        const statusBadge = document.getElementById('ai-engine-status-badge');
+
+        const apiKey = keyInput ? keyInput.value.trim() : '';
+        const model = modelSelect ? modelSelect.value : 'gemini-2.0-flash';
+        const mode = modeSelect ? modeSelect.value : 'cloud';
+        const temperature = tempSlider ? parseFloat(tempSlider.value) : 0.3;
+        const systemPrompt = promptTextarea ? promptTextarea.value.trim() : '';
+
+        if (apiKey && !apiKey.includes('••••')) {
+            localStorage.setItem('amyo_gemini_api_key', apiKey);
+            localStorage.setItem('gemini_api_key', apiKey);
+        }
+        if (systemPrompt) {
+            localStorage.setItem('amyo_gemini_system_prompt', systemPrompt);
+        }
+
+        const payload = {
+            apiKey: apiKey || undefined,
+            model,
+            mode,
+            temperature,
+            systemPrompt
+        };
+
+        if (window.apiCall) {
+            try {
+                await window.apiCall('/api/ai/config', 'POST', payload);
+                showAIToast('✅ تم حفظ وتفعيل إعدادات الذكاء الاصطناعي بنجاح في النظام!', 'success');
+                if (keyInput && apiKey) {
+                    keyInput.value = '';
+                    keyInput.placeholder = `المفتاح محفوظ (${apiKey.substring(0,4)}••••)`;
+                }
+                if (statusBadge) {
+                    statusBadge.style.background = '#10b981';
+                    statusBadge.innerHTML = '<span style="width: 6px; height: 6px; background: #fff; border-radius: 50%; display: inline-block;"></span> متصل وجاهز';
+                }
+            } catch (err) {
+                showAIToast('⚠️ فشل حفظ الإعدادات على الخادم: ' + err.message, 'error');
+            }
         } else {
-            showAIToast('يرجى كتابة التوجيهات والقواعد قبل الحفظ.', 'info');
+            showAIToast('✅ تم حفظ الإعدادات محلياً بنجاح!', 'success');
         }
     }
 
-    function handleRunNLPTest() {
-        const inputEl = document.getElementById('ai-test-input-msg');
-        const selectEl = document.getElementById('ai-test-persona-select');
-        const outputBox = document.getElementById('ai-test-output-box');
-        const replyEl = document.getElementById('ai-test-customer-reply');
-        const badgesEl = document.getElementById('ai-test-criteria-badges');
+    async function handleTestAIKey() {
+        const keyInput = document.getElementById('admin-gemini-key-input');
+        const modelSelect = document.getElementById('admin-gemini-model-select');
+        const resultBanner = document.getElementById('ai-test-key-result-banner');
+        const latencyLabel = document.getElementById('ai-active-latency-label');
+        const testBtn = document.getElementById('btn-test-ai-key');
+
+        const apiKey = keyInput ? keyInput.value.trim() : '';
+        const model = modelSelect ? modelSelect.value : 'gemini-2.0-flash';
+
+        if (testBtn) {
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري فحص الاتصال...';
+        }
+
+        if (resultBanner) {
+            resultBanner.className = '';
+            resultBanner.classList.remove('hidden');
+            resultBanner.style.background = '#f8fafc';
+            resultBanner.style.border = '1px solid #cbd5e1';
+            resultBanner.style.color = '#475569';
+            resultBanner.innerHTML = '⚡ جاري إرسال طلب اختبار مباشر لخوادم Google Gemini...';
+        }
+
+        try {
+            let resData = null;
+            if (window.apiCall) {
+                resData = await window.apiCall('/api/ai/test-key', 'POST', { apiKey, model });
+            } else {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                const t0 = Date.now();
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
+                });
+                const j = await res.json();
+                if (res.ok) {
+                    resData = { success: true, latency: Date.now() - t0, model };
+                } else {
+                    resData = { success: false, error: j.error?.message || 'فشل الاتصال' };
+                }
+            }
+
+            if (resData && resData.success) {
+                if (resultBanner) {
+                    resultBanner.className = 'success';
+                    resultBanner.innerHTML = `
+                        <div style="font-weight: 800; color: #166534; margin-bottom: 4px;">
+                            <i class="fa-solid fa-circle-check"></i> الاتصال ناجح ومستقر مع Google Gemini!
+                        </div>
+                        <div style="font-size: 0.85rem; color: #15803d;">
+                            النموذج: <strong>${resData.model || model}</strong> | زمن الاستجابة: <strong>⚡ ${resData.latency}ms</strong> | حالة المفتاح: <strong>صالح ونشط</strong>
+                        </div>
+                    `;
+                }
+                if (latencyLabel) {
+                    latencyLabel.textContent = `⚡ ${resData.latency}ms`;
+                }
+                showAIToast(`✅ اتصال ناجح بمحرك Gemini في ${resData.latency}ms`, 'success');
+            } else {
+                throw new Error(resData?.error || 'فشل التحقق من المفتاح');
+            }
+        } catch (err) {
+            if (resultBanner) {
+                resultBanner.className = 'error';
+                resultBanner.innerHTML = `
+                    <div style="font-weight: 800; color: #991b1b; margin-bottom: 4px;">
+                        <i class="fa-solid fa-circle-xmark"></i> فشل الاتصال بخوادم Gemini API
+                    </div>
+                    <div style="font-size: 0.85rem; color: #b91c1c;">
+                        السبب: ${err.message || 'المفتاح غير صالح أو الحساب مقيد'}. يرجى التحقق من المفتاح في Google AI Studio.
+                    </div>
+                `;
+            }
+            showAIToast('❌ خطأ في اختبار مفتاح Gemini: ' + err.message, 'error');
+        } finally {
+            if (testBtn) {
+                testBtn.disabled = false;
+                testBtn.innerHTML = '<i class="fa-solid fa-bolt" style="color: #ff9900;"></i> <span>فحص الاتصال الفوري (Test Connection)</span>';
+            }
+        }
+    }
+
+    async function handleRunKBTest() {
+        const inputEl = document.getElementById('ai-test-kb-input');
+        const outputBox = document.getElementById('ai-test-kb-output');
+        const replyEl = document.getElementById('ai-test-kb-reply');
+        const metricsEl = document.getElementById('ai-test-kb-metrics');
+        const runBtn = document.getElementById('btn-run-kb-test');
 
         if (!inputEl || !inputEl.value.trim()) {
-            showAIToast('يرجى كتابة رسالة تجريبية أولاً', 'error');
+            showAIToast('يرجى كتابة سؤال بالعامية العراقية للتجربة', 'info');
             return;
         }
 
         const msg = inputEl.value.trim();
-        const personaVal = selectEl ? selectEl.value : '1';
+        if (runBtn) {
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التوليد...';
+        }
 
-        let customerName = 'رهيف زمان';
-        let chatId = 1;
-        if (personaVal === '2') { customerName = 'علي'; chatId = 2; }
-        else if (personaVal === '3') { customerName = 'خطاب عمر'; chatId = 3; }
-        else if (personaVal === 'krd_1') { customerName = 'دانا زەمەن (کوردی)'; chatId = 1; }
-        else if (personaVal === 'krd_2') { customerName = 'شاکار (کوردی)'; chatId = 2; }
-        else if (personaVal === 'krd_3') { customerName = 'کاروان (کوردی)'; chatId = 3; }
-        else if (personaVal === 'sandbox') { customerName = 'محمد'; chatId = 1; }
-
-        const reply = zainNLPBrain.generateCustomerReply(chatId, [], msg, customerName, null);
-        const analysis = zainNLPBrain.analyzeResponse(msg, customerName, '');
-        const isGibberish = zainNLPBrain.isGibberish(msg);
-
-        if (replyEl) replyEl.textContent = reply;
         if (outputBox) outputBox.classList.remove('hidden');
+        if (replyEl) replyEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري استشارة محرك الذكاء والبحث في دليل المعرفة...';
+        if (metricsEl) metricsEl.textContent = 'جاري المعالجة...';
 
-        if (badgesEl) {
-            badgesEl.innerHTML = `
-                <span class="disp-badge ${analysis.hasGreeting ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
-                    ${analysis.hasGreeting ? '✅ ترحيب رسمي' : '❌ بدون ترحيب'}
-                </span>
-                <span class="disp-badge ${analysis.hasCustomerName ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
-                    ${analysis.hasCustomerName ? '✅ ذكر اسم الزبون (' + customerName + ')' : '❌ لم يذكر اسم الزبون'}
-                </span>
-                <span class="disp-badge ${analysis.hasPoliteTone ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
-                    ${analysis.hasPoliteTone ? '✅ لهجة عراقية ولباقة' : '⚠️ لهجة جافة'}
-                </span>
-                <span class="disp-badge ${(analysis.asksWalletNumber || analysis.givesExplanation) ? 'disp-badge-inquiry' : 'disp-badge-request'}" style="font-size:0.8rem; padding:4px 10px;">
-                    ${(analysis.asksWalletNumber || analysis.givesExplanation) ? '✅ تحقق وإجراء مهني' : '⚠️ لم يطلب بيانات'}
-                </span>
-                <span class="disp-badge ${isGibberish ? 'disp-badge-complaint' : 'disp-badge-inquiry'}" style="font-size:0.8rem; padding:4px 10px;">
-                    ${isGibberish ? '🚨 تم كشف نصوص عشوائية / شخابيط' : '✅ نص مفهوم'}
-                </span>
-            `;
-        }
-    }
+        try {
+            const t0 = Date.now();
+            let data = null;
+            if (window.apiCall) {
+                data = await window.apiCall('/api/ai/chat', 'POST', { message: msg, history: [] });
+            } else if (typeof window.askKnowledgeBaseAI === 'function') {
+                const rep = await window.askKnowledgeBaseAI(msg, [], window.kbArticles || []);
+                data = { reply: rep, modelUsed: 'Gemini 2.0 Flash', latency: Date.now() - t0, sources: [] };
+            }
 
-    function handleResetPrompt() {
-        const promptTextarea = document.getElementById('ai-settings-system-prompt');
-        if (promptTextarea) {
-            promptTextarea.value = DEFAULT_AI_SYSTEM_PROMPT;
-            showAIToast('Default System Prompt restored', 'info');
-        }
-    }
-
-    function handleClearSessions() {
-        if (confirm('Are you sure you want to delete all AI Agent sessions? This cannot be undone.')) {
-            localStorage.removeItem('amyo_ai_sessions');
-            loadAISessionsTable();
-            showAIToast('All sessions cleared successfully', 'success');
+            const dt = Date.now() - t0;
+            if (replyEl) replyEl.textContent = data?.reply || 'لم يتم استلام رد.';
+            if (metricsEl) {
+                metricsEl.textContent = `${data?.engine || data?.modelUsed || 'AI Engine'} | ⚡ ${data?.latency || dt}ms | 📚 ${data?.sources?.length ? data.sources.join(', ') : 'دليل المعرفة'}`;
+            }
+        } catch (err) {
+            if (replyEl) replyEl.textContent = '⚠️ تعذر الحصول على رد: ' + err.message;
+            if (metricsEl) metricsEl.textContent = 'خطأ في الاستجابة';
+        } finally {
+            if (runBtn) {
+                runBtn.disabled = false;
+                runBtn.innerHTML = '<i class="fa-solid fa-paper-plane" style="transform: rotate(180deg);"></i> <span>تجربة الإجابة</span>';
+            }
         }
     }
 
     function handleToggleKeyVisibility() {
-        const keyInput = document.getElementById('ai-settings-api-key');
-        const toggleBtn = document.getElementById('btn-toggle-api-key');
-        if (!keyInput || !toggleBtn) return;
+        const keyInput = document.getElementById('admin-gemini-key-input');
+        const eyeIcon = document.getElementById('icon-toggle-key-eye');
+        if (!keyInput) return;
 
         if (keyInput.type === 'password') {
             keyInput.type = 'text';
-            toggleBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+            if (eyeIcon) {
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            }
         } else {
             keyInput.type = 'password';
-            toggleBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+            if (eyeIcon) {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
         }
     }
+
+    window.loadAISettingsIntoAdminForm = loadAISettingsIntoAdminForm;
 
     // ─────────────────────────────────────────────
     // Table Log Render

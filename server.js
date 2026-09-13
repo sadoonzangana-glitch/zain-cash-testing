@@ -482,28 +482,250 @@ app.get('/api/ai-scenarios', async (req, res) => {
 
 app.get('/api/ai/config', async (req, res) => {
     const key = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || '');
-    res.json({ hasKey: !!key, maskedKey: key ? key.substring(0, 6) + '...' : '' });
+    const model = dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
+    const temperature = dbStorage.getConfig('geminiTemp', 0.3);
+    const mode = dbStorage.getConfig('geminiMode', 'cloud'); // 'cloud' or 'local'
+    const prompt = dbStorage.getConfig('geminiPrompt', '');
+    res.json({
+        hasKey: !!key,
+        maskedKey: key ? (key.length > 8 ? key.substring(0, 4) + '••••••••' + key.substring(key.length - 4) : '••••••••') : '',
+        model: model || 'gemini-2.0-flash',
+        temperature: typeof temperature === 'number' ? temperature : 0.3,
+        mode: mode || 'cloud',
+        systemPrompt: prompt || ''
+    });
 });
 
 app.post('/api/ai/config', requireAdminRole, async (req, res) => {
-    const { apiKey } = req.body || {};
-    if (typeof apiKey === 'string') {
+    const { apiKey, model, temperature, mode, systemPrompt } = req.body || {};
+    if (typeof apiKey === 'string' && apiKey.trim() && !apiKey.includes('••••')) {
         dbStorage.setConfig('geminiApiKey', apiKey.trim());
     }
-    res.json({ success: true });
+    if (typeof model === 'string' && model.trim()) {
+        dbStorage.setConfig('geminiModel', model.trim());
+    }
+    if (typeof temperature === 'number') {
+        dbStorage.setConfig('geminiTemp', temperature);
+    }
+    if (typeof mode === 'string') {
+        dbStorage.setConfig('geminiMode', mode);
+    }
+    if (typeof systemPrompt === 'string') {
+        dbStorage.setConfig('geminiPrompt', systemPrompt);
+    }
+    res.json({ success: true, message: "AI configuration saved successfully" });
+});
+
+app.post('/api/ai/test-key', requireAdminRole, async (req, res) => {
+    let { apiKey, model } = req.body || {};
+    if (!apiKey || apiKey.includes('••••')) {
+        apiKey = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || '');
+    }
+    if (!apiKey || !apiKey.trim()) {
+        return res.status(400).json({ success: false, error: 'لم يتم توفير أو حفظ مفتاح Gemini API' });
+    }
+
+    const targetModel = model || dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
+    const startTime = Date.now();
+
+    try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+        const testPayload = {
+            contents: [{ parts: [{ text: "اختبار الاتصال السريع: أجب بكلمة 'متصل' فقط." }] }],
+            generationConfig: { maxOutputTokens: 10, temperature: 0.1 }
+        };
+
+        const resp = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(testPayload)
+        });
+
+        const latency = Date.now() - startTime;
+        const data = await resp.json();
+
+        if (resp.ok && data.candidates && data.candidates.length > 0) {
+            const replyText = data.candidates[0]?.content?.parts?.[0]?.text || 'متصل';
+            return res.json({
+                success: true,
+                latency,
+                model: targetModel,
+                reply: replyText.trim(),
+                message: `الاتصال ناجح بمحرك Google Gemini (${targetModel}) في زمن استجابة ${latency}ms`
+            });
+        } else {
+            const errorMsg = data.error?.message || `HTTP ${resp.status}: فشل التحقق من المفتاح`;
+            return res.status(400).json({
+                success: false,
+                latency,
+                error: errorMsg
+            });
+        }
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            latency: Date.now() - startTime,
+            error: 'تعذر الاتصال بخوادم Google Gemini: ' + err.message
+        });
+    }
+});
+
+app.post('/api/ai/chat', async (req, res) => {
+    const { message, history, model, temperature } = req.body || {};
+    if (!message || !message.trim()) {
+        return res.status(400).json({ error: "Message is required" });
+    }
+
+    const apiKey = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || req.headers['x-gemini-key'] || '');
+    const activeModel = model || dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
+    const temp = typeof temperature === 'number' ? temperature : dbStorage.getConfig('geminiTemp', 0.3);
+    const mode = dbStorage.getConfig('geminiMode', 'cloud');
+
+    // Retrieve Knowledge Base articles from SQLite/Memory
+    const kbArticles = dbStorage.getConfig('knowledgeBase', defaultKb) || defaultKb;
+    
+    // RAG: Find relevant articles based on keyword matching
+    const qLower = message.toLowerCase().trim();
+    const scoredArticles = (kbArticles || []).map(art => {
+        const title = (art.title || '').toLowerCase();
+        const cat = (art.category || '').toLowerCase();
+        const kw = (art.keywords || '').toLowerCase();
+        const content = (art.content || '').replace(/<[^>]+>/g, ' ').toLowerCase();
+
+        let score = 0;
+        const words = qLower.split(/\s+/).filter(w => w.length > 1);
+        words.forEach(w => {
+            if (title.includes(w)) score += 20;
+            if (kw.includes(w)) score += 12;
+            if (cat.includes(w)) score += 8;
+            if (content.includes(w)) score += 2;
+        });
+        return { article: art, score };
+    }).filter(a => a.score > 0).sort((a, b) => b.score - a.score);
+
+    const topArticles = scoredArticles.slice(0, 4).map(s => s.article);
+    const articlesToUse = topArticles.length > 0 ? topArticles : (kbArticles || []).slice(0, 3);
+
+    const articlesContext = articlesToUse.map((a, idx) => `
+[مقال ${idx + 1}]: ${a.title} (القسم: ${a.category})
+المحتوى الرسمي:
+${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1500)}
+`).join('\n---\n');
+
+    // Try Gemini Cloud API first if key exists and mode is cloud
+    if (apiKey && apiKey.trim() && mode !== 'local') {
+        try {
+            const systemInstructionText = `أنت المساعد الذكي المعتمد لخدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
+مهمتك: مساعدة الموظفين والزبائن بالإجابة على الاستفسارات بدقة واحترافية وبلهجة عراقية مهذبة وودودة جداً.
+
+قواعد الإجابة الصارمة:
+1. استند فقط على دليل ومقالات المعرفة المرفقة أدناه لتقديم الخطوات والإجراءات المعتمدة.
+2. اكتب إجابتك باللهجة العراقية اللطيفة والمحترمة (مثل: "أهلاً بك عيني 🌸"، "تدلل"، "الخطوات بكل بساطة:...").
+3. رتب الخطوات على شكل نقاط أو خطوات رقمية واضحة ومباشرة وسهلة القراءة.
+4. حافظ على سياق المحادثة السابقة (إذا سأل المستخدم "شلون اطلبها؟" وكان الكلام عن الماستر كارد، قدم خطوات طلب الماستر كارد).
+5. ⚠️ ممنوع نهائياً ذكر التصنيفات الداخلية مثل Main/Sub Disposition أو فئات المقالات، فقط الإجراء المفيد للزبون/الموظف.
+6. إذا لم تجد الإجابة في المقالات، أجب بلطف: "عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي."
+
+دليل مقالات المعرفة المتاحة لزين كاش:
+${articlesContext}`;
+
+            const contents = [];
+            if (Array.isArray(history)) {
+                history.forEach(h => {
+                    if (h.text) {
+                        contents.push({
+                            role: h.role === 'user' ? 'user' : 'model',
+                            parts: [{ text: h.text }]
+                        });
+                    }
+                });
+            }
+            contents.push({
+                role: 'user',
+                parts: [{ text: message }]
+            });
+
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+            const geminiReqBody = {
+                contents: contents,
+                systemInstruction: { parts: [{ text: systemInstructionText }] },
+                generationConfig: {
+                    temperature: temp,
+                    maxOutputTokens: 1000
+                }
+            };
+
+            const startTime = Date.now();
+            const resp = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(geminiReqBody)
+            });
+
+            const data = await resp.json();
+            const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (resp.ok && replyText && replyText.trim()) {
+                return res.json({
+                    reply: replyText.trim(),
+                    modelUsed: activeModel,
+                    latency: Date.now() - startTime,
+                    sources: articlesToUse.map(a => a.title),
+                    engine: 'Gemini Cloud AI'
+                });
+            }
+        } catch (err) {
+            console.warn('[AI Chat] Gemini API error, falling back to local NLP engine:', err.message);
+        }
+    }
+
+    // Fallback: Local NLP RAG Synthesizer
+    const topArt = topArticles[0] || (kbArticles && kbArticles[0]);
+    if (!topArt) {
+        return res.json({
+            reply: "عذراً عيني، دليل المعرفة غير متوفر حالياً.",
+            modelUsed: 'Local NLP Fallback',
+            latency: 5,
+            sources: [],
+            engine: 'Local NLP'
+        });
+    }
+
+    const cleanContent = (topArt.content || '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const localReply = `أهلاً بك عيني 🌸 بخصوص استفسارك حول "${topArt.title}":
+
+${cleanContent.slice(0, 450)}...
+
+💡 إذا تحتاج أي تفاصيل إضافية تدلل عيني!`;
+
+    return res.json({
+        reply: localReply,
+        modelUsed: 'Local NLP Engine',
+        latency: 10,
+        sources: [topArt.title],
+        engine: 'Local NLP'
+    });
 });
 
 app.post('/api/ai/generate', async (req, res) => {
     const apiKey = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || req.headers['x-gemini-key'] || '');
-    const { requestBody } = req.body || {};
+    const { requestBody, model } = req.body || {};
     if (!requestBody) return res.status(400).json({ error: 'Request body required' });
     
     if (!apiKey) {
         return res.status(400).json({ error: 'No Gemini API key configured on server' });
     }
 
+    const targetModel = model || dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
+
     try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent?key=${encodeURIComponent(apiKey)}`;
         const resp = await fetch(geminiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

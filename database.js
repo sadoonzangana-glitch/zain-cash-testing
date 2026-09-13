@@ -205,16 +205,16 @@ function updateUserEmail(id, email) {
 
 function getConfig(key, defaultValue = null) {
     const row = stmts.getConfig.get(key);
-    if (!row || !row.value) return defaultValue;
+    if (!row || row.value === undefined || row.value === null) return defaultValue;
     try {
         return JSON.parse(row.value);
     } catch(e) {
-        return defaultValue;
+        return row.value !== '' ? row.value : defaultValue;
     }
 }
 
 function setConfig(key, value) {
-    const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+    const serialized = typeof value === 'string' ? JSON.stringify(value) : JSON.stringify(value);
     stmts.setConfig.run(key, serialized);
 }
 
