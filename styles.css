@@ -1431,13 +1431,15 @@ body::after {
     width: 100%;
     background: #ffffff;
     border-radius: 24px;
-    padding: 42px 45px 36px;
+    padding: 38px 40px 32px;
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 20px;
     box-shadow: 0 35px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.12);
     position: relative;
     overflow: hidden;
+    direction: ltr;
+    text-align: left;
 }
 
 /* Rainbow bar at top of form card */
@@ -1487,22 +1489,24 @@ body::after {
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    padding-top: 8px;
+    padding-top: 4px;
 }
 
 .login-header h2 {
-    font-size: 1.55rem;
+    font-size: 1.6rem;
     font-weight: 800;
     color: var(--primary);
     letter-spacing: -0.5px;
     line-height: 1.2;
+    margin: 0;
 }
 
 .login-header p {
-    font-size: 0.87rem;
+    font-size: 0.88rem;
     color: #64748b;
     font-weight: 500;
     line-height: 1.4;
+    margin: 0;
 }
 
 .login-divider {
@@ -1532,48 +1536,78 @@ body::after {
     position: relative;
     display: flex;
     align-items: center;
+    width: 100%;
 }
 
-.input-with-icon i {
+.input-with-icon > i.fa-solid,
+.input-with-icon > i.fa-regular {
     position: absolute;
-    right: 16px;
+    left: 15px;
+    right: auto;
     color: #94a3b8;
-    font-size: 1.1rem;
-    transition: color 0.25s ease;
+    font-size: 1.05rem;
+    transition: all 0.25s ease;
     pointer-events: none;
+    z-index: 2;
 }
 
 .input-with-icon input {
     width: 100%;
     background: #f8fafc;
-    border: 2px solid #e2e8f0;
+    border: 1.5px solid #e2e8f0;
     border-radius: 14px;
-    color: #0f1b2d;
-    padding: 14px 46px 14px 16px;
-    font-family: var(--font-ar);
-    font-size: 1rem;
-    font-weight: 600;
+    color: #0f172a;
+    padding: 13px 44px 13px 44px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
     outline: none;
-    transition: all 0.3s ease;
-    text-align: right;
-    direction: rtl;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+    transition: all 0.25s ease;
+    text-align: left;
+    direction: ltr;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .input-with-icon input::placeholder {
     color: #94a3b8;
     font-weight: 400;
+    text-align: left;
+    direction: ltr;
 }
 
 .input-with-icon input:focus {
-    border-color: var(--primary);
+    border-color: #00B5E2;
     background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(12, 79, 138, 0.1), inset 0 2px 4px rgba(0,0,0,0.02);
+    box-shadow: 0 0 0 4px rgba(0, 181, 226, 0.15), inset 0 1px 2px rgba(0,0,0,0.02);
 }
 
-.input-with-icon input:focus ~ i,
-.input-with-icon input:focus + i {
-    color: var(--primary);
+.input-with-icon:focus-within > i.fa-solid,
+.input-with-icon:focus-within > i.fa-regular {
+    color: #00B5E2;
+}
+
+#toggle-login-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 7px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    z-index: 3;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+#toggle-login-password:hover {
+    color: #0c4f8a;
+    background-color: rgba(0, 181, 226, 0.08);
 }
 
 .error-msg {

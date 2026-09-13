@@ -180,7 +180,12 @@ function getUserById(id) {
 
 function findUser(identifier) {
     if (!identifier) return null;
-    return stmts.findUser.get(identifier, identifier, identifier) || null;
+    const clean = String(identifier).trim();
+    let user = stmts.findUser.get(clean, clean, clean) || null;
+    if (!user && clean.toLowerCase() === 'admin') {
+        user = stmts.getUserById.get('ZC000') || stmts.getUserById.get('ZC599') || null;
+    }
+    return user;
 }
 
 function saveUser(user) {
