@@ -5184,6 +5184,110 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function fallbackSearchKb(query, articles) {
+        let list = articles;
+        if (!list || !list.length) {
+            if (window.EMBEDDED_KB_DATA && window.EMBEDDED_KB_DATA.length) list = window.EMBEDDED_KB_DATA;
+            else if (typeof defaultKb !== 'undefined') list = defaultKb;
+        }
+        if (!list || !list.length) return "عذراً عيني، دليل المعرفة غير متوفر حالياً.";
+
+        const q = String(query || '').toLowerCase().trim();
+        if (!q) return "تفضل عيني، شلون أقدر أساعدك بخصوص خدمات زين كاش؟";
+
+        const rawTokens = q
+            .replace(/[^\w\s\u0600-\u06FF]/gi, ' ')
+            .split(/\s+/)
+            .filter(t => t.length > 1);
+
+        const synonyms = {
+            'ماستر': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
+            'mastercard': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
+            'بطاقة': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
+            'card': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
+            'order': ['طلب', 'شراء', 'اصدار', 'استلام', 'تقديم'],
+            'اطلب': ['طلب', 'شراء', 'اصدار', 'استلام', 'تقديم'],
+            'شلون': ['طريقة', 'كيفية', 'خطوات', 'شروط', 'اجراء'],
+            'how': ['طريقة', 'كيفية', 'خطوات', 'شروط', 'اجراء'],
+            'اسهم': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
+            'stocks': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
+            'trading': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
+            'تداول': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
+            'سهم': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
+            'رمز': ['رمز', 'سري', 'pin', 'نسيت', 'استرجاع', 'تغيير', 'فتح'],
+            'pin': ['رمز', 'سري', 'pin', 'نسيت', 'استرجاع', 'تغيير', 'فتح'],
+            'ويسترن': ['ويسترن', 'western union', 'حوالة', 'خارجية', 'استلام', 'ارسال', 'mtcn'],
+            'western': ['ويسترن', 'western union', 'حوالة', 'خارجية', 'استلام', 'ارسال', 'mtcn'],
+            'حوالة': ['حوالة', 'تحويل', 'فلوس', 'ارسال', 'استلام', 'ويسترن', 'western'],
+            'سحب': ['سحب', 'كاش', 'اموال', 'وكيل', 'صراف', 'atm'],
+            'ايداع': ['ايداع', 'تعبئة', 'شحن', 'رصيد', 'فلوس'],
+            'حظر': ['حظر', 'متوقف', 'معلق', 'ci', 'additional customer information', 'مقفل'],
+            'ci': ['حظر', 'متوقف', 'معلق', 'ci', 'additional customer information', 'مقفل']
+        };
+
+        let expandedTokens = [...rawTokens];
+        rawTokens.forEach(t => {
+            for (const [key, synList] of Object.entries(synonyms)) {
+                if (t === key || t.includes(key) || key.includes(t)) {
+                    expandedTokens.push(...synList);
+                }
+            }
+        });
+        expandedTokens = Array.from(new Set(expandedTokens));
+
+        const scored = list.map(art => {
+            const title = (art.title || '').toLowerCase();
+            const cat = (art.category || '').toLowerCase();
+            const keywords = (art.keywords || '').toLowerCase();
+            const rawContent = (art.content || '').replace(/<[^>]+>/g, ' ').toLowerCase();
+
+            let score = 0;
+            expandedTokens.forEach(t => {
+                if (title.includes(t)) score += 20;
+                if (keywords.includes(t)) score += 12;
+                if (cat.includes(t)) score += 8;
+                if (rawContent.includes(t)) score += 2;
+            });
+            return { article: art, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        const top = scored[0];
+
+        if (!top || top.score < 8) {
+            return `عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي.
+تكدر تسألني عن خدمات زين كاش:
+• طلب وتفعيل بطاقات ماستر كارد (MasterCard).
+• إرسال واستلام حوالات ويسترن يونيون (Western Union).
+• خدمة تداول الأسهم الأمريكية وشروط التسجيل ونموذج W-8BEN.
+• إعادة تعيين الرمز السري لمحفظة زين كاش.
+• شروط توثيق الحساب وحالات المحافظ الموقوفة (CI).`;
+        }
+
+        const art = top.article;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = art.content || '';
+        tempDiv.querySelectorAll('style, script, .kb-hero-banner, .kb-header-badge').forEach(e => e.remove());
+
+        const listItems = Array.from(tempDiv.querySelectorAll('li, p, .kb-step, .kb-box, td'))
+            .map(el => el.textContent.trim())
+            .filter(t => t.length > 25 && !t.includes('الدليل الشامل') && !t.includes('جميع الحقوق'))
+            .slice(0, 5);
+
+        let stepsText = '';
+        if (listItems.length > 0) {
+            stepsText = listItems.map((item, idx) => `${idx + 1}. ${item}`).join('\n\n');
+        } else {
+            stepsText = tempDiv.textContent.replace(/\s+/g, ' ').trim().slice(0, 350) + '...';
+        }
+
+        return `أهلاً بك عيني 🌸 بخصوص استفسارك حول "${art.title}":
+
+${stepsText}
+
+💡 إذا تحتاج أي تفاصيل إضافية تدلل عيني!`;
+    }
+
     async function handleKbAiChat() {
         if (!chatInput || !chatBody) return;
         const msg = chatInput.value.trim();
@@ -5213,36 +5317,34 @@ document.addEventListener('DOMContentLoaded', () => {
         chatBody.appendChild(typingDiv);
         chatBody.scrollTop = chatBody.scrollHeight;
 
+        let reply = '';
         try {
-            const reply = await window.askKnowledgeBaseAI(msg, kbAiHistory, kbArticles);
-            typingDiv.remove();
-
-            const aiMsgDiv = document.createElement('div');
-            aiMsgDiv.className = 'chat-msg';
-            aiMsgDiv.style.alignSelf = 'flex-start';
-            aiMsgDiv.innerHTML = `
-                <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #1e293b; border-top-right-radius: 0;">
-                    <p style="margin:0; white-space: pre-line;">${reply}</p>
-                </div>
-            `;
-            chatBody.appendChild(aiMsgDiv);
-            chatBody.scrollTop = chatBody.scrollHeight;
-
-            kbAiHistory.push({ role: 'user', text: msg });
-            kbAiHistory.push({ role: 'model', text: reply });
-        } catch (err) {
-            typingDiv.remove();
-            const errDiv = document.createElement('div');
-            errDiv.className = 'chat-msg';
-            errDiv.style.alignSelf = 'flex-start';
-            errDiv.innerHTML = `
-                <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #c62828; border-top-right-radius: 0;">
-                    <p style="margin:0;">⚠️ عذراً عيني، واجهت مشكلة بالاتصال بالذكاء الاصطناعي. يرجى التأكد من مفتاح API في الإعدادات.</p>
-                </div>
-            `;
-            chatBody.appendChild(errDiv);
-            chatBody.scrollTop = chatBody.scrollHeight;
+            if (typeof window.askKnowledgeBaseAI === 'function') {
+                reply = await window.askKnowledgeBaseAI(msg, kbAiHistory, kbArticles || window.EMBEDDED_KB_DATA || []);
+            }
+        } catch(e) {
+            console.log("askKnowledgeBaseAI threw error, using direct NLP engine:", e.message);
         }
+
+        if (!reply || !reply.trim() || reply.includes('⚠️ عذراً عيني، واجهت مشكلة')) {
+            reply = fallbackSearchKb(msg, kbArticles || window.EMBEDDED_KB_DATA || []);
+        }
+
+        typingDiv.remove();
+
+        const aiMsgDiv = document.createElement('div');
+        aiMsgDiv.className = 'chat-msg';
+        aiMsgDiv.style.alignSelf = 'flex-start';
+        aiMsgDiv.innerHTML = `
+            <div class="ai-msg" style="align-self: flex-start; max-width: 85%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #1e293b; border-top-right-radius: 0;">
+                <p style="margin:0; white-space: pre-line;">${reply}</p>
+            </div>
+        `;
+        chatBody.appendChild(aiMsgDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        kbAiHistory.push({ role: 'user', text: msg });
+        kbAiHistory.push({ role: 'model', text: reply });
     }
 
     if (sendBtn) sendBtn.addEventListener('click', handleKbAiChat);
