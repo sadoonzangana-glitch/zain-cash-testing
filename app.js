@@ -5223,16 +5223,93 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    window.viewKbArticle = viewKbArticle;
+    window.kbAiTranslations = window.kbAiTranslations || {};
+
+    // Speech-to-Text Integration (Web Speech API)
+    const micBtn = document.getElementById('kb-ai-mic-btn');
+    let recognition = null;
+    let isRecording = false;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        try {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ar-IQ'; // Iraqi Arabic
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                if (micBtn) {
+                    micBtn.classList.add('recording');
+                    micBtn.title = 'جاري الاستماع... اضغط للإيقاف';
+                    micBtn.style.color = '#ef4444';
+                    micBtn.style.borderColor = '#ef4444';
+                    micBtn.style.background = '#fee2e2';
+                }
+            };
+
+            recognition.onresult = (event) => {
+                if (event.results && event.results[0] && event.results[0][0]) {
+                    const transcript = event.results[0][0].transcript;
+                    if (chatInput && transcript) {
+                        chatInput.value = (chatInput.value ? chatInput.value + ' ' : '') + transcript;
+                        chatInput.focus();
+                    }
+                }
+            };
+
+            recognition.onerror = (err) => {
+                console.warn('Speech Recognition error:', err.error);
+                stopSpeechRec();
+            };
+
+            recognition.onend = () => {
+                stopSpeechRec();
+            };
+
+            function stopSpeechRec() {
+                isRecording = false;
+                if (micBtn) {
+                    micBtn.classList.remove('recording');
+                    micBtn.title = 'التحدث بالصوت (Speech-to-Text)';
+                    micBtn.style.color = '#475569';
+                    micBtn.style.borderColor = '#cbd5e1';
+                    micBtn.style.background = '#f8fafc';
+                }
+            }
+
+            if (micBtn) {
+                micBtn.addEventListener('click', () => {
+                    if (isRecording) {
+                        recognition.stop();
+                    } else {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.warn('Recognition start error:', e);
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('SpeechRecognition init error:', e);
+        }
+    } else if (micBtn) {
+        micBtn.addEventListener('click', () => {
+            alert('ميزة التعرف الصوتي غير مدعومة في هذا المتصفح. يمكنك الكتابة في المربع.');
+        });
+    }
+
     // Typewriter streaming effect for lifelike natural pacing
-    function typewriterStream(element, fullText, speed = 12) {
+    function typewriterStream(element, fullText, speed = 10) {
         return new Promise((resolve) => {
-            let i = 0;
             element.innerHTML = '';
             const cursorSpan = document.createElement('span');
             cursorSpan.className = 'ai-typewriter-cursor';
             element.appendChild(cursorSpan);
 
-            // Break by words or characters
             const words = fullText.split(' ');
             let wordIndex = 0;
 
@@ -5243,7 +5320,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     element.appendChild(cursorSpan);
                     if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
                     wordIndex++;
-                    setTimeout(streamWord, speed + Math.floor(Math.random() * 8));
+                    setTimeout(streamWord, speed + Math.floor(Math.random() * 6));
                 } else {
                     cursorSpan.remove();
                     element.innerHTML = fullText.replace(/\n/g, '<br>');
@@ -5372,7 +5449,7 @@ ${stepsText}
         userMsgDiv.style.alignSelf = 'flex-end';
         userMsgDiv.innerHTML = `
             <div class="user-msg">
-                <p style="margin:0;">${msg}</p>
+                <p style="margin:0;">${escapeHtml(msg)}</p>
             </div>
         `;
         chatBody.appendChild(userMsgDiv);
@@ -5390,6 +5467,8 @@ ${stepsText}
         chatBody.scrollTop = chatBody.scrollHeight;
 
         let reply = '';
+        let aiMeta = null;
+
         try {
             // 1. Try server-side intelligent RAG endpoint first
             if (window.apiCall) {
@@ -5399,6 +5478,7 @@ ${stepsText}
                 });
                 if (res && res.reply) {
                     reply = res.reply;
+                    aiMeta = res;
                 }
             }
 
@@ -5417,21 +5497,173 @@ ${stepsText}
 
         typingDiv.remove();
 
+        const msgId = 'ai-msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        window.kbAiTranslations[msgId] = {
+            ar: reply,
+            en: null,
+            ku: null,
+            currentLang: 'ar'
+        };
+
+        const primaryArt = aiMeta && aiMeta.primaryArticle ? aiMeta.primaryArticle : null;
+        const sourceHtml = (primaryArt && primaryArt.title) ? `
+            <div class="ai-source-card" style="margin-top: 8px;">
+                <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">
+                    <i class="fa-solid fa-book-bookmark" style="color:#ff9900;"></i>
+                    <span style="font-weight:700; font-size:0.73rem; color:#1e293b; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(primaryArt.title)}">المصدر: ${escapeHtml(primaryArt.title)}</span>
+                </div>
+                <button type="button" class="ai-source-link-btn" data-art-id="${primaryArt.id}" title="عرض هذا المقال في دليل المعرفة">
+                    عرض المقال 📖
+                </button>
+            </div>
+        ` : '';
+
+        const followUps = (aiMeta && Array.isArray(aiMeta.followUpChips) && aiMeta.followUpChips.length > 0) ? aiMeta.followUpChips : [];
+        const chipsHtml = followUps.length > 0 ? `
+            <div class="ai-interactive-chips" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:5px;">
+                ${followUps.map(chip => `<button type="button" class="ai-followup-chip" data-query="${escapeHtml(chip)}">💡 ${escapeHtml(chip)}</button>`).join('')}
+            </div>
+        ` : '';
+
         const aiMsgDiv = document.createElement('div');
         aiMsgDiv.className = 'chat-msg';
         aiMsgDiv.style.alignSelf = 'flex-start';
+        aiMsgDiv.style.width = '100%';
         aiMsgDiv.innerHTML = `
-            <div class="ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; font-size: 0.84rem; line-height: 1.65; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                <p class="ai-reply-text" style="margin:0; white-space: pre-line;"></p>
+            <div class="ai-msg" style="align-self: flex-start; max-width: 95%; width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.65; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                    <div class="ai-lang-switch" data-msg-id="${msgId}">
+                        <button type="button" class="ai-lang-pill active" data-lang="ar" data-msg-id="${msgId}">🇮🇶 العربية</button>
+                        <button type="button" class="ai-lang-pill" data-lang="en" data-msg-id="${msgId}">🇬🇧 English</button>
+                        <button type="button" class="ai-lang-pill" data-lang="ku" data-msg-id="${msgId}">☀️ کوردی</button>
+                    </div>
+                    <span style="font-size:0.67rem; color:#64748b; font-weight:700;">
+                        <i class="fa-solid fa-bolt" style="color:#ff9900;"></i> ${aiMeta && aiMeta.engine ? escapeHtml(aiMeta.engine) : 'Gemini 2.0 Flash'}
+                    </span>
+                </div>
+
+                <div class="ai-reply-container" id="reply-container-${msgId}" style="direction: rtl; text-align: right;">
+                    <p class="ai-reply-text" id="text-${msgId}" style="margin:0; white-space: pre-line;"></p>
+                </div>
+
+                <div class="ai-msg-actions-bar">
+                    <button type="button" class="ai-copy-btn" data-msg-id="${msgId}" title="نسخ هذا الرد لإرساله مباشرة للزبون">
+                        <i class="fa-regular fa-clone"></i>
+                        <span class="copy-btn-label">نسخ الرد للزبون 📋</span>
+                    </button>
+                </div>
+
+                ${sourceHtml}
+                ${chipsHtml}
             </div>
         `;
         chatBody.appendChild(aiMsgDiv);
         chatBody.scrollTop = chatBody.scrollHeight;
 
-        const replyP = aiMsgDiv.querySelector('.ai-reply-text');
+        const replyP = aiMsgDiv.querySelector(`#text-${msgId}`);
         if (replyP) {
             await typewriterStream(replyP, reply, 8);
         }
+
+        // Event: Language Switch Pills
+        aiMsgDiv.querySelectorAll('.ai-lang-pill').forEach(pill => {
+            pill.addEventListener('click', async () => {
+                const targetLang = pill.getAttribute('data-lang');
+                const mId = pill.getAttribute('data-msg-id');
+                const cache = window.kbAiTranslations[mId];
+                if (!cache || cache.currentLang === targetLang) return;
+
+                const textEl = document.getElementById(`text-${mId}`);
+                const container = document.getElementById(`reply-container-${mId}`);
+                if (!textEl || !container) return;
+
+                if (cache[targetLang]) {
+                    cache.currentLang = targetLang;
+                    aiMsgDiv.querySelectorAll('.ai-lang-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-lang') === targetLang));
+                    container.style.direction = targetLang === 'en' ? 'ltr' : 'rtl';
+                    container.style.textAlign = targetLang === 'en' ? 'left' : 'right';
+                    textEl.innerHTML = cache[targetLang].replace(/\n/g, '<br>');
+                    return;
+                }
+
+                // Show translating loader
+                const originalAr = cache.ar;
+                const prevHtml = textEl.innerHTML;
+                textEl.innerHTML = `<span style="color:#64748b; font-size:0.8rem;"><i class="fa-solid fa-spinner fa-spin"></i> جاري الترجمة الاحترافية (${targetLang === 'en' ? 'English' : 'سۆرانی'})...</span>`;
+
+                try {
+                    const transRes = await window.apiCall('/api/ai/translate', 'POST', {
+                        text: originalAr,
+                        targetLang: targetLang
+                    });
+                    if (transRes && transRes.translation) {
+                        cache[targetLang] = transRes.translation;
+                        cache.currentLang = targetLang;
+                        aiMsgDiv.querySelectorAll('.ai-lang-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-lang') === targetLang));
+                        container.style.direction = targetLang === 'en' ? 'ltr' : 'rtl';
+                        container.style.textAlign = targetLang === 'en' ? 'left' : 'right';
+                        textEl.innerHTML = transRes.translation.replace(/\n/g, '<br>');
+                    } else {
+                        textEl.innerHTML = prevHtml;
+                        alert('تعذر إتمام الترجمة حالياً.');
+                    }
+                } catch(err) {
+                    console.error('Translation error:', err);
+                    textEl.innerHTML = prevHtml;
+                }
+            });
+        });
+
+        // Event: Copy to Clipboard
+        const copyBtn = aiMsgDiv.querySelector('.ai-copy-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const mId = copyBtn.getAttribute('data-msg-id');
+                const cache = window.kbAiTranslations[mId];
+                const textToCopy = (cache && cache[cache.currentLang]) ? cache[cache.currentLang] : (document.getElementById(`text-${mId}`) ? document.getElementById(`text-${mId}`).innerText : '');
+                if (textToCopy) {
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const label = copyBtn.querySelector('.copy-btn-label');
+                        const prev = label ? label.innerHTML : 'نسخ الرد للزبون 📋';
+                        if (label) label.innerHTML = 'تم النسخ بنجاح! ✅';
+                        copyBtn.style.background = '#ecfdf5';
+                        copyBtn.style.borderColor = '#10b981';
+                        copyBtn.style.color = '#047857';
+                        setTimeout(() => {
+                            if (label) label.innerHTML = prev;
+                            copyBtn.style.background = '';
+                            copyBtn.style.borderColor = '';
+                            copyBtn.style.color = '';
+                        }, 2000);
+                    }).catch(err => {
+                        console.warn('Clipboard write failed:', err);
+                    });
+                }
+            });
+        }
+
+        // Event: Source Link Button (1-Click Article Viewer)
+        const srcBtn = aiMsgDiv.querySelector('.ai-source-link-btn');
+        if (srcBtn) {
+            srcBtn.addEventListener('click', () => {
+                const artId = srcBtn.getAttribute('data-art-id');
+                if (artId) {
+                    switchTab('tab-kb');
+                    viewKbArticle(artId);
+                }
+            });
+        }
+
+        // Event: Interactive Follow-Up Chips
+        aiMsgDiv.querySelectorAll('.ai-followup-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const q = chip.getAttribute('data-query');
+                if (q && chatInput) {
+                    chatInput.value = q;
+                    handleKbAiChat();
+                }
+            });
+        });
 
         kbAiHistory.push({ role: 'user', text: msg });
         kbAiHistory.push({ role: 'model', text: reply });

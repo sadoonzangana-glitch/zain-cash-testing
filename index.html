@@ -187,25 +187,25 @@
                     <span class="ai-pulse-dot"></span>
                 </button>
 
-                <div class="kb-ai-chat-panel hidden" id="kb-ai-chat-panel" style="position: fixed; bottom: 85px; right: 25px; width: 380px; height: 530px; max-height: calc(100vh - 120px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); z-index: 1000; display: flex; flex-direction: column; overflow: hidden; font-family: var(--font-ar); direction: rtl; text-align: right; transition: all 0.3s ease;">
+                <div class="kb-ai-chat-panel hidden" id="kb-ai-chat-panel" style="position: fixed; bottom: 85px; right: 25px; width: 420px; max-width: calc(100vw - 40px); height: 560px; max-height: calc(100vh - 110px); background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22); z-index: 1000; display: flex; flex-direction: column; overflow: hidden; font-family: var(--font-ar); direction: rtl; text-align: right; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
                     <div class="kb-ai-chat-header" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
                         <div class="ai-header-left" style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #ff9900, #ff6600); display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 8px rgba(255,102,0,0.4);">
-                                <i class="fa-solid fa-robot" style="font-size: 1.1rem;"></i>
+                            <div style="width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #ff9900, #ff6600); display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 10px rgba(255,102,0,0.4);">
+                                <i class="fa-solid fa-robot" style="font-size: 1.15rem;"></i>
                             </div>
                             <div>
-                                <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
                                     مساعد زين كاش الذكي
-                                    <span style="font-size: 0.65rem; background: rgba(255,153,0,0.2); color: #ff9900; border: 1px solid rgba(255,153,0,0.4); padding: 1px 6px; border-radius: 12px; font-weight: 700;" id="kb-ai-model-tag">Gemini 2.0</span>
+                                    <span style="font-size: 0.65rem; background: rgba(255,153,0,0.2); color: #ff9900; border: 1px solid rgba(255,153,0,0.4); padding: 1px 6px; border-radius: 12px; font-weight: 700;" id="kb-ai-model-tag">Gemini 2.0 Flash</span>
                                 </h4>
                                 <span class="status" style="font-size: 0.68rem; color: #10b981; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
                                     <span style="width:6px; height:6px; background:#10b981; border-radius:50%; display:inline-block; box-shadow: 0 0 6px #10b981;"></span>
-                                    <span id="kb-ai-status-label">متصل بالذكاء الاصطناعي وقاعدة المعرفة</span>
+                                    <span id="kb-ai-status-label">متصل بالذكاء الاصطناعي وقاعدة المعرفة (37 مقال)</span>
                                 </span>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <button class="icon-action-btn" id="kb-ai-clear-btn" title="مسح المحادثة وبدء محادثة جديدة" style="background: rgba(255,255,255,0.1); border: none; color: #94a3b8; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: all 0.2s;">
+                            <button class="icon-action-btn" id="kb-ai-clear-btn" title="مسح المحادثة وبدء محادثة جديدة" style="background: rgba(255,255,255,0.1); border: none; color: #94a3b8; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; transition: all 0.2s;">
                                 <i class="fa-solid fa-rotate-left"></i>
                             </button>
                             <button class="close-chat-btn" id="kb-ai-close-btn" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
@@ -217,18 +217,22 @@
                         <button class="ai-chip-btn" data-query="شلون اطلب بطاقة ماستر كارد؟">💳 طلب ماستر كارد</button>
                         <button class="ai-chip-btn" data-query="حسابي متوقف CI - Additional Customer Information">🔒 حساب متوقف CI</button>
                         <button class="ai-chip-btn" data-query="شروط تداول الأسهم ونموذج W-8BEN">📈 تداول الأسهم</button>
+                        <button class="ai-chip-btn" data-query="شكد عمولة سحب كاش من الصراف أو الوكيل؟">💰 حاسبة العمولات</button>
                         <button class="ai-chip-btn" data-query="نسيت الرمز السري لمحفظتي">🔑 نسيت الرمز السري</button>
                         <button class="ai-chip-btn" data-query="استلام وتصحيح حوالة ويسترن يونيون">🌐 ويسترن يونيون</button>
                     </div>
 
-                    <div class="kb-ai-chat-body" id="kb-ai-chat-body" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #f8fafc;">
-                        <div class="chat-msg ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.6; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                            <p style="margin: 0;">أهلاً بك عيني 🌸 أنا المساعد الذكي لخدمة عملاء زين كاش. اسألني عن أي معاملة، خطوة، أو إجراء رسمي بالعامية العراقية وراح أجاوبك بدقة وسرعة من واقع دليل المعرفة!</p>
+                    <div class="kb-ai-chat-body" id="kb-ai-chat-body" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: #f8fafc;">
+                        <div class="chat-msg ai-msg" style="align-self: flex-start; max-width: 95%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px; font-size: 0.85rem; line-height: 1.65; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                            <p style="margin: 0;">أهلاً بك عيني 🌸 أنا المساعد الذكي لخدمة عملاء زين كاش. اسألني عن أي معاملة، عمولة، أو مشكلة وسأجيبك فوراً مع إمكانية تحويل الرد للإنكليزية أو الكردية بضغطة زر!</p>
                         </div>
                     </div>
 
                     <div class="kb-ai-chat-footer" style="padding: 10px 12px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; background: #ffffff; align-items: center; flex-shrink: 0;">
-                        <input type="text" id="kb-ai-chat-input" placeholder="اكتب سؤالك بالعامية العراقية هنا..." style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 25px; font-size: 0.83rem; outline: none; background: #f8fafc; font-family: inherit; transition: border-color 0.2s;">
+                        <button type="button" id="kb-ai-mic-btn" title="التحدث بالصوت (Speech-to-Text)" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s;">
+                            <i class="fa-solid fa-microphone" id="kb-ai-mic-icon"></i>
+                        </button>
+                        <input type="text" id="kb-ai-chat-input" placeholder="اكتب سؤالك بالعامية أو تحدث بالمايكروفون..." style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 25px; font-size: 0.83rem; outline: none; background: #f8fafc; font-family: inherit; transition: border-color 0.2s;">
                         <button class="btn btn-primary" id="kb-ai-send-btn" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #ff9900, #ff6600); border: none; box-shadow: 0 4px 10px rgba(255,102,0,0.3); cursor: pointer;">
                             <i class="fa-solid fa-paper-plane" style="font-size: 0.9rem; transform: rotate(180deg);"></i>
                         </button>

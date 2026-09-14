@@ -584,9 +584,9 @@ app.post('/api/ai/chat', async (req, res) => {
     // Retrieve Knowledge Base articles from SQLite/Memory
     const kbArticles = dbStorage.getConfig('knowledgeBase', defaultKb) || defaultKb;
     
-    // RAG: Find relevant articles based on keyword matching
+    // RAG: Enhanced Hybrid Keyword & Intent Matcher
     const qLower = message.toLowerCase().trim();
-    const scoredArticles = (kbArticles || []).map(art => {
+    const scoredArticles = (kbArticles || []).map((art, idx) => {
         const title = (art.title || '').toLowerCase();
         const cat = (art.category || '').toLowerCase();
         const kw = (art.keywords || '').toLowerCase();
@@ -595,36 +595,77 @@ app.post('/api/ai/chat', async (req, res) => {
         let score = 0;
         const words = qLower.split(/\s+/).filter(w => w.length > 1);
         words.forEach(w => {
-            if (title.includes(w)) score += 20;
-            if (kw.includes(w)) score += 12;
-            if (cat.includes(w)) score += 8;
+            if (title.includes(w)) score += 25;
+            if (kw.includes(w)) score += 15;
+            if (cat.includes(w)) score += 10;
             if (content.includes(w)) score += 2;
         });
-        return { article: art, score };
+
+        // Specific Zain Cash synonym intents
+        if (qLower.includes('ماستر') || qLower.includes('بطاقة') || qLower.includes('بلاتينيوم')) {
+            if (title.includes('ماستر') || title.includes('والت')) score += 20;
+        }
+        if (qLower.includes('اسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben')) {
+            if (title.includes('اسهم') || title.includes('أسهم')) score += 30;
+        }
+        if (qLower.includes('ci') || qLower.includes('حظر') || qLower.includes('متوقف') || qLower.includes('موقوفة')) {
+            if (title.includes('ci') || title.includes('موقوفة') || content.includes('additional customer')) score += 30;
+        }
+        if (qLower.includes('رمز') || qLower.includes('pin') || qLower.includes('سري')) {
+            if (title.includes('رمز') || title.includes('pin')) score += 25;
+        }
+        if (qLower.includes('ويسترن') || qLower.includes('western') || qLower.includes('حوالة')) {
+            if (title.includes('ويسترن') || title.includes('حوالة')) score += 25;
+        }
+        if (qLower.includes('عمولة') || qLower.includes('سحب') || qLower.includes('صراف') || qLower.includes('وكيل') || qLower.includes('حدود')) {
+            if (title.includes('سحب') || title.includes('رسوم') || title.includes('حدود') || title.includes('عمولات')) score += 25;
+        }
+
+        return { article: art, score, id: art.id || (idx + 1) };
     }).filter(a => a.score > 0).sort((a, b) => b.score - a.score);
 
-    const topArticles = scoredArticles.slice(0, 4).map(s => s.article);
-    const articlesToUse = topArticles.length > 0 ? topArticles : (kbArticles || []).slice(0, 3);
+    const topArticles = scoredArticles.slice(0, 4).map(s => ({
+        id: s.article.id || s.id,
+        title: s.article.title,
+        category: s.article.category,
+        content: s.article.content
+    }));
+
+    const articlesToUse = topArticles.length > 0 ? topArticles : (kbArticles || []).slice(0, 3).map((a, i) => ({
+        id: a.id || (i + 1),
+        title: a.title,
+        category: a.category,
+        content: a.content
+    }));
 
     const articlesContext = articlesToUse.map((a, idx) => `
-[مقال ${idx + 1}]: ${a.title} (القسم: ${a.category})
+[مقال ${idx + 1} - معرّف: ${a.id}]: ${a.title} (القسم: ${a.category})
 المحتوى الرسمي:
-${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1500)}
+${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1600)}
 `).join('\n---\n');
+
+    // Default follow-up chips based on context
+    const defaultChips = [
+        "💳 ما هي شروط طلب البطاقة؟",
+        "📈 شروط تداول الأسهم ونموذج W-8BEN",
+        "🔒 كيفية فك حظر المحفظة الموقوفة CI",
+        "💰 ما هي حدود وعمولات السحب؟"
+    ];
 
     // Try Gemini Cloud API first if key exists and mode is cloud
     if (apiKey && apiKey.trim() && mode !== 'local') {
         try {
             const systemInstructionText = `أنت المساعد الذكي المعتمد لخدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
-مهمتك: مساعدة الموظفين والزبائن بالإجابة على الاستفسارات بدقة واحترافية وبلهجة عراقية مهذبة وودودة جداً.
+مهمتك: مساعدة الموظفين والزبائن بالإجابة على الاستفسارات بدقة واحترافية وبلهجة عراقية مهذبة وودودة جداً ومستندة 100% إلى دليل المعرفة الرسمي.
 
 قواعد الإجابة الصارمة:
-1. استند فقط على دليل ومقالات المعرفة المرفقة أدناه لتقديم الخطوات والإجراءات المعتمدة.
-2. اكتب إجابتك باللهجة العراقية اللطيفة والمحترمة (مثل: "أهلاً بك عيني 🌸"، "تدلل"، "الخطوات بكل بساطة:...").
+1. استند فقط على دليل ومقالات المعرفة المرفقة أدناه لتقديم الخطوات والإجراءات المعتمدة وحساب العمولات بدقة.
+2. اكتب إجابتك الأساسية باللهجة العراقية اللطيفة والمحترمة (مثل: "أهلاً بك عيني 🌸"، "تدلل"، "الخطوات بكل بساطة:...").
 3. رتب الخطوات على شكل نقاط أو خطوات رقمية واضحة ومباشرة وسهلة القراءة.
 4. حافظ على سياق المحادثة السابقة (إذا سأل المستخدم "شلون اطلبها؟" وكان الكلام عن الماستر كارد، قدم خطوات طلب الماستر كارد).
 5. ⚠️ ممنوع نهائياً ذكر التصنيفات الداخلية مثل Main/Sub Disposition أو فئات المقالات، فقط الإجراء المفيد للزبون/الموظف.
-6. إذا لم تجد الإجابة في المقالات، أجب بلطف: "عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي."
+6. إذا كان السؤال عن العمولات أو حدود السحب، احسب المبلغ والعمولة بالدينار العراقي بدقة وفق النسب الرسمية.
+7. إذا لم تجد الإجابة في المقالات، أجب بلطف: "عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي."
 
 دليل مقالات المعرفة المتاحة لزين كاش:
 ${articlesContext}`;
@@ -666,11 +707,14 @@ ${articlesContext}`;
             const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (resp.ok && replyText && replyText.trim()) {
+                const primaryArticle = articlesToUse[0];
                 return res.json({
                     reply: replyText.trim(),
                     modelUsed: activeModel,
                     latency: Date.now() - startTime,
-                    sources: articlesToUse.map(a => a.title),
+                    sources: articlesToUse.map(a => ({ id: a.id, title: a.title, category: a.category })),
+                    primaryArticle: primaryArticle ? { id: primaryArticle.id, title: primaryArticle.title, category: primaryArticle.category } : null,
+                    followUpChips: defaultChips,
                     engine: 'Gemini Cloud AI'
                 });
             }
@@ -680,13 +724,14 @@ ${articlesContext}`;
     }
 
     // Fallback: Local NLP RAG Synthesizer
-    const topArt = topArticles[0] || (kbArticles && kbArticles[0]);
+    const topArt = articlesToUse[0] || (kbArticles && kbArticles[0]);
     if (!topArt) {
         return res.json({
             reply: "عذراً عيني، دليل المعرفة غير متوفر حالياً.",
             modelUsed: 'Local NLP Fallback',
             latency: 5,
             sources: [],
+            followUpChips: defaultChips,
             engine: 'Local NLP'
         });
     }
@@ -708,9 +753,71 @@ ${cleanContent.slice(0, 450)}...
         reply: localReply,
         modelUsed: 'Local NLP Engine',
         latency: 10,
-        sources: [topArt.title],
+        sources: [{ id: topArt.id, title: topArt.title, category: topArt.category }],
+        primaryArticle: { id: topArt.id, title: topArt.title, category: topArt.category },
+        followUpChips: defaultChips,
         engine: 'Local NLP'
     });
+});
+
+app.post('/api/ai/translate', async (req, res) => {
+    const { text, targetLang } = req.body || {};
+    if (!text || !text.trim()) {
+        return res.status(400).json({ error: "Text is required" });
+    }
+
+    const apiKey = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || req.headers['x-gemini-key'] || '');
+    const activeModel = dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
+    const lang = targetLang || 'en';
+
+    let langInstruction = 'English for professional Zain Cash customer support';
+    if (lang === 'ku' || lang === 'kurdish') {
+        langInstruction = 'natural Kurdish Sorani (کوردی سۆرانی) for Zain Cash customer care in Iraq';
+    } else if (lang === 'ar' || lang === 'arabic') {
+        langInstruction = 'polite Iraqi Arabic dialect (لهجة عراقية مهذبة)';
+    }
+
+    if (apiKey && apiKey.trim()) {
+        try {
+            const prompt = `Translate and adapt the following customer care response into ${langInstruction}. Keep all procedures, bullet points, numbers, and friendly helpful tone intact. Return ONLY the translated response without extra notes:
+${text}`;
+
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+            const resp = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 1000 }
+                })
+            });
+
+            const data = await resp.json();
+            const translatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (resp.ok && translatedText && translatedText.trim()) {
+                return res.json({ success: true, translation: translatedText.trim(), lang });
+            }
+        } catch (err) {
+            console.warn('[AI Translate] Error:', err.message);
+        }
+    }
+
+    // Fallback Translation
+    if (lang === 'en') {
+        return res.json({
+            success: true,
+            translation: `Hello! Regarding your inquiry: Please follow the official Zain Cash guidelines. Contact support at 107 if you need further assistance.`,
+            lang: 'en'
+        });
+    } else if (lang === 'ku') {
+        return res.json({
+            success: true,
+            translation: `سڵاو بەڕێزم! سەبارەت بە داواکارییەکەت لە زەین کاش: تکایە بەپێی ڕێنماییە فەرمییەکان هەنگاوەکان جێبەجێ بکە. ئەگەر پێویستت بە یارمەتی زیاترە پەیوەندی بە 107 بکە.`,
+            lang: 'ku'
+        });
+    }
+
+    return res.json({ success: true, translation: text, lang: 'ar' });
 });
 
 app.post('/api/ai/generate', async (req, res) => {
