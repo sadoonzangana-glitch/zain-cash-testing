@@ -5179,7 +5179,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.getElementById('kb-ai-send-btn');
     const chatInput = document.getElementById('kb-ai-chat-input');
     const chatBody = document.getElementById('kb-ai-chat-body');
-    const quickChipsContainer = document.getElementById('kb-ai-quick-chips');
 
     if (chatBtn && chatPanel) {
         chatBtn.addEventListener('click', () => {
@@ -5199,26 +5198,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             kbAiHistory = [];
+            window.kbAiTranslations = {};
             if (chatBody) {
                 chatBody.innerHTML = `
-                    <div class="chat-msg ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.6; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                        <p style="margin: 0;">تم بدء محادثة جديدة! تفضل عيني، اسألني عن أي معاملة أو خدمة بزين كاش وراح أجاوبك فوراً.</p>
+                    <div class="chat-msg ai-msg" style="align-self: flex-start; max-width: 95%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; font-size: 0.9rem; line-height: 1.7; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                        <p style="margin: 0; font-weight: 600;">✨ تم بدء محادثة جديدة! اكتب سؤالك أو تحدث بالمايكروفون لأي استفسار أو معاملة بزين كاش.</p>
                     </div>
                 `;
             }
-            if (chatInput) chatInput.focus();
-        });
-    }
-
-    if (quickChipsContainer) {
-        quickChipsContainer.addEventListener('click', (e) => {
-            const btn = e.target.closest('.ai-chip-btn');
-            if (btn && chatInput) {
-                const query = btn.getAttribute('data-query');
-                if (query) {
-                    chatInput.value = query;
-                    handleKbAiChat();
-                }
+            if (chatInput) {
+                chatInput.value = '';
+                chatInput.focus();
             }
         });
     }
@@ -5231,22 +5221,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let recognition = null;
     let isRecording = false;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
         try {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'ar-IQ'; // Iraqi Arabic
+            recognition = new SpeechRec();
+            recognition.lang = 'ar-IQ';
+            recognition.continuous = false;
             recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
 
             recognition.onstart = () => {
                 isRecording = true;
                 if (micBtn) {
                     micBtn.classList.add('recording');
-                    micBtn.title = 'جاري الاستماع... اضغط للإيقاف';
-                    micBtn.style.color = '#ef4444';
+                    micBtn.title = 'جاري الاستماع... تكلم الآن (اضغط للإيقاف)';
+                    micBtn.style.color = '#ffffff';
                     micBtn.style.borderColor = '#ef4444';
-                    micBtn.style.background = '#fee2e2';
+                    micBtn.style.background = '#ef4444';
+                    const icon = micBtn.querySelector('i');
+                    if (icon) icon.className = 'fa-solid fa-microphone-lines fa-fade';
                 }
             };
 
@@ -5263,6 +5255,9 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.onerror = (err) => {
                 console.warn('Speech Recognition error:', err.error);
                 stopSpeechRec();
+                if (err.error === 'not-allowed') {
+                    alert('يرجى السماح للمتصفح بالوصول للمايكروفون للتحدث.');
+                }
             };
 
             recognition.onend = () => {
@@ -5277,11 +5272,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     micBtn.style.color = '#475569';
                     micBtn.style.borderColor = '#cbd5e1';
                     micBtn.style.background = '#f8fafc';
+                    const icon = micBtn.querySelector('i');
+                    if (icon) icon.className = 'fa-solid fa-microphone';
                 }
             }
 
             if (micBtn) {
-                micBtn.addEventListener('click', () => {
+                micBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
                     if (isRecording) {
                         recognition.stop();
                     } else {
@@ -5298,12 +5296,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } else if (micBtn) {
         micBtn.addEventListener('click', () => {
-            alert('ميزة التعرف الصوتي غير مدعومة في هذا المتصفح. يمكنك الكتابة في المربع.');
+            alert('ميزة التعرف الصوتي غير مدعومة في هذا المتصفح. يرجى استخدام Google Chrome أو Microsoft Edge.');
         });
     }
 
     // Typewriter streaming effect for lifelike natural pacing
-    function typewriterStream(element, fullText, speed = 10) {
+    function typewriterStream(element, fullText, speed = 8) {
         return new Promise((resolve) => {
             element.innerHTML = '';
             const cursorSpan = document.createElement('span');
@@ -5320,7 +5318,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     element.appendChild(cursorSpan);
                     if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
                     wordIndex++;
-                    setTimeout(streamWord, speed + Math.floor(Math.random() * 6));
+                    setTimeout(streamWord, speed + Math.floor(Math.random() * 5));
                 } else {
                     cursorSpan.remove();
                     element.innerHTML = fullText.replace(/\n/g, '<br>');
@@ -5339,102 +5337,89 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.EMBEDDED_KB_DATA && window.EMBEDDED_KB_DATA.length) list = window.EMBEDDED_KB_DATA;
             else if (typeof defaultKb !== 'undefined') list = defaultKb;
         }
-        if (!list || !list.length) return "عذراً عيني، دليل المعرفة غير متوفر حالياً.";
+        if (!list || !list.length) return "عذراً، دليل المعرفة غير متوفر حالياً.";
 
         const q = String(query || '').toLowerCase().trim();
         if (!q) return "تفضل عيني، شلون أقدر أساعدك بخصوص خدمات زين كاش؟";
 
-        const rawTokens = q
-            .replace(/[^\w\s\u0600-\u06FF]/gi, ' ')
-            .split(/\s+/)
-            .filter(t => t.length > 1);
+        if (q.includes('سهم') || q.includes('اسهم') || q.includes('تداول') || q.includes('بورصة') || q.includes('alpaca')) {
+            return `خطوات شراء وتداول الأسهم الأمريكية عبر زين كاش:
+1. افتح تطبيق زين كاش واضغط على أيقونة (الأسهم والتداول).
+2. وافق على الشروط والأحكام ونموذج W-8BEN لتفعيل حساب التداول.
+3. بعد تفعيل الحساب، اختر الشركة أو السهم المطلوب من قائمة البورصة.
+4. حدد مبلغ الشراء أو عدد الأسهم واضغط على (تأكيد الشراء).
+5. يتم خصم المبلغ من المحفظة وإيداع الأسهم في حسابك الاستثماري فوراً.`;
+        }
 
-        const synonyms = {
-            'ماستر': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
-            'mastercard': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
-            'بطاقة': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
-            'card': ['ماستر', 'ماستركارد', 'بطاقة', 'فيزا', 'mastercard', 'card', 'محفظة', 'طلب', 'تفعيل', 'اصدار', 'شراء'],
-            'order': ['طلب', 'شراء', 'اصدار', 'استلام', 'تقديم'],
-            'اطلب': ['طلب', 'شراء', 'اصدار', 'استلام', 'تقديم'],
-            'شلون': ['طريقة', 'كيفية', 'خطوات', 'شروط', 'اجراء'],
-            'how': ['طريقة', 'كيفية', 'خطوات', 'شروط', 'اجراء'],
-            'اسهم': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
-            'stocks': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
-            'trading': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
-            'تداول': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
-            'سهم': ['اسهم', 'أسهم', 'تداول', 'بورصة', 'أمريكية', 'alpaca', 'w-8ben', 'stocks', 'trading'],
-            'رمز': ['رمز', 'سري', 'pin', 'نسيت', 'استرجاع', 'تغيير', 'فتح'],
-            'pin': ['رمز', 'سري', 'pin', 'نسيت', 'استرجاع', 'تغيير', 'فتح'],
-            'ويسترن': ['ويسترن', 'western union', 'حوالة', 'خارجية', 'استلام', 'ارسال', 'mtcn'],
-            'western': ['ويسترن', 'western union', 'حوالة', 'خارجية', 'استلام', 'ارسال', 'mtcn'],
-            'حوالة': ['حوالة', 'تحويل', 'فلوس', 'ارسال', 'استلام', 'ويسترن', 'western'],
-            'سحب': ['سحب', 'كاش', 'اموال', 'وكيل', 'صراف', 'atm'],
-            'ايداع': ['ايداع', 'تعبئة', 'شحن', 'رصيد', 'فلوس'],
-            'حظر': ['حظر', 'متوقف', 'معلق', 'ci', 'additional customer information', 'مقفل'],
-            'ci': ['حظر', 'متوقف', 'معلق', 'ci', 'additional customer information', 'مقفل']
-        };
+        if (q.includes('ماستر') || q.includes('بطاقة') || q.includes('طلب بطاقة') || q.includes('بلاتينيوم')) {
+            return `خطوات طلب وتفعيل بطاقة ماستر كارد زين كاش:
+1. افتح تطبيق زين كاش واضغط على خدمة (ماستر كارد).
+2. اختر نوع البطاقة واضغط على (طلب بطاقة جديدة).
+3. حدد عنوان الاستلام أو اختر الفرع المعتمد للاستلام.
+4. ادفع رسوم الإصدار عبر رصيد المحفظة.
+5. بعد الاستلام، ادخل التطبيق واضغط (تفعيل البطاقة) وأدخل آخر 4 أرقام لتعيين الرمز السري.`;
+        }
 
-        let expandedTokens = [...rawTokens];
-        rawTokens.forEach(t => {
-            for (const [key, synList] of Object.entries(synonyms)) {
-                if (t === key || t.includes(key) || key.includes(t)) {
-                    expandedTokens.push(...synList);
-                }
-            }
-        });
-        expandedTokens = Array.from(new Set(expandedTokens));
+        if (q.includes('رمز') || q.includes('pin') || q.includes('سري') || q.includes('نسيت')) {
+            return `إجراءات إعادة تعيين الرمز السري لمحفظة زين كاش:
+1. في واجهة تسجيل الدخول بالتطبيق، اضغط على (نسيت الرمز السري؟).
+2. أدخل رقم هاتفك ورقم البطاقة الوطنية/الهوية الموثقة بها المحفظة.
+3. ستصلك رسالة نصية SMS بها رمز التحقق OTP لإدخال رمز سري جديد مكون من 4 أرقام.
+4. إذا لم تتمكن من الاسترجاع، اتصل بخدمة العملاء على 107 لإعادة التعيين بعد التحقق.`;
+        }
 
+        if (q.includes('ci') || q.includes('حظر') || q.includes('متوقف') || q.includes('موقوفة')) {
+            return `إجراءات فك الحظر المؤقت للمحفظة الموقوفة (CI):
+1. افتح تطبيق زين كاش واضغط على إشعار تحديث البيانات أو توجه لأقرب وكيل رئيسي.
+2. ارفع نسخة واضحة ومحدثة من البطاقة الموحدة/الهوية وبطاقة السكن.
+3. تأكد من تطابق بيانات صاحب المحفظة مع الوثائق الرسمية.
+4. يتم مراجعة المستندات وفك الحظر وإعادة تنشيط المحفظة خلال وقت وجيز.`;
+        }
+
+        if (q.includes('ويسترن') || q.includes('western') || q.includes('حوالة')) {
+            return `خطوات إرسال واستلام حوالات ويسترن يونيون عبر زين كاش:
+• لاستلام حوالة: افتح التطبيق > ويسترن يونيون > استلام حوالة > أدخل رقم الحوالة (MTCN) والمبلغ المتوقع وسيتم إيداعها في محفظتك فوراً.
+• لإرسال حوالة: افتح التطبيق > ويسترن يونيون > إرسال حوالة > اختر الدولة والعملة وأدخل اسم المستلم بالإنكليزية مطابقاً لجواز سفره، ثم أكد العملية واحفظ رقم MTCN لمشاركته مع المستلم.`;
+        }
+
+        if (q.includes('عمولة') || q.includes('سحب') || q.includes('رسوم') || q.includes('صراف') || q.includes('وكيل')) {
+            return `عمولات وحدود السحب والإيداع في زين كاش:
+• سحب الكاش من الصراف الآلي (ATM): العمولة 0.8% (حد أدنى 1,000 د.ع).
+• سحب الكاش من الوكلاء المعتمدين: العمولة 0.8% (حد أدنى 1,000 د.ع).
+• الإيداع وتعبئة رصيد المحفظة: مجاني تماماً وبدون أي عمولة إضافية.
+• التحويل بين المحافظ: عمولة رمزية وفق جدول الرسوم المعتمد.`;
+        }
+
+        // Generic search match
         const scored = list.map(art => {
             const title = (art.title || '').toLowerCase();
-            const cat = (art.category || '').toLowerCase();
-            const keywords = (art.keywords || '').toLowerCase();
             const rawContent = (art.content || '').replace(/<[^>]+>/g, ' ').toLowerCase();
-
             let score = 0;
-            expandedTokens.forEach(t => {
-                if (title.includes(t)) score += 20;
-                if (keywords.includes(t)) score += 12;
-                if (cat.includes(t)) score += 8;
-                if (rawContent.includes(t)) score += 2;
-            });
+            if (title.includes(q)) score += 20;
+            if (rawContent.includes(q)) score += 5;
             return { article: art, score };
-        });
+        }).sort((a, b) => b.score - a.score);
 
-        scored.sort((a, b) => b.score - a.score);
         const top = scored[0];
-
-        if (!top || top.score < 8) {
-            return `عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي.
-تكدر تسألني عن خدمات زين كاش:
-• طلب وتفعيل بطاقات ماستر كارد (MasterCard).
-• إرسال واستلام حوالات ويسترن يونيون (Western Union).
-• خدمة تداول الأسهم الأمريكية وشروط التسجيل ونموذج W-8BEN.
-• إعادة تعيين الرمز السري لمحفظة زين كاش.
-• شروط توثيق الحساب وحالات المحافظ الموقوفة (CI).`;
+        if (!top || top.score < 5) {
+            return `الخطوات والإجراءات المعتمدة:
+1. افتح تطبيق زين كاش وتوجه إلى قائمة الخدمات.
+2. اختر الخدمة المطلوبة واتبع التعليمات الظاهرة على الشاشة.
+3. للمساعدة المباشرة يرجى الاتصال بخدمة العملاء على الرقم 107.`;
         }
 
-        const art = top.article;
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = art.content || '';
-        tempDiv.querySelectorAll('style, script, .kb-hero-banner, .kb-header-badge').forEach(e => e.remove());
+        const clean = (top.article.content || '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .split(/<\/p>|<\/li>|<br\s*\/?>|<\/h[1-6]>/gi)
+            .map(s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+            .filter(s => s.length > 20 && !s.includes('دليل تشغيلي') && !s.includes('جميع الحقوق') && !s.includes('الدليل الشامل'));
 
-        const listItems = Array.from(tempDiv.querySelectorAll('li, p, .kb-step, .kb-box, td'))
-            .map(el => el.textContent.trim())
-            .filter(t => t.length > 25 && !t.includes('الدليل الشامل') && !t.includes('جميع الحقوق'))
-            .slice(0, 5);
-
-        let stepsText = '';
-        if (listItems.length > 0) {
-            stepsText = listItems.map((item, idx) => `${idx + 1}. ${item}`).join('\n\n');
-        } else {
-            stepsText = tempDiv.textContent.replace(/\s+/g, ' ').trim().slice(0, 350) + '...';
+        if (clean.length > 0) {
+            return `الخطوات المعتمدة:\n` + clean.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n');
         }
 
-        return `أهلاً بك عيني 🌸 بخصوص استفسارك حول "${art.title}":
-
-${stepsText}
-
-💡 إذا تحتاج أي تفاصيل إضافية تدلل عيني!`;
+        return `1. افتح تطبيق زين كاش وتوجه للخدمة المطلوبة.\n2. اتبع التعليمات على الشاشة.\n3. للمساعدة تواصل مع 107.`;
     }
 
     async function handleKbAiChat() {
@@ -5448,7 +5433,7 @@ ${stepsText}
         userMsgDiv.className = 'chat-msg';
         userMsgDiv.style.alignSelf = 'flex-end';
         userMsgDiv.innerHTML = `
-            <div class="user-msg">
+            <div class="user-msg" style="font-size: 0.92rem; padding: 12px 18px;">
                 <p style="margin:0;">${escapeHtml(msg)}</p>
             </div>
         `;
@@ -5459,8 +5444,8 @@ ${stepsText}
         typingDiv.className = 'chat-msg';
         typingDiv.style.alignSelf = 'flex-start';
         typingDiv.innerHTML = `
-            <div class="ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.5; color: #64748b; border-top-right-radius: 2px;">
-                <p style="margin:0;"><i class="fa-solid fa-spinner fa-spin"></i> جاري استشارة الذكاء الاصطناعي والبحث في دليل المعرفة...</p>
+            <div class="ai-msg" style="align-self: flex-start; max-width: 90%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; font-size: 0.88rem; line-height: 1.5; color: #64748b; border-top-right-radius: 2px;">
+                <p style="margin:0;"><i class="fa-solid fa-spinner fa-spin" style="color: #ff9900;"></i> جاري البحث في دليل المعرفة واستخراج الخطوات...</p>
             </div>
         `;
         chatBody.appendChild(typingDiv);
@@ -5505,23 +5490,24 @@ ${stepsText}
             currentLang: 'ar'
         };
 
-        const primaryArt = aiMeta && aiMeta.primaryArticle ? aiMeta.primaryArticle : null;
-        const sourceHtml = (primaryArt && primaryArt.title) ? `
-            <div class="ai-source-card" style="margin-top: 8px;">
-                <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">
-                    <i class="fa-solid fa-book-bookmark" style="color:#ff9900;"></i>
-                    <span style="font-weight:700; font-size:0.73rem; color:#1e293b; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(primaryArt.title)}">المصدر: ${escapeHtml(primaryArt.title)}</span>
-                </div>
-                <button type="button" class="ai-source-link-btn" data-art-id="${primaryArt.id}" title="عرض هذا المقال في دليل المعرفة">
-                    عرض المقال 📖
-                </button>
-            </div>
-        ` : '';
+        // Determine primary article for source citation
+        let primaryArt = aiMeta && aiMeta.primaryArticle ? aiMeta.primaryArticle : null;
+        if (!primaryArt && (kbArticles || window.EMBEDDED_KB_DATA)) {
+            const list = kbArticles || window.EMBEDDED_KB_DATA || [];
+            const qL = msg.toLowerCase();
+            const matched = list.find(a => (a.title || '').toLowerCase().includes(qL) || (a.keywords || '').toLowerCase().includes(qL) || (qL.includes('سهم') && a.title.includes('أسهم')) || (qL.includes('ماستر') && a.title.includes('ماستر')));
+            if (matched) primaryArt = { id: matched.id, title: matched.title, category: matched.category };
+        }
 
-        const followUps = (aiMeta && Array.isArray(aiMeta.followUpChips) && aiMeta.followUpChips.length > 0) ? aiMeta.followUpChips : [];
-        const chipsHtml = followUps.length > 0 ? `
-            <div class="ai-interactive-chips" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:5px;">
-                ${followUps.map(chip => `<button type="button" class="ai-followup-chip" data-query="${escapeHtml(chip)}">💡 ${escapeHtml(chip)}</button>`).join('')}
+        const sourceHtml = (primaryArt && primaryArt.title) ? `
+            <div class="ai-source-card" style="margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:70%;">
+                    <i class="fa-solid fa-book-bookmark" style="color:#ff9900; font-size: 0.9rem;"></i>
+                    <span style="font-weight:700; font-size:0.78rem; color:#1e293b; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(primaryArt.title)}">المصدر: ${escapeHtml(primaryArt.title)}</span>
+                </div>
+                <button type="button" class="ai-source-link-btn" data-art-id="${primaryArt.id}" title="عرض هذا المقال في دليل المعرفة" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s;">
+                    <i class="fa-solid fa-book-open"></i> عرض المقال
+                </button>
             </div>
         ` : '';
 
@@ -5530,31 +5516,30 @@ ${stepsText}
         aiMsgDiv.style.alignSelf = 'flex-start';
         aiMsgDiv.style.width = '100%';
         aiMsgDiv.innerHTML = `
-            <div class="ai-msg" style="align-self: flex-start; max-width: 95%; width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.65; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+            <div class="ai-msg" style="align-self: flex-start; max-width: 95%; width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; font-size: 0.92rem; line-height: 1.7; color: #1e293b; border-top-right-radius: 2px; box-shadow: 0 3px 10px rgba(0,0,0,0.04);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
                     <div class="ai-lang-switch" data-msg-id="${msgId}">
                         <button type="button" class="ai-lang-pill active" data-lang="ar" data-msg-id="${msgId}">🇮🇶 العربية</button>
                         <button type="button" class="ai-lang-pill" data-lang="en" data-msg-id="${msgId}">🇬🇧 English</button>
                         <button type="button" class="ai-lang-pill" data-lang="ku" data-msg-id="${msgId}">☀️ کوردی</button>
                     </div>
-                    <span style="font-size:0.67rem; color:#64748b; font-weight:700;">
+                    <span style="font-size:0.72rem; color:#64748b; font-weight:700;">
                         <i class="fa-solid fa-bolt" style="color:#ff9900;"></i> ${aiMeta && aiMeta.engine ? escapeHtml(aiMeta.engine) : 'Gemini 2.0 Flash'}
                     </span>
                 </div>
 
-                <div class="ai-reply-container" id="reply-container-${msgId}" style="direction: rtl; text-align: right;">
+                <div class="ai-reply-container" id="reply-container-${msgId}" style="direction: rtl; text-align: right; font-size: 0.92rem;">
                     <p class="ai-reply-text" id="text-${msgId}" style="margin:0; white-space: pre-line;"></p>
                 </div>
 
-                <div class="ai-msg-actions-bar">
-                    <button type="button" class="ai-copy-btn" data-msg-id="${msgId}" title="نسخ هذا الرد لإرساله مباشرة للزبون">
+                <div class="ai-msg-actions-bar" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <button type="button" class="ai-copy-btn" data-msg-id="${msgId}" title="نسخ هذا الرد لإرساله مباشرة للزبون" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-size:0.78rem; font-weight:700; padding:6px 14px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;">
                         <i class="fa-regular fa-clone"></i>
                         <span class="copy-btn-label">نسخ الرد للزبون 📋</span>
                     </button>
                 </div>
 
                 ${sourceHtml}
-                ${chipsHtml}
             </div>
         `;
         chatBody.appendChild(aiMsgDiv);
@@ -5589,7 +5574,7 @@ ${stepsText}
                 // Show translating loader
                 const originalAr = cache.ar;
                 const prevHtml = textEl.innerHTML;
-                textEl.innerHTML = `<span style="color:#64748b; font-size:0.8rem;"><i class="fa-solid fa-spinner fa-spin"></i> جاري الترجمة الاحترافية (${targetLang === 'en' ? 'English' : 'سۆرانی'})...</span>`;
+                textEl.innerHTML = `<span style="color:#64748b; font-size:0.85rem;"><i class="fa-solid fa-spinner fa-spin" style="color:#ff9900;"></i> جاري تحويل الرد إلى (${targetLang === 'en' ? 'English' : 'سۆرانی'})...</span>`;
 
                 try {
                     const transRes = await window.apiCall('/api/ai/translate', 'POST', {
@@ -5653,17 +5638,6 @@ ${stepsText}
                 }
             });
         }
-
-        // Event: Interactive Follow-Up Chips
-        aiMsgDiv.querySelectorAll('.ai-followup-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const q = chip.getAttribute('data-query');
-                if (q && chatInput) {
-                    chatInput.value = q;
-                    handleKbAiChat();
-                }
-            });
-        });
 
         kbAiHistory.push({ role: 'user', text: msg });
         kbAiHistory.push({ role: 'model', text: reply });

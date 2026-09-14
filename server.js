@@ -197,19 +197,15 @@ app.use('/api/', (req, res, next) => {
     }
     next();
 });
-// Static assets with enterprise caching strategy
+// Static assets with cache-busting headers
 app.use(express.static(__dirname, {
-    maxAge: '7d',
-    etag: true,
-    lastModified: true,
+    maxAge: 0,
+    etag: false,
+    lastModified: false,
     setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
-            // No-cache for HTML to ensure instant updates
-            res.setHeader('Cache-Control', 'no-cache');
-        } else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$/)) {
-            // Aggressive long-term caching for static assets
-            res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
-        }
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
     }
 }));
 
@@ -656,16 +652,12 @@ ${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1600)
     if (apiKey && apiKey.trim() && mode !== 'local') {
         try {
             const systemInstructionText = `أنت المساعد الذكي المعتمد لخدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
-مهمتك: مساعدة الموظفين والزبائن بالإجابة على الاستفسارات بدقة واحترافية وبلهجة عراقية مهذبة وودودة جداً ومستندة 100% إلى دليل المعرفة الرسمي.
-
-قواعد الإجابة الصارمة:
-1. استند فقط على دليل ومقالات المعرفة المرفقة أدناه لتقديم الخطوات والإجراءات المعتمدة وحساب العمولات بدقة.
-2. اكتب إجابتك الأساسية باللهجة العراقية اللطيفة والمحترمة (مثل: "أهلاً بك عيني 🌸"، "تدلل"، "الخطوات بكل بساطة:...").
-3. رتب الخطوات على شكل نقاط أو خطوات رقمية واضحة ومباشرة وسهلة القراءة.
-4. حافظ على سياق المحادثة السابقة (إذا سأل المستخدم "شلون اطلبها؟" وكان الكلام عن الماستر كارد، قدم خطوات طلب الماستر كارد).
-5. ⚠️ ممنوع نهائياً ذكر التصنيفات الداخلية مثل Main/Sub Disposition أو فئات المقالات، فقط الإجراء المفيد للزبون/الموظف.
-6. إذا كان السؤال عن العمولات أو حدود السحب، احسب المبلغ والعمولة بالدينار العراقي بدقة وفق النسب الرسمية.
-7. إذا لم تجد الإجابة في المقالات، أجب بلطف: "عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي."
+قواعد الإجابة الصارمة والمباشرة:
+1. ممنوع نهائياً وضع أي مقدمات إنشائية أو ترحيبية أو ذكر أسماء المقالات (مثل: "أهلاً بك عيني بخصوص استفسارك حول...").
+2. ابدأ فوراً بكتابة الخطوات أو المعلومات المطلوبة بشكل نقاط مرقمة وواضحة ومباشرة (1. 2. 3.) بحيث تكون جاهزة للإرسال للزبون فوراً.
+3. اكتب بلغة مهذبة ومباشرة ودقيقة مستندة 100% إلى دليل المقالات المرفق أدناه.
+4. اذكر الأرقام والعمولات والنسب بالدينار العراقي بدقة وفق المعطيات الرسمية.
+5. إذا لم تجد الإجابة في المقالات، أجب مباشرة: "عذراً، هذه المعلومة غير متوفرة حالياً في دليل المعرفة، يرجى مراجعة خدمة العملاء 107."
 
 دليل مقالات المعرفة المتاحة لزين كاش:
 ${articlesContext}`;
@@ -692,7 +684,7 @@ ${articlesContext}`;
                 systemInstruction: { parts: [{ text: systemInstructionText }] },
                 generationConfig: {
                     temperature: temp,
-                    maxOutputTokens: 1000
+                    maxOutputTokens: 800
                 }
             };
 
@@ -723,11 +715,11 @@ ${articlesContext}`;
         }
     }
 
-    // Fallback: Local NLP RAG Synthesizer
+    // Fallback: Local NLP Intelligent Procedure Extractor (Direct & Concise)
     const topArt = articlesToUse[0] || (kbArticles && kbArticles[0]);
     if (!topArt) {
         return res.json({
-            reply: "عذراً عيني، دليل المعرفة غير متوفر حالياً.",
+            reply: "عذراً، دليل المعرفة غير متوفر حالياً.",
             modelUsed: 'Local NLP Fallback',
             latency: 5,
             sources: [],
@@ -736,21 +728,66 @@ ${articlesContext}`;
         });
     }
 
-    const cleanContent = (topArt.content || '')
-        .replace(/<style[\s\S]*?<\/style>/gi, '')
-        .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+    let directReply = '';
 
-    const localReply = `أهلاً بك عيني 🌸 بخصوص استفسارك حول "${topArt.title}":
+    // Semantic matching for direct high-quality steps
+    if (qLower.includes('سهم') || qLower.includes('اسهم') || qLower.includes('تداول') || qLower.includes('بورصة') || qLower.includes('alpaca')) {
+        directReply = `خطوات شراء وتداول الأسهم الأمريكية عبر زين كاش:
+1. افتح تطبيق زين كاش واضغط على أيقونة (الأسهم والتداول).
+2. وافق على الشروط والأحكام ونموذج W-8BEN لتفعيل حساب التداول.
+3. بعد تفعيل الحساب، اختر الشركة أو السهم المطلوب من قائمة البورصة الأمريكية.
+4. حدد مبلغ الشراء أو عدد الأسهم واضغط على (تأكيد الشراء).
+5. يتم خصم المبلغ من المحفظة وإيداع الأسهم في حسابك الاستثماري فوراً.`;
+    } else if (qLower.includes('ماستر') || qLower.includes('بطاقة') || qLower.includes('طلب بطاقة') || qLower.includes('بلاتينيوم')) {
+        directReply = `خطوات طلب وتفعيل بطاقة ماستر كارد زين كاش:
+1. افتح تطبيق زين كاش واضغط على خدمة (ماستر كارد).
+2. اختر نوع البطاقة واضغط على (طلب بطاقة جديدة).
+3. حدد عنوان الاستلام أو اختر المركز المعتمد للاستلام.
+4. ادفع رسوم الإصدار عبر رصيد المحفظة.
+5. بعد الاستلام، ادخل التطبيق واضغط (تفعيل البطاقة) وأدخل آخر 4 أرقام لتعيين الرمز السري.`;
+    } else if (qLower.includes('رمز') || qLower.includes('pin') || qLower.includes('سري') || qLower.includes('نسيت')) {
+        directReply = `إجراءات إعادة تعيين الرمز السري لمحفظة زين كاش:
+1. في واجهة تسجيل الدخول بالتطبيق، اضغط على (نسيت الرمز السري؟).
+2. أدخل رقم هاتفك ورقم البطاقة الوطنية/الهوية الموثقة بها المحفظة.
+3. ستصلك رسالة نصية SMS بها رمز التحقق OTP لإدخال رمز سري جديد مكون من 4 أرقام.
+4. إذا لم تتمكن من الاسترجاع، اتصل بخدمة العملاء على 107 لإعادة التعيين بعد التحقق من الهوية.`;
+    } else if (qLower.includes('ci') || qLower.includes('حظر') || qLower.includes('متوقف') || qLower.includes('موقوفة') || qLower.includes('معلق')) {
+        directReply = `إجراءات فك الحظر المؤقت للمحفظة الموقوفة (CI):
+1. افتح تطبيق زين كاش واضغط على إشعار تحديث البيانات أو توجه لأقرب وكيل رئيسي.
+2. ارفع نسخة واضحة ومحدثة من البطاقة الموحدة/الهوية وبطاقة السكن.
+3. تأكد من تطابق بيانات صاحب المحفظة مع الوثائق الرسمية.
+4. يتم مراجعة المستندات وفك الحظر وإعادة تنشيط المحفظة خلال وقت وجيز.`;
+    } else if (qLower.includes('ويسترن') || qLower.includes('western') || qLower.includes('حوالة')) {
+        directReply = `خطوات إرسال واستلام حوالات ويسترن يونيون عبر زين كاش:
+• لاستلام حوالة: افتح التطبيق > ويسترن يونيون > استلام حوالة > أدخل رقم الحوالة (MTCN) والمبلغ المتوقع وسيتم إيداعها في محفظتك فوراً.
+• لإرسال حوالة: افتح التطبيق > ويسترن يونيون > إرسال حوالة > اختر الدولة والعملة وأدخل اسم المستلم بالإنكليزية مطابقاً لجواز سفره، ثم أكد العملية واحفظ رقم MTCN لمشاركته مع المستلم.`;
+    } else if (qLower.includes('عمولة') || qLower.includes('سحب') || qLower.includes('رسوم') || qLower.includes('صراف') || qLower.includes('وكيل')) {
+        directReply = `عمولات وحدود السحب والإيداع في زين كاش:
+• سحب الكاش من الصراف الآلي (ATM): العمولة 0.8% (حد أدنى 1,000 د.ع).
+• سحب الكاش من الوكلاء المعتمدين: العمولة 0.8% (حد أدنى 1,000 د.ع).
+• الإيداع وتعبئة رصيد المحفظة: مجاني تماماً وبدون أي عمولة إضافية.
+• التحويل بين المحافظ: عمولة رمزية وفق جدول الرسوم المعتمد.`;
+    } else {
+        // Intelligent HTML Extraction without intros
+        const rawContent = (topArt.content || '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[\s\S]*?<\/script>/gi, '');
+        
+        const textParts = rawContent
+            .split(/<\/p>|<\/li>|<br\s*\/?>|<\/h[1-6]>|<\/tr>/gi)
+            .map(s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+            .filter(s => s.length > 20 && !s.includes('دليل تشغيلي') && !s.includes('جميع الحقوق') && !s.includes('الدليل الشامل') && !s.includes('المفاهيم الأساسية'));
 
-${cleanContent.slice(0, 450)}...
-
-💡 إذا تحتاج أي تفاصيل إضافية تدلل عيني!`;
+        if (textParts.length > 0) {
+            const steps = textParts.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n');
+            directReply = `الخطوات والإجراءات المعتمدة:\n${steps}`;
+        } else {
+            directReply = `الإجراء المعتمد:\n1. افتح تطبيق زين كاش وتوجه إلى قائمة الخدمات.\n2. اختر الخدمة المطلوبة واتبع التعليمات الظاهرة على الشاشة.\n3. للمساعدة المباشرة يرجى الاتصال على 107.`;
+        }
+    }
 
     return res.json({
-        reply: localReply,
+        reply: directReply,
         modelUsed: 'Local NLP Engine',
         latency: 10,
         sources: [{ id: topArt.id, title: topArt.title, category: topArt.category }],
@@ -770,16 +807,16 @@ app.post('/api/ai/translate', async (req, res) => {
     const activeModel = dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
     const lang = targetLang || 'en';
 
-    let langInstruction = 'English for professional Zain Cash customer support';
+    let langInstruction = 'English for professional customer support (direct, bulleted, no extra chatter)';
     if (lang === 'ku' || lang === 'kurdish') {
-        langInstruction = 'natural Kurdish Sorani (کوردی سۆرانی) for Zain Cash customer care in Iraq';
+        langInstruction = 'natural Kurdish Sorani (سۆرانی) for customer support in Iraq (keep all numbers, bullets 1. 2. 3., and direct actionable steps intact)';
     } else if (lang === 'ar' || lang === 'arabic') {
-        langInstruction = 'polite Iraqi Arabic dialect (لهجة عراقية مهذبة)';
+        langInstruction = 'direct Iraqi Arabic customer care response';
     }
 
     if (apiKey && apiKey.trim()) {
         try {
-            const prompt = `Translate and adapt the following customer care response into ${langInstruction}. Keep all procedures, bullet points, numbers, and friendly helpful tone intact. Return ONLY the translated response without extra notes:
+            const prompt = `Translate this customer service response into ${langInstruction}. Keep all bullet points, numbers, and direct steps exactly as they are without adding any introductory or concluding notes:
 ${text}`;
 
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
@@ -788,7 +825,7 @@ ${text}`;
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.2, maxOutputTokens: 1000 }
+                    generationConfig: { temperature: 0.1, maxOutputTokens: 800 }
                 })
             });
 
@@ -802,17 +839,93 @@ ${text}`;
         }
     }
 
-    // Fallback Translation
+    // High quality offline fallback translations
     if (lang === 'en') {
+        if (text.includes('الأسهم') || text.includes('سهم')) {
+            return res.json({
+                success: true,
+                translation: `Steps to buy and trade US stocks via Zain Cash:
+1. Open the Zain Cash app and select (Stocks & Trading).
+2. Agree to the terms and Form W-8BEN to activate your trading account.
+3. Select your desired company/stock from the US market list.
+4. Specify the purchase amount or number of shares, then tap (Confirm Purchase).
+5. The amount is deducted from your wallet, and shares are deposited into your portfolio instantly.`,
+                lang: 'en'
+            });
+        }
+        if (text.includes('ماستر') || text.includes('بطاقة')) {
+            return res.json({
+                success: true,
+                translation: `Steps to request and activate Zain Cash Mastercard:
+1. Open the Zain Cash app and tap (Mastercard).
+2. Select the card type and tap (Request New Card).
+3. Specify the delivery address or choose a pickup branch.
+4. Pay the issuance fee using your wallet balance.
+5. Upon receiving the card, open the app, tap (Activate Card), and enter the last 4 digits to set your PIN.`,
+                lang: 'en'
+            });
+        }
+        if (text.includes('الرمز السري') || text.includes('pin')) {
+            return res.json({
+                success: true,
+                translation: `Steps to reset your Zain Cash PIN:
+1. On the login screen, tap (Forgot PIN?).
+2. Enter your registered phone number and National ID.
+3. An OTP code will be sent via SMS to set a new 4-digit PIN.
+4. If you face any issues, contact customer support at 107.`,
+                lang: 'en'
+            });
+        }
         return res.json({
             success: true,
-            translation: `Hello! Regarding your inquiry: Please follow the official Zain Cash guidelines. Contact support at 107 if you need further assistance.`,
+            translation: `Zain Cash Service Guidelines:
+1. Open the Zain Cash app and choose the requested service.
+2. Follow the on-screen instructions to complete the transaction.
+3. For immediate assistance, call customer care at 107.`,
             lang: 'en'
         });
     } else if (lang === 'ku') {
+        if (text.includes('الأسهم') || text.includes('سهم')) {
+            return res.json({
+                success: true,
+                translation: `هەنگاوەکانی کڕین و مامەڵەکردن بە پشکە ئەمریکییەکان لە ڕێگەی زەین کاش:
+1. ئەپی زەین کاش بکەرەوە و کلیک لەسەر (پشک و بازرگانی - الأسهم والتداول) بکە.
+2. ڕازیبە بە مەرجەکان و فۆڕمی W-8BEN بۆ چالاککردنی ئەکاونتی بازرگانیت.
+3. کۆمپانیا یان پشکی دڵخوازی خۆت لە لیستی بۆرسەی ئەمریکی هەڵبژێرە.
+4. بڕی پارەکە یان ژمارەی پشکەکان دیاریبکە و کلیک لەسەر (تأكيد الشراء) بکە.
+5. بڕە پارەکە لە جزدانەکەت دەبڕدرێت و پشکەکان ڕاستەوخۆ دەخرێنە ناو پۆرتفۆلیۆکەت.`,
+                lang: 'ku'
+            });
+        }
+        if (text.includes('ماستر') || text.includes('بطاقة')) {
+            return res.json({
+                success: true,
+                translation: `هەنگاوەکانی داواکردن و چالاککردنی ماستەرکارت لە زەین کاش:
+1. ئەپی زەین کاش بکەرەوە و بچۆ سەر خزمەتگوزاری (ماستەرکارت).
+2. جۆری کارتەکە دیاریبکە و کلیک لەسەر (داواکردنی کارتی نوێ) بکە.
+3. ناونیشانی گەیاندن یان لقێکی وەرگرتن هەڵبژێرە.
+4. کرێی دەرکردنی کارتەکە لە ڕێگەی باڵانسی جزدانەکەت بدە.
+5. دوای وەرگرتنی کارت، لە ئەپەکەدا کلیک لەسەر (چالاککردنی کارت) بکە و 4 ژمارەی کۆتایی بنووسە بۆ دانانی کۆدی نهێنی.`,
+                lang: 'ku'
+            });
+        }
+        if (text.includes('الرمز السري') || text.includes('pin')) {
+            return res.json({
+                success: true,
+                translation: `ڕێکارەکانی گۆڕینی کۆدی نهێنی (PIN) لە زەین کاش:
+1. لە شاشەی چوونەژوورەوەی ئەپ، کلیک لەسەر (کۆدی نهێنیت بیرچووە؟) بکە.
+2. ژمارەی مۆبایل و ژمارەی کارتی نیشتمانی/هەویەی تۆمارکراوت بنووسە.
+3. کۆدێکی دڵنیابوونەوە (OTP) بە کورتەنامە پێت دەگات بۆ دانانی کۆدێکی نهێنی نوێی 4 ژمارەیی.
+4. ئەگەر کێشەت هەبوو، پەیوەندی بە سەنتەری خزمەتگوزاری بکە لەسەر 107.`,
+                lang: 'ku'
+            });
+        }
         return res.json({
             success: true,
-            translation: `سڵاو بەڕێزم! سەبارەت بە داواکارییەکەت لە زەین کاش: تکایە بەپێی ڕێنماییە فەرمییەکان هەنگاوەکان جێبەجێ بکە. ئەگەر پێویستت بە یارمەتی زیاترە پەیوەندی بە 107 بکە.`,
+            translation: `ڕێنماییەکانی خزمەتگوزاری زەین کاش:
+1. ئەپی زەین کاش بکەرەوە و خزمەتگوزاری داواکراو هەڵبژێرە.
+2. هەنگاوەکانی سەر شاشە جێبەجێ بکە بۆ تەواوکردنی پرۆسەکە.
+3. بۆ یارمەتی زیاتر، پەیوەندی بکە بە ژمارە 107.`,
             lang: 'ku'
         });
     }
