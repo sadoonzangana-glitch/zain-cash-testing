@@ -837,9 +837,6 @@
                         <button class="admin-tab-btn active" data-tab="tab-scenarios">
                             <i class="fa-solid fa-file-signature"></i> Manage Scenarios
                         </button>
-                        <button class="admin-tab-btn" data-tab="tab-ai-scenarios">
-                            <i class="fa-solid fa-brain"></i> Manage AI Scenarios
-                        </button>
                         <button class="admin-tab-btn" data-tab="tab-call-scenarios">
                             <i class="fa-solid fa-headset"></i> Manage Call Scenarios
                         </button>
@@ -1085,121 +1082,6 @@
                                 </button>
                             </div>
                         </footer>
-                    </div>
-
-                    <!-- TAB 1.5: AI Scenarios Manager -->
-                    <div class="admin-tab-content" id="tab-ai-scenarios">
-                        <div class="admin-modal-body">
-                            <!-- Sidebar: AI Scenarios List -->
-                            <aside class="admin-sidebar">
-                                <div class="sidebar-header">
-                                    <h3>Current AI Scenarios</h3>
-                                    <button class="btn-add-scenario" id="add-new-ai-scenario-btn" type="button">
-                                        <i class="fa-solid fa-plus"></i> Add New
-                                    </button>
-                                </div>
-                                <ul class="admin-scenarios-list" id="admin-ai-scenarios-list-ul">
-                                    <!-- Loaded dynamically -->
-                                </ul>
-                            </aside>
-                            
-                            <!-- Main Area: Edit Form & Live Preview Split Pane -->
-                            <main class="admin-form-area split-preview-container" style="display: flex; gap: 20px;">
-                                <!-- Left Form -->
-                                <div class="split-left-form" style="flex: 1; min-width: 0;">
-                                    <div id="no-ai-scenario-selected" class="no-selection-message">
-                                        <i class="fa-solid fa-brain"></i>
-                                        <p>Select an AI scenario from the sidebar to edit it, or click "Add New".</p>
-                                    </div>
-                                    <form id="ai-scenario-edit-form" class="hidden">
-                                    <input type="hidden" id="edit-ai-scenario-id">
-                                    
-                                    <div class="form-row-double" style="display: flex; gap: 15px; margin-bottom: 15px;">
-                                        <div class="form-group" style="flex: 1;">
-                                            <label for="edit-ai-customer-name">Customer Name:</label>
-                                            <input type="text" id="edit-ai-customer-name" required placeholder="e.g. Mohammad">
-                                        </div>
-                                        <div class="form-group" style="flex: 1;">
-                                            <label for="edit-ai-customer-tone">Customer Tone / Personality:</label>
-                                            <select id="edit-ai-customer-tone" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
-                                                <option value="Simple & Worried (بسيط وقلق)">Simple & Worried (بسيط وقلق)</option>
-                                                <option value="Angry & Demanding (غاضب ومستعجل)">Angry & Demanding (غاضب ومستعجل)</option>
-                                                <option value="Polite & Inquiring (مهذب ومستفسر)">Polite & Inquiring (مهذب ومستفسر)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-group" style="margin-bottom: 15px;">
-                                        <label for="edit-ai-initial-message">Customer Message / Problem Description:</label>
-                                        <textarea id="edit-ai-initial-message" required placeholder="e.g. My wallet transfer has failed..." style="width:100%; min-height:80px; border: 1px solid var(--border-color); border-radius:8px; padding:10px; font-family:inherit; outline:none; resize:vertical;"></textarea>
-                                    </div>
-
-                                    <div class="form-row-double" style="display: flex; gap: 15px; margin-bottom: 15px;">
-                                        <div class="form-group" style="flex: 1;">
-                                            <label for="edit-ai-correct-disp">Correct Main Disposition:</label>
-                                            <select id="edit-ai-correct-disp" required style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
-                                                <option value="">Select Disposition</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group" style="flex: 1;">
-                                            <label for="edit-ai-correct-sub">Correct Sub Disposition:</label>
-                                            <select id="edit-ai-correct-sub" required style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 10px; font-family: var(--font-en); font-size: 0.9rem; color: var(--text-primary); outline: none; background: #fff;">
-                                                <option value="">Select Sub Disposition</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                                        <button type="button" class="btn btn-secondary" id="delete-ai-scenario-btn" style="background: #ef4444; color: white;">
-                                            <i class="fa-solid fa-trash-can"></i> Delete Scenario
-                                        </button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fa-solid fa-circle-check"></i> Save Scenario
-                                        </button>
-                                    </div>
-                                    </form>
-                                </div>
-
-                                <!-- Right Live Preview -->
-                                <div class="split-right-preview hidden" id="ai-live-preview-panel" style="width: 320px; border-right: 1px solid #e2e8f0; padding-right: 20px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; direction: rtl; text-align: right;">
-                                    <div class="preview-header-label" style="font-size: 0.85rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px; font-family: var(--font-ar);">
-                                        <i class="fa-solid fa-eye" style="color: var(--primary);"></i> معاينة الأيجنت الفورية
-                                    </div>
-                                    
-                                    <div class="ai-preview-frame" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; height: 380px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: var(--font-ar);">
-                                        <!-- Welcome Header Card -->
-                                        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 15px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                                            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,153,0,0.15); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                                                <i class="fa-solid fa-robot"></i>
-                                            </div>
-                                            <div style="font-size: 0.9rem; font-weight: 800;">مدرب زين كاش الذكي</div>
-                                        </div>
-                                        
-                                        <!-- Customer Details Area -->
-                                        <div style="flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.72rem; overflow-y: auto;">
-                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
-                                                <div style="font-weight: 700; color: #475569; margin-bottom: 4px;">شخصية الزبون الافتراضية:</div>
-                                                <div style="font-size: 0.8rem; color: var(--text-primary); font-weight: 800;" id="ai-preview-cust-name">الزبون: -</div>
-                                                <div style="font-size: 0.75rem; color: #ff9900; margin-top: 2px;" id="ai-preview-cust-tone">نبرة الصوت: -</div>
-                                            </div>
-                                            
-                                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px;">
-                                                <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">الرسالة الأولى للمشترك:</div>
-                                                <div style="font-size: 0.75rem; color: #1e293b; white-space: pre-wrap;" id="ai-preview-cust-msg">رسالة البدء...</div>
-                                            </div>
-                                            
-                                            <div style="border-top: 1px dashed #e2e8f0; padding-top: 8px; margin-top: auto;">
-                                                <div style="font-weight: 700; color: #475569; font-size: 0.65rem; margin-bottom: 4px;">التصنيف الصحيح المتوقع للتقييم:</div>
-                                                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                                    <span id="ai-preview-correct-disp" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: bold;">Main Disp</span>
-                                                    <span id="ai-preview-correct-sub" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: bold;">Sub Disp</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </main>
-                        </div>
                     </div>
 
                     <!-- TAB: Call Scenarios Manager (Manage Call Scenarios) -->
@@ -2094,7 +1976,7 @@
                         <label for="login-username" style="font-size:0.82rem; font-weight:700; color:#64748b; margin-bottom:2px; display:block; text-align:left; direction:ltr;">Employee ZC Code / Username</label>
                         <div class="input-with-icon" style="position:relative; width:100%; display:flex; align-items:center;">
                             <i class="fa-solid fa-id-badge" style="position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:1.1rem; pointer-events:none; z-index:2;"></i>
-                            <input type="text" id="login-username" required placeholder="" autocomplete="username" style="width:100%; box-sizing:border-box; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; color:#0f172a; padding:13px 16px 13px 46px; font-size:0.95rem; font-weight:500; outline:none; text-align:left !important; direction:ltr !important; unicode-bidi:isolate !important;">
+                            <input type="text" id="login-username" required placeholder="Enter Username" autocomplete="username" style="width:100%; box-sizing:border-box; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; color:#0f172a; padding:13px 16px 13px 46px; font-size:0.95rem; font-weight:500; outline:none; text-align:left !important; direction:ltr !important; unicode-bidi:isolate !important;">
                         </div>
                     </div>
                     <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
