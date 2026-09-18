@@ -7861,6 +7861,505 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ==========================================================================
+    // PHASE 1: MOCK CORE CRM PORTAL SYSTEM
+    // ==========================================================================
+    const MOCK_CRM_DATABASE = {
+        '07701234501': {
+            name: 'حسين علي مهدي',
+            phone: '07701234501',
+            status: 'Active (نشط)',
+            kycLevel: 'Full KYC (حساب موثق بالكامل)',
+            governorate: 'بغداد - المنصور',
+            iqdBalance: '1,450,000 د.ع',
+            usdBalance: '$850.00 USD (تداول ISX)',
+            mastercard: '5300 **** **** 4892 (نشطة - Active)',
+            registeredAt: '2023-04-12',
+            transactions: [
+                { id: 'TXN-88219401', date: '2026-09-18 14:22', type: 'شراء أسهم (شركة بغداد للمشروبات)', amount: '-250,000 د.ع', fee: '2,500 د.ع', status: 'success', statusText: 'مكتملة' },
+                { id: 'TXN-88190244', date: '2026-09-17 11:05', type: 'إيداع نقدي عبر وكيل (المنصور)', amount: '+500,000 د.ع', fee: '0 د.ع', status: 'success', statusText: 'مكتملة' },
+                { id: 'TXN-88041920', date: '2026-09-16 19:40', type: 'تحويل محلي P2P إلى 07801234567', amount: '-100,000 د.ع', fee: '500 د.ع', status: 'success', statusText: 'مكتملة' }
+            ],
+            tickets: [
+                { id: 'TKT-44012', date: '2026-09-18', subject: 'استفسار عن تداول أسهم سوق العراق للأوراق المالية (ISX)', category: 'الأسهم والتداول', status: 'مغلقة', resolution: 'تم تزويد المشترك بخطوات الشراء وتأكيد العمولة المعتمدة.' }
+            ],
+            kyc: {
+                idType: 'البطاقة الوطنية الموحدة',
+                idNumber: '199201489012',
+                motherName: 'فاطمة كريم',
+                dob: '1992-06-15',
+                lastVerification: '2025-11-20'
+            }
+        },
+        '07809876501': {
+            name: 'سارة فاضل عباس',
+            phone: '07809876501',
+            status: 'Active (نشط)',
+            kycLevel: 'Full KYC (حساب موثق بالكامل)',
+            governorate: 'البصرة - العشار',
+            iqdBalance: '3,200,000 د.ع',
+            usdBalance: '$1,200.00 USD (تداول ISX)',
+            mastercard: '5300 **** **** 9104 (نشطة - Active)',
+            registeredAt: '2023-08-01',
+            transactions: [
+                { id: 'TXN-99401284', date: '2026-09-18 10:15', type: 'أمر شراء معلق (أسهم مصرف بغداد)', amount: '-750,000 د.ع', fee: '3,000 د.ع', status: 'pending', statusText: 'معلقة (Pending)' },
+                { id: 'TXN-99301129', date: '2026-09-15 16:30', type: 'تسوق إلكتروني عبر ماستركارد', amount: '-45,000 د.ع', fee: '1,000 د.ع', status: 'success', statusText: 'مكتملة' }
+            ],
+            tickets: [
+                { id: 'TKT-44199', date: '2026-09-18', subject: 'متابعة أمر شراء أسهم معلق في جلسة التداول', category: 'الأسهم والتداول', status: 'قيد المعالجة', resolution: 'تم تصعيد الحالة لغرفة التداول والمقاصة المركزية.' }
+            ],
+            kyc: {
+                idType: 'البطاقة الوطنية الموحدة',
+                idNumber: '199608471120',
+                motherName: 'زينب جواد',
+                dob: '1996-03-22',
+                lastVerification: '2026-01-10'
+            }
+        },
+        '07802345678': {
+            name: 'نور الهدى علي',
+            phone: '07802345678',
+            status: 'Suspended (موقوف - CI)',
+            kycLevel: 'Light / Basic (غير مكتمل)',
+            governorate: 'النجف الأشرف',
+            iqdBalance: '15,000 د.ع',
+            usdBalance: '$0.00 USD',
+            mastercard: 'لا توجد بطاقة مرتبطة',
+            registeredAt: '2024-02-14',
+            transactions: [
+                { id: 'TXN-77102948', date: '2026-09-17 18:00', type: 'محاولة سحب كاش مرفوضة', amount: '0 د.ع', fee: '0 د.ع', status: 'failed', statusText: 'مرفوضة (CI Account)' }
+            ],
+            tickets: [
+                { id: 'TKT-39014', date: '2026-09-17', subject: 'طلب توثيق المحفظة وفك تعليق الحساب (CI)', category: 'توثيق المحفظة', status: 'مفتوحة', resolution: 'بانتظار مراجعة أقرب فرع لرفع المستمسكات الرسمية.' }
+            ],
+            kyc: {
+                idType: 'شهادة الجنسية (قديمة)',
+                idNumber: '7741029',
+                motherName: 'مريم حسن',
+                dob: '1998-11-05',
+                lastVerification: 'غير مكتمل'
+            }
+        },
+        '07719876543': {
+            name: 'حيدر جاسم كاظم',
+            phone: '07719876543',
+            status: 'Active (نشط)',
+            kycLevel: 'Full KYC (حساب موثق بالكامل)',
+            governorate: 'كربلاء المقدسة',
+            iqdBalance: '820,000 د.ع',
+            usdBalance: '$350.00 USD',
+            mastercard: '5300 **** **** 6612 (نشطة - Active)',
+            registeredAt: '2022-11-09',
+            transactions: [
+                { id: 'TXN-66401920', date: '2026-09-18 09:40', type: 'استلام حوالة ويسترن يونيون (MTCN: 8849102451)', amount: '+400,000 د.ع', fee: '0 د.ع', status: 'success', statusText: 'مكتملة' },
+                { id: 'TXN-66301984', date: '2026-09-14 20:10', type: 'تسديد فاتورة كهرباء حكومية', amount: '-65,000 د.ع', fee: '1,000 د.ع', status: 'success', statusText: 'مكتملة' }
+            ],
+            tickets: [
+                { id: 'TKT-42109', date: '2026-09-18', subject: 'استفسار عن استلام حوالة Western Union دولية', category: 'ويسترن يونيون', status: 'مغلقة', resolution: 'تم التحقق من رقم الحوالة والمطابقة مع جواز السفر.' }
+            ],
+            kyc: {
+                idType: 'جواز سفر عراقي',
+                idNumber: 'A19482015',
+                motherName: 'سعاد مهدي',
+                dob: '1989-08-30',
+                lastVerification: '2026-02-18'
+            }
+        },
+        '07727900402': {
+            name: 'علي مهدي صالح',
+            phone: '07727900402',
+            status: 'Active (نشط)',
+            kycLevel: 'Full KYC (حساب موثق بالكامل)',
+            governorate: 'أربيل',
+            iqdBalance: '540,000 د.ع',
+            usdBalance: '$0.00 USD',
+            mastercard: '5300 **** **** 3311 (نشطة - Active)',
+            registeredAt: '2023-01-20',
+            transactions: [
+                { id: 'TXN-55201948', date: '2026-09-18 12:10', type: 'شحن رصيد خط زين العراق', amount: '-10,000 د.ع', fee: '0 د.ع', status: 'success', statusText: 'مكتملة' },
+                { id: 'TXN-55102934', date: '2026-09-10 15:45', type: 'رسوم تجديد بطاقة ماستركارد', amount: '-15,000 د.ع', fee: '0 د.ع', status: 'success', statusText: 'مكتملة' }
+            ],
+            tickets: [
+                { id: 'TKT-41002', date: '2026-09-10', subject: 'استلام وتفعيل بطاقة ماستركارد جديدة', category: 'ماستركارد زين كاش', status: 'مغلقة', resolution: 'تم ربط وتفعيل البطاقة بنجاح من خلال التطبيق.' }
+            ],
+            kyc: {
+                idType: 'البطاقة الوطنية الموحدة',
+                idNumber: '199504819033',
+                motherName: 'منى صبحي',
+                dob: '1995-12-04',
+                lastVerification: '2025-08-14'
+            }
+        },
+        '07723065187': {
+            name: 'أحمد محمد عبد الله',
+            phone: '07723065187',
+            status: 'Active (نشط)',
+            kycLevel: 'Full KYC (حساب موثق بالكامل)',
+            governorate: 'بغداد - الكرادة',
+            iqdBalance: '2,850,000 د.ع',
+            usdBalance: '$450.00 USD',
+            mastercard: '5300 **** **** 7789 (نشطة - Active)',
+            registeredAt: '2022-05-18',
+            transactions: [
+                { id: 'TXN-44109283', date: '2026-09-18 13:50', type: 'سحب نقدي كاش من منفذ معتمد (الكرادة)', amount: '-250,000 د.ع', fee: '2,000 د.ع', status: 'success', statusText: 'مكتملة' },
+                { id: 'TXN-44019284', date: '2026-09-16 17:15', type: 'شراء بطاقة إلكترونية E-Goods', amount: '-25,000 د.ع', fee: '0 د.ع', status: 'success', statusText: 'مكتملة' }
+            ],
+            tickets: [
+                { id: 'TKT-40192', date: '2026-09-18', subject: 'استفسار عن عمولة السحب النقدي وتحديد السقف اليومي', category: 'السحب والإيداع', status: 'مغلقة', resolution: 'تم توضيح نسبة العمولة المعتمدة وسقف السحب اليومي للمحفظة الموثقة.' }
+            ],
+            kyc: {
+                idType: 'البطاقة الوطنية الموحدة',
+                idNumber: '199002819401',
+                motherName: 'خديجة رشيد',
+                dob: '1990-09-14',
+                lastVerification: '2025-10-02'
+            }
+        }
+    };
+
+    function generateDeterministicCustomer(phone) {
+        let hash = 0;
+        for (let i = 0; i < phone.length; i++) {
+            hash = ((hash << 5) - hash) + phone.charCodeAt(i);
+            hash |= 0;
+        }
+        const absHash = Math.abs(hash);
+        const names = ['حيدر عبد الكريم', 'سجاد رعد خليل', 'مروة طارق سعيد', 'عمر فاروق نجم', 'يوسف قاسم جواد', 'هدى وليد خالد'];
+        const cities = ['بغداد - المنصور', 'البصرة - الجزائر', 'أربيل - عينكاوة', 'السليمانية - بختياري', 'كربلاء المقدسة', 'بابل - الحلة'];
+        const name = names[absHash % names.length];
+        const city = cities[absHash % cities.length];
+        const iqd = ((absHash % 450) * 10000 + 50000).toLocaleString() + ' د.ع';
+        const usd = '$' + ((absHash % 80) * 10).toFixed(2) + ' USD';
+        
+        return {
+            name: name,
+            phone: phone,
+            status: 'Active (نشط)',
+            kycLevel: 'Full KYC (حساب موثق بالكامل)',
+            governorate: city,
+            iqdBalance: iqd,
+            usdBalance: usd,
+            mastercard: '5300 **** **** ' + String(absHash % 9000 + 1000) + ' (نشطة - Active)',
+            registeredAt: '2023-06-15',
+            transactions: [
+                { id: 'TXN-' + (absHash % 900000 + 100000), date: '2026-09-18 11:20', type: 'تحويل مالي محلي P2P', amount: '-50,000 د.ع', fee: '500 د.ع', status: 'success', statusText: 'مكتملة' },
+                { id: 'TXN-' + (absHash % 900000 + 100001), date: '2026-09-17 14:00', type: 'إيداع نقدي عبر وكيل معتمد', amount: '+150,000 د.ع', fee: '0 د.ع', status: 'success', statusText: 'مكتملة' }
+            ],
+            tickets: [
+                { id: 'TKT-' + (absHash % 9000 + 1000), date: '2026-09-15', subject: 'استفسار عام عن خدمات المحفظة', category: 'استفسارات الحساب', status: 'مغلقة', resolution: 'تمت إجابة العميل وتوضيح الإجراءات.' }
+            ],
+            kyc: {
+                idType: 'البطاقة الوطنية الموحدة',
+                idNumber: '199' + String(absHash % 90000000 + 10000000),
+                motherName: 'فاطمة كريم',
+                dob: '1993-05-12',
+                lastVerification: '2025-09-10'
+            }
+        };
+    }
+
+    function initMockCrmSystem() {
+        const modal = document.getElementById('mock-crm-modal');
+        const openBtn = document.getElementById('btn-open-crm-portal');
+        const closeBtn = document.getElementById('btn-close-crm-modal');
+        const searchInput = document.getElementById('crm-search-phone');
+        const searchBtn = document.getElementById('crm-btn-search');
+        const chips = document.querySelectorAll('.crm-chip');
+
+        if (!modal) return;
+
+        // Open / Close Modal
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                modal.classList.add('active');
+                if (searchInput) {
+                    if (!searchInput.value) searchInput.value = '07701234501';
+                    performCrmSearch(searchInput.value.trim());
+                    searchInput.focus();
+                }
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+
+        // Search trigger
+        if (searchBtn && searchInput) {
+            searchBtn.addEventListener('click', () => {
+                performCrmSearch(searchInput.value.trim());
+            });
+
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performCrmSearch(searchInput.value.trim());
+                }
+            });
+        }
+
+        // Scenario chips click
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const phone = chip.getAttribute('data-phone');
+                if (phone && searchInput) {
+                    searchInput.value = phone;
+                    performCrmSearch(phone);
+                }
+            });
+        });
+
+        // Tab Switching inside CRM
+        const tabBtns = modal.querySelectorAll('.crm-tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const targetTab = btn.getAttribute('data-crm-tab');
+                modal.querySelectorAll('.crm-tab-pane').forEach(p => p.classList.add('hidden'));
+                const activePane = document.getElementById(`crm-pane-${targetTab}`);
+                if (activePane) activePane.classList.remove('hidden');
+            });
+        });
+    }
+
+    function performCrmSearch(rawPhone) {
+        const cleanPhone = String(rawPhone || '').replace(/\D/g, '');
+        const customer = MOCK_CRM_DATABASE[cleanPhone] || generateDeterministicCustomer(cleanPhone || '07700000000');
+
+        const nameEl = document.getElementById('crm-user-name');
+        const phoneEl = document.getElementById('crm-user-phone');
+        const statusEl = document.getElementById('crm-user-status');
+        const kycEl = document.getElementById('crm-user-kyc');
+        const cityEl = document.getElementById('crm-user-city');
+        const cardEl = document.getElementById('crm-user-card');
+        const iqdEl = document.getElementById('crm-user-iqd');
+        const usdEl = document.getElementById('crm-user-usd');
+
+        if (nameEl) nameEl.textContent = customer.name;
+        if (phoneEl) phoneEl.textContent = customer.phone;
+        if (statusEl) {
+            statusEl.textContent = customer.status;
+            statusEl.style.color = customer.status.includes('Suspended') ? '#ef4444' : '#22c55e';
+        }
+        if (kycEl) kycEl.textContent = customer.kycLevel;
+        if (cityEl) cityEl.textContent = customer.governorate;
+        if (cardEl) cardEl.textContent = customer.mastercard;
+        if (iqdEl) iqdEl.textContent = customer.iqdBalance;
+        if (usdEl) usdEl.textContent = customer.usdBalance;
+
+        // Render Transactions Table
+        const txTbody = document.getElementById('crm-transactions-tbody');
+        if (txTbody) {
+            if (!customer.transactions || customer.transactions.length === 0) {
+                txTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">لا توجد حركات مالية مسجلة لهذه المحفظة</td></tr>`;
+            } else {
+                txTbody.innerHTML = customer.transactions.map(tx => `
+                    <tr>
+                        <td>
+                            <strong style="font-family:monospace; color:#38bdf8;">${tx.id}</strong>
+                            <button type="button" class="crm-copy-btn" onclick="navigator.clipboard.writeText('${tx.id}'); showToast('تم نسخ رقم العملية: ${tx.id}', 'success');" title="نسخ رقم العملية">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </td>
+                        <td>${tx.date}</td>
+                        <td style="font-weight:700;">${escapeHtml(tx.type)}</td>
+                        <td style="font-weight:800; direction:ltr; text-align:right; color:${tx.amount.startsWith('+') ? '#22c55e' : '#f87171'};">${tx.amount}</td>
+                        <td>${tx.fee}</td>
+                        <td>
+                            <span class="crm-status-tag ${tx.status}">
+                                <i class="fa-solid ${tx.status === 'success' ? 'fa-check' : (tx.status === 'pending' ? 'fa-clock' : 'fa-xmark')}"></i>
+                                ${tx.statusText}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Render Tickets Table
+        const tkTbody = document.getElementById('crm-tickets-tbody');
+        if (tkTbody) {
+            if (!customer.tickets || customer.tickets.length === 0) {
+                tkTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">لا توجد تذاكر دعم سابقة للمشترك</td></tr>`;
+            } else {
+                tkTbody.innerHTML = customer.tickets.map(tk => `
+                    <tr>
+                        <td><strong style="font-family:monospace; color:#ff9900;">${tk.id}</strong></td>
+                        <td>${tk.date}</td>
+                        <td style="font-weight:700; color:#ffffff;">${escapeHtml(tk.subject)}</td>
+                        <td><span style="background:rgba(0,181,226,0.15); color:#00B5E2; padding:2px 8px; border-radius:10px; font-size:0.75rem;">${escapeHtml(tk.category)}</span></td>
+                        <td><span class="crm-status-tag ${tk.status === 'مغلقة' ? 'success' : 'pending'}">${tk.status}</span></td>
+                        <td style="font-size:0.78rem; color:#94a3b8;">${escapeHtml(tk.resolution || '-')}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Render KYC Details
+        const kycDiv = document.getElementById('crm-pane-kyc');
+        if (kycDiv && customer.kyc) {
+            kycDiv.innerHTML = `
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; background:rgba(9, 19, 34, 0.6); padding:18px; border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+                    <div><span style="color:#94a3b8; font-size:0.75rem;">نوع المستمسك الرسمي:</span><br><strong style="color:#ffffff;">${customer.kyc.idType}</strong></div>
+                    <div><span style="color:#94a3b8; font-size:0.75rem;">رقم الوثيقة / القيد:</span><br><strong style="font-family:monospace; color:#38bdf8;">${customer.kyc.idNumber}</strong></div>
+                    <div><span style="color:#94a3b8; font-size:0.75rem;">اسم الأم الثلاثي:</span><br><strong style="color:#ffffff;">${customer.kyc.motherName}</strong></div>
+                    <div><span style="color:#94a3b8; font-size:0.75rem;">تاريخ التولد:</span><br><strong style="color:#ffffff;">${customer.kyc.dob}</strong></div>
+                    <div><span style="color:#94a3b8; font-size:0.75rem;">آخر تدقيق امتثال:</span><br><strong style="color:#22c55e;">${customer.kyc.lastVerification}</strong></div>
+                </div>
+            `;
+        }
+    }
+    window.openMockCrmCustomer = function(phone) {
+        const modal = document.getElementById('mock-crm-modal');
+        const searchInput = document.getElementById('crm-search-phone');
+        if (modal) {
+            modal.classList.add('active');
+            if (searchInput && phone) {
+                searchInput.value = phone;
+                performCrmSearch(phone);
+            }
+        }
+    };
+
+    // ==========================================================================
+    // PHASE 1: LIVE PROHIBITED WORDS & PROFESSIONAL TONE MONITOR
+    // ==========================================================================
+    const PROHIBITED_WORDS_MAP = [
+        { regex: /ما\s*(أعرف|اعرف|أدري|ادري)/i, phrase: 'ما أعرف / ما أدري', alt: 'سأتحقق لحضرتك من النظام فوراً ودعني أتأكد لك بكل سرور.' },
+        { regex: /(النظام|السيستم|السيرفر)\s*(عاطل|واكف|طافي|خربان)/i, phrase: 'النظام عاطل / السيستم واكف', alt: 'توجد أعمال تحديث وتطوير دورية في النظام لخدمتكم بشكل أفضل.' },
+        { regex: /(هاي\s*)?(مشكلتك|مو\s*مشكلتنا)/i, phrase: 'هاي مشكلتك / مو مشكلتنا', alt: 'نحن هنا لمساعدتك وسنعمل على توضيح وحل الموضوع لحضرتك.' },
+        { regex: /(انت|أنت)\s*(غلطان|الغلطان)/i, phrase: 'أنت غلطان', alt: 'دعنا نراجع الخطوات والتفاصيل معاً لتصحيح العملية بنجاح.' },
+        { regex: /(مالنا|مالي|ما\s*لنا)\s*(علاقة|دخل)|(مو\s*يمنا)/i, phrase: 'مالنا علاقة / مو يمنا', alt: 'يسعدنا توجيهك إلى القسم المختص أو الخطوات المعتمدة بالكامل.' },
+        { regex: /روح\s*للفرع\s*(وخلصنا)?/i, phrase: 'روح للفرع وخلصنا', alt: 'يمكنك زيارة أقرب مركز خدمة رئيسي لتفويض وتأكيد العملية لحمايتك.' }
+    ];
+
+    let activeProhibitedToast = null;
+
+    function checkProhibitedTone(text) {
+        if (!text || typeof text !== 'string') return null;
+        for (const item of PROHIBITED_WORDS_MAP) {
+            if (item.regex.test(text)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    function showProhibitedWordAlert(match) {
+        if (activeProhibitedToast) {
+            activeProhibitedToast.remove();
+            activeProhibitedToast = null;
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'prohibited-toast';
+        toast.innerHTML = `
+            <div class="prohibited-toast-head">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>تنبيه جودة الخدمة (QA Alert)</span>
+            </div>
+            <div class="prohibited-toast-body">
+                تم رصد عبارة غير لائقة بأسلوب التخاطب: <strong>"${match.phrase}"</strong>.
+            </div>
+            <div class="prohibited-toast-alt">
+                <strong>💡 البديل المهني الموصى به:</strong><br>
+                "${match.alt}"
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        activeProhibitedToast = toast;
+
+        setTimeout(() => {
+            if (toast && toast.parentNode) {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.4s ease';
+                setTimeout(() => toast.remove(), 400);
+            }
+        }, 6000);
+    }
+
+    function initProhibitedWordsDetector() {
+        document.addEventListener('input', (e) => {
+            const target = e.target;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+                const val = target.value;
+                const match = checkProhibitedTone(val);
+                if (match && !target.hasAttribute('data-prohibited-alerted')) {
+                    target.setAttribute('data-prohibited-alerted', 'true');
+                    showProhibitedWordAlert(match);
+                    setTimeout(() => target.removeAttribute('data-prohibited-alerted'), 10000);
+                }
+            }
+        });
+    }
+
+    // ==========================================================================
+    // PHASE 1: INTERACTIVE MISTAKES REVIEW & DIRECT KB REDIRECTION
+    // ==========================================================================
+    window.renderMistakesReviewSection = function(mistakes, containerEl) {
+        if (!containerEl) return;
+        if (!mistakes || mistakes.length === 0) {
+            containerEl.innerHTML = `
+                <div style="background:rgba(34, 197, 94, 0.1); border:1px solid rgba(34, 197, 94, 0.25); border-radius:10px; padding:16px; text-align:center; color:#86efac; font-size:0.9rem; font-weight:700;">
+                    🎉 أداء مثالي ورائع! لم يتم تسجيل أي أخطاء مهنية في هذا الاختبار.
+                </div>
+            `;
+            return;
+        }
+
+        containerEl.innerHTML = `
+            <div class="mistakes-review-wrapper">
+                <div class="mistakes-review-header">
+                    <div class="mistakes-review-title">
+                        <i class="fa-solid fa-clipboard-check" style="color:#ff9900;"></i>
+                        <span>مراجعة الأخطاء التعليمية وربطها بدليل المعرفة (${mistakes.length} أخطاء)</span>
+                    </div>
+                    <span style="font-size:0.75rem; color:#94a3b8;">اضغط على أي مقال للمراجعة المباشرة</span>
+                </div>
+                ${mistakes.map((m, idx) => `
+                    <div class="mistake-card">
+                        <div class="mistake-q-title">
+                            <span>${idx + 1}. ${escapeHtml(m.question || m.scenarioTitle || 'الحالة التدريبية')}</span>
+                            <span style="font-size:0.75rem; color:#f87171; font-weight:800;">خطأ في الإجابة</span>
+                        </div>
+                        <div class="mistake-comparison">
+                            <div class="mistake-ans-box user">
+                                <strong style="display:block; margin-bottom:4px; font-size:0.74rem;">❌ إجابتك المسجلة:</strong>
+                                ${escapeHtml(m.userAnswer || m.selectedOption || 'إجابة غير دقيقة')}
+                            </div>
+                            <div class="mistake-ans-box correct">
+                                <strong style="display:block; margin-bottom:4px; font-size:0.74rem;">✅ الإجراء الصحيح المعتمد:</strong>
+                                ${escapeHtml(m.correctAnswer || m.idealAction || 'الخطوات الرسمية حسب الدليل')}
+                            </div>
+                        </div>
+                        ${m.explanation ? `
+                            <div class="mistake-expl">
+                                <strong>💡 التوضيح المهني:</strong> ${escapeHtml(m.explanation)}
+                            </div>
+                        ` : ''}
+                        ${m.articleId ? `
+                            <button type="button" class="btn-open-kb-article" onclick="switchTab('tab-kb'); if(typeof viewKbArticle==='function') viewKbArticle('${m.articleId}');">
+                                <i class="fa-solid fa-book-bookmark"></i>
+                                <span>عرض المقال في دليل المعرفة (${escapeHtml(m.articleTitle || 'الدليل المعتمد')})</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    };
+
+    // Initialize Phase 1 Core Modules
+    initMockCrmSystem();
+    initProhibitedWordsDetector();
+
     // Initial session check
     checkUserSession();
 });

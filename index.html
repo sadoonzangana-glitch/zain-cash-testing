@@ -93,6 +93,12 @@
             </div>
             
             <div class="header-right-controls">
+                <!-- Mock CRM Launcher Button -->
+                <button type="button" class="btn-crm-launcher" id="btn-open-crm-portal" title="بوابة العمليات وخدمة المشتركين (CRM)" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border: 1px solid rgba(255,255,255,0.25); font-size: 0.8rem; font-weight: 800; padding: 7px 14px; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); transition: all 0.2s;">
+                    <i class="fa-solid fa-id-card-clip"></i>
+                    <span>بوابة الـ CRM والعمليات</span>
+                </button>
+
                 <!-- User Profile Display -->
                 <div class="user-profile-display hidden" id="header-user-profile">
                     <div class="user-avatar-circle" id="header-user-avatar">Z</div>
@@ -2274,6 +2280,221 @@
                     <i class="fa-solid fa-check-double"></i>
                     <span>اعتماد النتيجة وحفظها في Test Results</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MOCK CORE CRM & TRANSACTIONS PORTAL MODAL -->
+    <!-- ========================================== -->
+    <div class="mock-crm-modal hidden" id="mock-crm-modal">
+        <div class="mock-crm-dialog">
+            <!-- CRM Header -->
+            <div class="mock-crm-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="crm-header-icon">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                            <span>بوابة زين كاش للعمليات والخدمات (Mock Core CRM)</span>
+                            <span class="crm-status-pill"><i class="fa-solid fa-circle-check"></i> متصل بالسيرفر المالي</span>
+                        </h3>
+                        <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: #94a3b8;">نظام الاستعلام التشغيلي الموحد للتحقق من بيانات وحركات المشتركين.</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="crm-icon-btn" id="btn-refresh-crm" title="تحديث البيانات"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    <button type="button" class="crm-close-btn" id="btn-close-crm-modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- CRM Search & Shortcuts Bar -->
+            <div class="mock-crm-search-section">
+                <form id="form-crm-search" style="display: flex; gap: 10px; width: 100%;">
+                    <div style="position: relative; flex: 1;">
+                        <i class="fa-solid fa-phone" style="position: absolute; right: 14px; top: 14px; color: #94a3b8; font-size: 0.9rem;"></i>
+                        <input type="text" id="crm-search-input" placeholder="أدخل رقم هاتف/محفظة المشترك (مثال: 07727900402 أو 07801234567)..." style="width: 100%; height: 44px; padding: 0 42px 0 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 0.88rem; outline: none; font-family: inherit; transition: all 0.2s;">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btn-crm-search-submit" style="height: 44px; padding: 0 22px; font-weight: 800; font-size: 0.88rem; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>استعلام مباشر</span>
+                    </button>
+                </form>
+
+                <!-- Quick Scenario Customer Shortcut Chips -->
+                <div class="crm-quick-shortcuts">
+                    <span style="font-size: 0.74rem; font-weight: 700; color: #64748b; white-space: nowrap;">مشتركو السيناريوهات:</span>
+                    <button type="button" class="crm-chip" data-phone="07701234501">📈 07701234501 (حسين علي - تداول أسهم)</button>
+                    <button type="button" class="crm-chip" data-phone="07809876501">⏳ 07809876501 (سارة فاضل - أمر شراء معلق)</button>
+                    <button type="button" class="crm-chip" data-phone="07802345678">🔒 07802345678 (نور الهدى - محفظة موقوفة CI)</button>
+                    <button type="button" class="crm-chip" data-phone="07719876543">🌐 07719876543 (حيدر جاسم - ويسترن يونيون)</button>
+                    <button type="button" class="crm-chip" data-phone="07727900402">💳 07727900402 (علي مهدي - بطاقة ماستركارد)</button>
+                    <button type="button" class="crm-chip" data-phone="07723065187">💰 07723065187 (أحمد محمد - سحب كاش)</button>
+                </div>
+            </div>
+
+            <!-- CRM Main Body / Profile Content -->
+            <div class="mock-crm-body" id="mock-crm-body">
+                <!-- Customer Profile Info Card Grid -->
+                <div class="crm-profile-grid">
+                    <!-- Card 1: Identity & Wallet Info -->
+                    <div class="crm-info-card">
+                        <div class="crm-card-header">
+                            <i class="fa-solid fa-user-check" style="color: #0284c7;"></i>
+                            <span>بيانات المشترك والمحفظة</span>
+                        </div>
+                        <div class="crm-data-list">
+                            <div class="crm-data-row">
+                                <span class="crm-label">اسم المشترك:</span>
+                                <strong class="crm-val" id="crm-val-name">حسين علي مهدي</strong>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">رقم المحفظة (MSISDN):</span>
+                                <strong class="crm-val" id="crm-val-phone" style="font-family: monospace; color: #0284c7;">07701234501</strong>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">رقم البطاقة الوطنية/الهوية:</span>
+                                <strong class="crm-val" id="crm-val-nid" style="font-family: monospace;">199248819203</strong>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">نوع وتصنيف المحفظة:</span>
+                                <span class="crm-badge badge-primary" id="crm-val-type">دائمية (Permanent)</span>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">حالة المحفظة التشغيلية:</span>
+                                <span class="crm-badge badge-success" id="crm-val-status">نشطة (Active)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Balances & Limits -->
+                    <div class="crm-info-card">
+                        <div class="crm-card-header">
+                            <i class="fa-solid fa-wallet" style="color: #16a34a;"></i>
+                            <span>الأرصدة والحدود المالية</span>
+                        </div>
+                        <div class="crm-data-list">
+                            <div class="crm-data-row">
+                                <span class="crm-label">الرصيد المتاح (IQD):</span>
+                                <strong class="crm-val highlight-green" id="crm-val-balance-iqd">450,000 د.ع</strong>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">محفظة تداول الأسهم (USD):</span>
+                                <strong class="crm-val highlight-blue" id="crm-val-balance-usd">$350.00</strong>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">مستوى التوثيق (KYC Tier):</span>
+                                <span class="crm-badge badge-info" id="crm-val-kyc">Tier 2 - Full KYC</span>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">سقف الحركات الشهري:</span>
+                                <strong class="crm-val" id="crm-val-limit">10,000,000 د.ع (مستخدم 12%)</strong>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">تاريخ إنشاء المحفظة:</span>
+                                <span class="crm-val" id="crm-val-created">2024-03-12</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Mastercard & Payment Services -->
+                    <div class="crm-info-card">
+                        <div class="crm-card-header">
+                            <i class="fa-solid fa-credit-card" style="color: #ff9900;"></i>
+                            <span>بطاقات الدفع والخدمات الإضافية</span>
+                        </div>
+                        <div class="crm-data-list">
+                            <div class="crm-data-row">
+                                <span class="crm-label">بطاقة ماستر كارد الأساسية:</span>
+                                <strong class="crm-val" id="crm-val-card" style="font-family: monospace;">5310 12** **** 8892</strong>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">حالة البطاقة:</span>
+                                <span class="crm-badge badge-success" id="crm-val-card-status">مفعلة ونشطة (Active)</span>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">تاريخ انتهاء البطاقة:</span>
+                                <span class="crm-val" id="crm-val-card-exp">09/28</span>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">خدمة تداول الأسهم ISX/US:</span>
+                                <span class="crm-badge badge-primary" id="crm-val-stocks-status">مفعلة (W-8BEN Approved)</span>
+                            </div>
+                            <div class="crm-data-row">
+                                <span class="crm-label">إجراء فوري للمشرف:</span>
+                                <button type="button" class="crm-action-btn-sm" id="btn-crm-quick-action"><i class="fa-solid fa-lock-open"></i> فحص قيود الحساب</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CRM Sub-tabs Navigation -->
+                <div class="crm-subtabs-nav">
+                    <button type="button" class="crm-tab-btn active" data-crm-tab="crm-tab-transactions">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span>سجل العمليات المالية الأخيرة (Transactions Ledger)</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-crm-tab="crm-tab-tickets">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>سجل التذاكر والدعم الفني (Ticket History)</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-crm-tab="crm-tab-kyc">
+                        <i class="fa-solid fa-file-shield"></i>
+                        <span>سجل التدقيق والامتثال (Compliance & Audit)</span>
+                    </button>
+                </div>
+
+                <!-- CRM Tab 1: Transactions Table -->
+                <div class="crm-tab-pane active" id="crm-tab-transactions">
+                    <div class="crm-table-container">
+                        <table class="crm-data-table">
+                            <thead>
+                                <tr>
+                                    <th>رقم العملية (TXN ID)</th>
+                                    <th>التاريخ والوقت</th>
+                                    <th>نوع الخدمة</th>
+                                    <th>المبلغ</th>
+                                    <th>العمولة</th>
+                                    <th>الحالة (Status)</th>
+                                    <th>التفاصيل / المستلم</th>
+                                    <th>إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crm-transactions-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CRM Tab 2: Tickets Table -->
+                <div class="crm-tab-pane" id="crm-tab-tickets">
+                    <div class="crm-table-container">
+                        <table class="crm-data-table">
+                            <thead>
+                                <tr>
+                                    <th>رقم التذكرة</th>
+                                    <th>تاريخ الإنشاء</th>
+                                    <th>الموضوع / الاستفسار</th>
+                                    <th>التصنيف الرئيسي</th>
+                                    <th>الموظف المعالج</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crm-tickets-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CRM Tab 3: KYC & Compliance -->
+                <div class="crm-tab-pane" id="crm-tab-kyc">
+                    <div class="crm-table-container" id="crm-kyc-content" style="padding: 18px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
