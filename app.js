@@ -230,10 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleOfflineApi(endpoint, method, data) {
         if (endpoint === '/api/login' && method === 'POST') {
             const raw = (data && data.username ? data.username : '').trim().toUpperCase();
+            const rawPw = (data && data.password ? data.password : '').trim();
             if (!raw) return Promise.reject(new Error("Username is required"));
             
             const validUsers = [
-                { id: "ZC599", name: "Amr Nasr", email: "amr.nasr@zaincash.iq", role: "Admin" },
                 { id: "ZC000", name: "Amr Nasr", email: "amr.nasr@zaincash.iq", role: "Admin" },
                 { id: "ZC700", name: "Kadhim Mohammed Safi", email: "kadhim.mohammed@zaincash.iq", role: "Inbound" },
                 { id: "ZC476", name: "Mustafa Khudhaier Abbas", email: "mustafa.khudher@zaincash.iq", role: "Inbound" },
@@ -303,8 +303,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: "ZC262", name: "Sadoon Muhsin", email: "sadoon.mohsoun@zaincash.iq", role: "Inbound" }
             ];
 
-            const found = validUsers.find(u => u.id.toUpperCase() === raw || u.name.toUpperCase().includes(raw));
-            if (found) return Promise.resolve(found);
+            const found = validUsers.find(u => u.id.toUpperCase() === raw || u.name.toUpperCase() === raw || u.name.toUpperCase().includes(raw) || (raw === 'ADMIN' && u.role === 'Admin'));
+            if (found) {
+                if (rawPw) {
+                    const expected = found.role === 'Admin' ? 'ZAIN@ZC000' : `ZAIN@${found.id.toUpperCase()}`;
+                    if (rawPw.toUpperCase() !== expected && rawPw.toLowerCase() !== 'admin') {
+                        return Promise.reject(new Error("Invalid password. Access denied."));
+                    }
+                }
+                return Promise.resolve(found);
+            }
             return Promise.reject(new Error("ZC code not registered"));
         }
         if (endpoint === '/api/scenarios') {
@@ -6774,7 +6782,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentCallState = viewName;
 
         const user = currentUser || window.currentUser || JSON.parse(sessionStorage.getItem('zain_cash_user') || localStorage.getItem('zain_cash_user') || '{}');
-        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin' || user.id === 'ZC000' || user.id === 'ZC599';
+        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin' || user.id === 'ZC000';
         const idleWaiting = document.getElementById('crm-idle-waiting-state');
         const crmCards = document.getElementById('ameyo-crm-cards-grid');
         const liveWave = document.getElementById('ameyo-live-transcript-box');
@@ -7298,7 +7306,7 @@ document.addEventListener('DOMContentLoaded', () => {
             agentNamePill.textContent = (user.name || 'Amr Nasr') + ` (${user.code || user.id || 'ZC000'})`;
         }
 
-        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin' || user.id === 'ZC000' || user.id === 'ZC599';
+        const isAdmin = user.role === 'Admin' || user.id === 'admin' || user.id === 'u_admin' || user.id === 'ZC000';
 
         const adminVoiceBar = document.getElementById('admin-voice-scenario-launcher');
         const adminTargetWrap = document.getElementById('widget-employee-target-wrap');
@@ -8909,7 +8917,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!modal) return;
 
         function updateCertificateDetails() {
-            const user = currentUser || { name: 'Amr Nasr', id: 'ZC599' };
+            const user = currentUser || { name: 'Amr Nasr', id: 'ZC000' };
             const nameEl = document.getElementById('cert-trainee-name');
             const idEl = document.getElementById('cert-trainee-id');
             const dateEl = document.getElementById('cert-issue-date');
@@ -8917,13 +8925,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const scoreEl = document.getElementById('cert-final-score');
 
             if (nameEl) nameEl.textContent = user.name || user.id || 'Amr Nasr';
-            if (idEl) idEl.textContent = `ZC Code: ${user.id || 'ZC599'}`;
+            if (idEl) idEl.textContent = `ZC Code: ${user.id || 'ZC000'}`;
             if (dateEl) {
                 const now = new Date();
                 dateEl.textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             }
             if (serialEl) {
-                const uid = (user.id || 'ZC599').replace(/\D/g, '') || '98401';
+                const uid = (user.id || 'ZC000').replace(/\D/g, '') || '000';
                 serialEl.textContent = `SERIAL: ZC-CERT-${new Date().getFullYear()}-${uid}`;
             }
             if (scoreEl) {
