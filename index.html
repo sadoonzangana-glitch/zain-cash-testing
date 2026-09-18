@@ -238,31 +238,151 @@
 
             <!-- TAB 0.5: Training Center Portal -->
             <div class="amy-tab-pane" id="tab-training-center">
-                <div class="training-center-welcome-screen" id="training-center-welcome" style="max-width: 900px; margin: 0 auto; padding: 30px 15px; font-family: var(--font-ar); direction: rtl; text-align: center;">
-                    <div class="tc-welcome-header" style="margin-bottom: 35px;">
-                        <h2 style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">مركز التدريب والتقييم لخدمة العملاء</h2>
-                        <p style="font-size: 0.95rem; color: #64748b;">اختر أحد مسارات التدريب والتقييم المتاحة لتطوير مهاراتك وقياس أدائك الحواري.</p>
-                    </div>
+                <div class="training-center-welcome-screen" id="training-center-welcome" style="max-width: 1050px; margin: 0 auto; padding: 25px 15px; font-family: var(--font-ar); direction: rtl; text-align: right;">
                     
-                    <div class="tc-pathways-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 780px; margin: 0 auto;">
-                        <!-- Card 1: Multitask Chat Simulator -->
-                        <div class="tc-path-card" id="btn-start-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 30px 24px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center;">
-                            <div class="path-icon-wrapper" style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37,99,235,0.15);">
-                                <i class="fa-solid fa-comments"></i>
+                    <div class="tc-welcome-header" style="margin-bottom: 25px; text-align: center;">
+                        <h2 style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">مركز التدريب والتقييم لخدمة العملاء</h2>
+                        <p style="font-size: 0.95rem; color: #64748b;">مسارات تدريبية متدرجة، ومكتبة مكالمات نموذجية، ومحاكيات تشغيلية حية لقياس جاهزيتك.</p>
+                    </div>
+
+                    <!-- =========================================================
+                         SECTION 1: TIERED LEARNING PATHS (مسارات التعلم المتدرجة)
+                         ========================================================= -->
+                    <div class="tiered-learning-section" style="margin-bottom: 35px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-graduation-cap" style="color: #0284c7;"></i>
+                                <span>مسار التعلم المتدرج (Tiered Learning Path)</span>
+                            </h3>
+                            <div class="overall-progress-pill" style="background:#f0f9ff; border:1px solid #bae6fd; padding:5px 14px; border-radius:20px; font-size:0.8rem; font-weight:700; color:#0369a1;">
+                                <span>التقدم الإجمالي: </span>
+                                <span id="tiered-progress-percentage">33%</span>
                             </div>
-                            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">محاكي الدردشة (Chat)</h3>
-                            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 22px; flex: 1;">تدرب على إدارة 3 محادثات خدمة عملاء متزامنة في نفس الوقت مع التقييم والتصنيف المعتمد للتذاكر.</p>
-                            <span class="btn btn-primary" style="font-size: 0.88rem; font-weight: 800; width: 100%; padding: 10px 0; border-radius: 12px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">ابدأ محاكي الدردشة</span>
                         </div>
 
-                        <!-- Card 2: Voice Call Simulator -->
-                        <div class="tc-path-card" id="btn-start-call-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 30px 24px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center;">
-                            <div class="path-icon-wrapper" style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; border: 1px solid #fbcfe8; box-shadow: 0 4px 12px rgba(219,39,119,0.15);">
+                        <!-- Progress Line Stepper -->
+                        <div class="stepper-progress-bar-container" style="background:#e2e8f0; height:8px; border-radius:4px; margin-bottom:20px; position:relative; overflow:hidden;">
+                            <div id="tiered-overall-progress-bar" style="width:33%; height:100%; background:linear-gradient(90deg, #00B5E2, #10b981); border-radius:4px; transition:width 0.4s ease;"></div>
+                        </div>
+
+                        <!-- Level Cards Grid -->
+                        <div class="tiered-levels-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
+                            
+                            <!-- Level 1: Basic Onboarding -->
+                            <div class="level-card active" id="level-card-1" style="background: #ffffff; border: 2px solid #00B5E2; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0, 181, 226, 0.08); position:relative; display:flex; flex-direction:column; justify-content:space-between;">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                                        <span class="level-badge" style="background: rgba(0,181,226,0.12); color:#0284c7; font-weight:800; font-size:0.75rem; padding:4px 10px; border-radius:20px; border:1px solid rgba(0,181,226,0.3);">
+                                            المستوى 1: التأسيس الأساسي
+                                        </span>
+                                        <span class="level-status-tag" id="level-1-status" style="color:#10b981; font-weight:800; font-size:0.8rem;"><i class="fa-solid fa-circle-check"></i> متاح للدراسة</span>
+                                    </div>
+                                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">أساسيات خدمة العملاء والعمليات الأولية</h4>
+                                    <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin-bottom: 12px;">
+                                        الترحيب المهني باللهجة العراقية، سحب كشف الحساب، الاستعلام عن الرصيد، وشحن الرصيد المحلي.
+                                    </p>
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:0.78rem; color:#475569; margin-bottom:14px;">
+                                        <i class="fa-solid fa-bullseye" style="color:#0284c7;"></i> <strong>شرط فتح المستوى التالي:</strong> تحقيق 80% في المحاكي.
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-start-level" data-level="1" style="width: 100%; padding: 8px 0; font-size: 0.84rem; font-weight: 800; border-radius: 10px; background: linear-gradient(135deg, #0c4f8a, #00B5E2); border:none; cursor:pointer;">
+                                    <i class="fa-solid fa-play"></i> بدء تدريب المستوى 1
+                                </button>
+                            </div>
+
+                            <!-- Level 2: Intermediate Services -->
+                            <div class="level-card locked" id="level-card-2" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); position:relative; display:flex; flex-direction:column; justify-content:space-between; opacity:0.9;">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                                        <span class="level-badge" style="background: #f1f5f9; color:#475569; font-weight:800; font-size:0.75rem; padding:4px 10px; border-radius:20px; border:1px solid #cbd5e1;">
+                                            المستوى 2: العمليات المتوسطة
+                                        </span>
+                                        <span class="level-status-tag" id="level-2-status" style="color:#64748b; font-weight:700; font-size:0.8rem;"><i class="fa-solid fa-lock"></i> مقفل</span>
+                                    </div>
+                                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">بطاقات ماستركارد وويسترن يونيون</h4>
+                                    <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin-bottom: 12px;">
+                                        ربط وتفعيل ماستركارد، طلبات استرجاع المبالغ Refund، حوالات ويسترن يونيون، وإعادة تعيين الرمز السري PIN.
+                                    </p>
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:0.78rem; color:#475569; margin-bottom:14px;">
+                                        <i class="fa-solid fa-bullseye" style="color:#ea580c;"></i> <strong>شرط الفتح:</strong> إكمال المستوى 1 بنجاح (80%+).
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-start-level" id="btn-level-2" data-level="2" style="width: 100%; padding: 8px 0; font-size: 0.84rem; font-weight: 800; border-radius: 10px; cursor:not-allowed; background:#94a3b8; border:none; color:#fff;">
+                                    <i class="fa-solid fa-lock"></i> مقفل (أكمل المستوى 1 أولاً)
+                                </button>
+                            </div>
+
+                            <!-- Level 3: Advanced & Compliance -->
+                            <div class="level-card locked" id="level-card-3" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); position:relative; display:flex; flex-direction:column; justify-content:space-between; opacity:0.9;">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                                        <span class="level-badge" style="background: #f1f5f9; color:#475569; font-weight:800; font-size:0.75rem; padding:4px 10px; border-radius:20px; border:1px solid #cbd5e1;">
+                                            المستوى 3: التخصص والامتثال
+                                        </span>
+                                        <span class="level-status-tag" id="level-3-status" style="color:#64748b; font-weight:700; font-size:0.8rem;"><i class="fa-solid fa-lock"></i> مقفل</span>
+                                    </div>
+                                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">تداول الأسهم والمحافظ المتوقفة والامتثال</h4>
+                                    <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin-bottom: 12px;">
+                                        تداول الأسهم في سوق العراق ISX، حالات المحافظ المتوقفة CI، مكافحة الاحتيال وغسيل الأموال AML.
+                                    </p>
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:0.78rem; color:#475569; margin-bottom:14px;">
+                                        <i class="fa-solid fa-bullseye" style="color:#ea580c;"></i> <strong>شرط الفتح:</strong> إكمال المستويين 1 و 2.
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-start-level" id="btn-level-3" data-level="3" style="width: 100%; padding: 8px 0; font-size: 0.84rem; font-weight: 800; border-radius: 10px; cursor:not-allowed; background:#94a3b8; border:none; color:#fff;">
+                                    <i class="fa-solid fa-lock"></i> مقفل (أكمل المستوى 2 أولاً)
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- =========================================================
+                         SECTION 2: PRACTICAL SIMULATORS & CALL SHADOWING
+                         ========================================================= -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-laptop-code" style="color: #7c3aed;"></i>
+                            <span>المحاكيات التفاعلية ومكتبة المكالمات</span>
+                        </h3>
+                    </div>
+
+                    <div class="tc-pathways-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        
+                        <!-- Card 1: Call Shadowing Library (NEW) -->
+                        <div class="tc-path-card" id="btn-open-shadowing-lib" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 26px 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 16px; border: 1px solid #ddd6fe; box-shadow: 0 4px 12px rgba(124,58,237,0.15);">
+                                <i class="fa-solid fa-headphones-simple"></i>
+                            </div>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">مكتبة المكالمات النموذجية (Shadowing)</h3>
+                            <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin-bottom: 18px; flex: 1;">
+                                استمع لمكالمات مثالية نموذجية (100% Score) ومكالمات تحتاج تحسين مع ملاحظات وتوجيهات المشرف الفورية.
+                            </p>
+                            <span class="btn btn-primary" style="font-size: 0.85rem; font-weight: 800; width: 100%; padding: 9px 0; border-radius: 12px; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">فتح مكتبة المكالمات</span>
+                        </div>
+
+                        <!-- Card 2: Multitask Chat Simulator -->
+                        <div class="tc-path-card" id="btn-start-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 26px 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 16px; border: 1px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37,99,235,0.15);">
+                                <i class="fa-solid fa-comments"></i>
+                            </div>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">محاكي الدردشة (Chat)</h3>
+                            <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin-bottom: 18px; flex: 1;">
+                                تدرب على إدارة 3 محادثات خدمة عملاء متزامنة في نفس الوقت مع التقييم والتصنيف المعتمد للتذاكر.
+                            </p>
+                            <span class="btn btn-primary" style="font-size: 0.85rem; font-weight: 800; width: 100%; padding: 9px 0; border-radius: 12px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">ابدأ محاكي الدردشة</span>
+                        </div>
+
+                        <!-- Card 3: Voice Call Simulator -->
+                        <div class="tc-path-card" id="btn-start-call-simulator" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 26px 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <div class="path-icon-wrapper" style="width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 16px; border: 1px solid #fbcfe8; box-shadow: 0 4px 12px rgba(219,39,119,0.15);">
                                 <i class="fa-solid fa-headset"></i>
                             </div>
-                            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">محاكي المكالمات (Call)</h3>
-                            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 22px; flex: 1;">تدرب على استقبال وإجراء المكالمات الهاتفية بنظام Ameyo مع التحكم بالـ Hold والتصنيف الفوري.</p>
-                            <span class="btn btn-primary" style="font-size: 0.88rem; font-weight: 800; width: 100%; padding: 10px 0; border-radius: 12px; background: linear-gradient(135deg, #db2777 0%, #be185d 100%);">ابدأ تدريب المكالمات</span>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">محاكي المكالمات (Call)</h3>
+                            <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin-bottom: 18px; flex: 1;">
+                                تدرب على استقبال وإجراء المكالمات الهاتفية بنظام Ameyo مع التحكم بالـ Hold والتصنيف الفوري.
+                            </p>
+                            <span class="btn btn-primary" style="font-size: 0.85rem; font-weight: 800; width: 100%; padding: 9px 0; border-radius: 12px; background: linear-gradient(135deg, #db2777 0%, #be185d 100%);">ابدأ تدريب المكالمات</span>
                         </div>
                     </div>
                 </div>
@@ -2494,6 +2614,111 @@
                     <div class="crm-table-container" id="crm-kyc-content" style="padding: 18px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
                         <!-- Populated dynamically -->
                     </div>
+                </div>
+    <!-- ==========================================================================
+         PHASE 2: CALL SHADOWING LIBRARY MODAL (مكتبة المكالمات النموذجية)
+         ========================================================================== -->
+    <div id="modal-call-shadowing" class="mock-crm-modal-backdrop" style="direction: rtl; text-align: right;">
+        <div class="mock-crm-window" style="max-width: 1080px; height: 88vh;">
+            <div class="mock-crm-header" style="background: linear-gradient(90deg, #1e1b4b 0%, #312e81 100%);">
+                <div class="mock-crm-brand">
+                    <div class="mock-crm-logo-icon" style="background: linear-gradient(135deg, #7c3aed, #4f46e5);">
+                        <i class="fa-solid fa-headphones-simple"></i>
+                    </div>
+                    <div>
+                        <div class="mock-crm-title">
+                            <span>مكتبة المكالمات النموذجية وظلال التدريب</span>
+                            <span class="mock-crm-badge" style="background:rgba(124,58,237,0.2); color:#c4b5fd; border-color:rgba(124,58,237,0.4);">Ameyo Call Shadowing</span>
+                        </div>
+                        <span style="font-size:0.75rem; color:#a5b4fc;">استمع للمكالمات الاحترافية واطلع على ملاحظات وتقييمات مسؤولي الجودة (QA)</span>
+                    </div>
+                </div>
+                <button type="button" class="mock-crm-close-btn" id="btn-close-shadowing-modal" title="إغلاق">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="mock-crm-body" style="display:grid; grid-template-columns: 320px 1fr; gap: 18px; padding: 18px; overflow:hidden;">
+                
+                <!-- Sidebar: Calls Playlist -->
+                <div class="shadowing-playlist" style="background: rgba(9, 19, 34, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; display:flex; flex-direction:column; gap:10px; overflow-y:auto;">
+                    <div style="font-size:0.85rem; font-weight:800; color:#e2e8f0; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                        <span>قائمة المكالمات المسجلة</span>
+                        <span id="shadowing-playlist-count" style="font-size:0.72rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:10px;">4 مكالمات</span>
+                    </div>
+
+                    <div id="shadowing-calls-list" style="display:flex; flex-direction:column; gap:8px;">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Main: Player & Interactive Content -->
+                <div class="shadowing-main-panel" style="background: rgba(9, 19, 34, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px; display:flex; flex-direction:column; gap:14px; overflow:hidden;">
+                    
+                    <!-- Call Top Header Meta -->
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <h4 id="shadowing-call-title" style="font-size:1.05rem; font-weight:800; color:#ffffff; margin:0;">شراء وتداول أسهم شركة بغداد للمشروبات (ISX)</h4>
+                                <span id="shadowing-call-grade-badge" class="crm-status-tag success">درجة الجودة: 100% نموذجية ⭐</span>
+                            </div>
+                            <div style="font-size:0.78rem; color:#94a3b8; margin-top:4px; display:flex; gap:16px;">
+                                <span><i class="fa-solid fa-user-tie"></i> الموظف: <strong id="shadowing-agent-name" style="color:#e2e8f0;">مصطفى خضير</strong></span>
+                                <span><i class="fa-solid fa-user"></i> الزبون: <strong id="shadowing-cust-name" style="color:#e2e8f0;">حسين علي مهدي</strong></span>
+                                <span><i class="fa-solid fa-tag"></i> التصنيف: <strong id="shadowing-disp-name" style="color:#38bdf8;">الأسهم والتداول</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Player Interactive Bar -->
+                    <div class="shadowing-player-box" style="background: linear-gradient(135deg, #0c182b 0%, #172554 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 14px 18px; display:flex; flex-direction:column; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <button type="button" id="shadowing-btn-play" style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, #00B5E2, #0284c7); border:none; color:#fff; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,181,226,0.35); transition:all 0.2s;">
+                                <i class="fa-solid fa-play" id="shadowing-play-icon"></i>
+                            </button>
+                            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; font-family:monospace;">
+                                    <span id="shadowing-current-time">00:00</span>
+                                    <span id="shadowing-duration-time">01:45</span>
+                                </div>
+                                <input type="range" id="shadowing-seek-bar" min="0" max="100" value="0" style="width:100%; cursor:pointer; accent-color:#00B5E2;">
+                            </div>
+                            <div class="shadowing-waveform-bars" id="shadowing-waveform" style="display:flex; align-items:center; gap:3px; height:26px;">
+                                <span style="width:3px; height:8px; background:#00B5E2; border-radius:2px;"></span>
+                                <span style="width:3px; height:18px; background:#00B5E2; border-radius:2px;"></span>
+                                <span style="width:3px; height:24px; background:#00B5E2; border-radius:2px;"></span>
+                                <span style="width:3px; height:12px; background:#00B5E2; border-radius:2px;"></span>
+                                <span style="width:3px; height:20px; background:#00B5E2; border-radius:2px;"></span>
+                                <span style="width:3px; height:10px; background:#00B5E2; border-radius:2px;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs Nav (Transcript vs QA Feedback) -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:4px;">
+                        <div class="crm-tabs-nav" style="border:none; padding:0;">
+                            <button type="button" class="crm-tab-btn active" id="btn-tab-shadow-transcript" data-shadow-tab="transcript">
+                                <i class="fa-solid fa-comments"></i> التفريغ الحواري المتزامن
+                            </button>
+                            <button type="button" class="crm-tab-btn" id="btn-tab-shadow-qa" data-shadow-tab="qa">
+                                <i class="fa-solid fa-clipboard-check"></i> تقييم وملاحظات مسؤول الجودة (QA)
+                            </button>
+                        </div>
+                        <span id="shadowing-speaking-indicator" style="font-size:0.75rem; color:#10b981; font-weight:700; display:none;">
+                            <i class="fa-solid fa-volume-high fa-beat"></i> جاري التشغيل...
+                        </span>
+                    </div>
+
+                    <!-- Transcript Pane -->
+                    <div id="shadow-pane-transcript" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px;">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- QA Notes Pane -->
+                    <div id="shadow-pane-qa" class="hidden" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px;">
+                        <!-- Populated dynamically -->
+                    </div>
+
                 </div>
             </div>
         </div>

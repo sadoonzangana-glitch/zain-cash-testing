@@ -8356,9 +8356,454 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // Initialize Phase 1 Core Modules
+    // ==========================================================================
+    // PHASE 2: TIERED LEARNING PATHS (مسارات التعلم المتدرجة)
+    // ==========================================================================
+    function getTraineeLearningProgress() {
+        const key = 'zain_tiered_learning_progress';
+        let data = {
+            level1Completed: true,
+            level1Score: 85,
+            level2Completed: false,
+            level2Score: 0,
+            level3Completed: false,
+            level3Score: 0
+        };
+        try {
+            const saved = JSON.parse(localStorage.getItem(key));
+            if (saved) data = { ...data, ...saved };
+        } catch(e) {}
+        return data;
+    }
+
+    function saveTraineeLearningProgress(progress) {
+        localStorage.setItem('zain_tiered_learning_progress', JSON.stringify(progress));
+        updateTieredUI();
+    }
+
+    function updateTieredUI() {
+        const progress = getTraineeLearningProgress();
+        const pBar = document.getElementById('tiered-overall-progress-bar');
+        const pPercent = document.getElementById('tiered-progress-percentage');
+        
+        let completedCount = 0;
+        if (progress.level1Completed) completedCount++;
+        if (progress.level2Completed) completedCount++;
+        if (progress.level3Completed) completedCount++;
+
+        const percentage = Math.round((completedCount / 3) * 100);
+        if (pBar) pBar.style.width = `${Math.max(15, percentage)}%`;
+        if (pPercent) pPercent.textContent = `${percentage}%`;
+
+        // Level 1 Card
+        const l1Card = document.getElementById('level-card-1');
+        const l1Status = document.getElementById('level-1-status');
+        if (progress.level1Completed && l1Card && l1Status) {
+            l1Card.classList.add('completed');
+            l1Status.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> تم الاجتياز (${progress.level1Score}%)`;
+        }
+
+        // Level 2 Card
+        const l2Card = document.getElementById('level-card-2');
+        const l2Status = document.getElementById('level-2-status');
+        const l2Btn = document.getElementById('btn-level-2');
+        if (progress.level1Completed && (progress.level1Score >= 80)) {
+            if (l2Card) {
+                l2Card.classList.remove('locked');
+                l2Card.classList.add('active');
+                l2Card.style.borderColor = '#00B5E2';
+                l2Card.style.opacity = '1';
+            }
+            if (l2Status) {
+                if (progress.level2Completed) {
+                    l2Status.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> تم الاجتياز (${progress.level2Score}%)`;
+                    if (l2Card) l2Card.classList.add('completed');
+                } else {
+                    l2Status.innerHTML = `<i class="fa-solid fa-lock-open" style="color:#0284c7;"></i> مفتوح ومتاح`;
+                }
+            }
+            if (l2Btn) {
+                l2Btn.disabled = false;
+                l2Btn.style.cursor = 'pointer';
+                l2Btn.style.background = 'linear-gradient(135deg, #0c4f8a, #00B5E2)';
+                l2Btn.innerHTML = `<i class="fa-solid fa-play"></i> بدء تدريب المستوى 2`;
+            }
+        }
+
+        // Level 3 Card
+        const l3Card = document.getElementById('level-card-3');
+        const l3Status = document.getElementById('level-3-status');
+        const l3Btn = document.getElementById('btn-level-3');
+        if (progress.level2Completed && (progress.level2Score >= 80)) {
+            if (l3Card) {
+                l3Card.classList.remove('locked');
+                l3Card.classList.add('active');
+                l3Card.style.borderColor = '#7c3aed';
+                l3Card.style.opacity = '1';
+            }
+            if (l3Status) {
+                if (progress.level3Completed) {
+                    l3Status.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> تم التخرج (${progress.level3Score}%)`;
+                    if (l3Card) l3Card.classList.add('completed');
+                } else {
+                    l3Status.innerHTML = `<i class="fa-solid fa-lock-open" style="color:#7c3aed;"></i> مفتوح ومتاح`;
+                }
+            }
+            if (l3Btn) {
+                l3Btn.disabled = false;
+                l3Btn.style.cursor = 'pointer';
+                l3Btn.style.background = 'linear-gradient(135deg, #7c3aed, #4f46e5)';
+                l3Btn.innerHTML = `<i class="fa-solid fa-play"></i> بدء تدريب المستوى 3 (المتقدم)`;
+            }
+        }
+    }
+
+    function initTieredLearningPaths() {
+        updateTieredUI();
+
+        document.querySelectorAll('.btn-start-level').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const lvl = btn.getAttribute('data-level');
+                if (btn.disabled || btn.classList.contains('disabled')) return;
+                
+                showToast(`🚀 تم بدء مسار المستوى ${lvl}! الانتقال إلى المحاكي...`, 'success');
+                setTimeout(() => {
+                    switchTab('tab-simulator');
+                }, 500);
+            });
+        });
+    }
+
+    // ==========================================================================
+    // PHASE 2: CALL SHADOWING LIBRARY (مكتبة المكالمات النموذجية)
+    // ==========================================================================
+    const CALL_SHADOWING_DATABASE = [
+        {
+            id: 'CALL-01',
+            title: 'شراء وتداول أسهم شركة بغداد للمشروبات الغازية (ISX)',
+            category: 'الأسهم والتداول',
+            agentName: 'مصطفى خضير',
+            customerName: 'حسين علي مهدي',
+            grade: '100% نموذجية ⭐',
+            gradeType: 'success',
+            durationText: '01:45',
+            dialogue: [
+                { role: 'agent', name: 'الموظف (مصطفى)', text: 'أهلاً وسهلاً بحضرتك أستاذ حسين، وياك مصطفى من خدمة عملاء زين كاش، شلون أگدر أساعدك اليوم؟' },
+                { role: 'customer', name: 'الزبون (حسين)', text: 'مرحبا مصطفى.. ردت استفسر شلون أگدر اشتري أسهم شركة بغداد للمشروبات من خلال التطبيق وعندي رصيد كافي بالمحفظة.' },
+                { role: 'agent', name: 'الموظف (مصطفى)', text: 'تدلل أستاذ حسين بكل سرور. من الواجهة الرئيسية للتطبيق توجه لخيار "تداول الأسهم"، بعدها اختر "سوق العراق للأوراق المالية (ISX)" ثم شركة بغداد للمشروبات الغازية. حدد عدد الأسهم وسعر الشراء ثم اضغط "تأكيد الأمر".' },
+                { role: 'customer', name: 'الزبون (حسين)', text: 'عاشت إيدك كلش واضحة الفكرة. شكد عمولة العملية؟' },
+                { role: 'agent', name: 'الموظف (مصطفى)', text: 'عمولة التداول معتمدة رسمياً بنسبة 1% فقط بدون أي رسوم إضافية مخفية، وتظهر لحضرتك في شاشة التأكيد قبل التنفيذ. هل تحب أساعدك بأي استفسار ثاني؟' },
+                { role: 'customer', name: 'الزبون (حسين)', text: 'لا تسلم يا غالي، شكراً جزيلاً.' },
+                { role: 'agent', name: 'الموظف (مصطفى)', text: 'العفو أستاذ حسين، يومك سعيد ونورت زين كاش.' }
+            ],
+            qaNotes: [
+                { standard: 'الترحيب والافتتاحية المهنية', score: '100%', comment: 'استخدام الترحيب المعتمد واللهجة العراقية المهذبة وذكر الاسم فوراً.', tip: 'المحافظة دائماً على نبرة الترحيب الدافئة.' },
+                { standard: 'الدقة الإجرائية والمعرفية', score: '100%', comment: 'شرح الخطوات بترتيب منطقي دقيق مع ذكر نسبة العمولة المعتمدة (1%).', tip: 'توضيح شاشة التأكيد يعزز ثقة الزبون.' },
+                { standard: 'تصنيف التذكرة الختامي', score: '100%', comment: 'التصنيف المعتمد: Inquiry -> Stocks & ISX Trading.', tip: 'إغلاق المكالمة بسؤال الزبون عن أي مساعدة إضافية.' }
+            ]
+        },
+        {
+            id: 'CALL-02',
+            title: 'فك حظر الرمز السري PIN والتحقق الأمني KYC',
+            category: 'الحساب والأمان',
+            agentName: 'آية كريم',
+            customerName: 'نور الهدى علي',
+            grade: '100% نموذجية ⭐',
+            gradeType: 'success',
+            durationText: '02:10',
+            dialogue: [
+                { role: 'agent', name: 'الموظفة (آية)', text: 'مرحباً بحضرتك ست نور، وياج آية من زين كاش، تفضلي شلون أگدر أخدمج؟' },
+                { role: 'customer', name: 'الزبونة (نور)', text: 'أهلاً حبيبتي، الرمز السري مال محفظتي انقفل لأن دخلته غلط 3 مرات ومحتاجة أحول فلوس ضروري.' },
+                { role: 'agent', name: 'الموظفة (آية)', text: 'سلامتج ست نور ولا يهمج، لحماية حسابج وفك الحظر أحتاج أطابق وياج بيانات الهوية: ممكن تذكرين لي اسم الأم الثلاثي وتاريخ التولد؟' },
+                { role: 'customer', name: 'الزبونة (نور)', text: 'اسم الوالدة مريم حسن خضير، والمواليد 5 نوفمبر 1998.' },
+                { role: 'agent', name: 'الموظفة (آية)', text: 'عاشت إيدج، البيانات مطابقة تماماً. أرسلت لحضرتك هسه رمز تأكيد سري مؤقت عبر رسالة SMS، بمجرد إدخاله بالتطبيق راح يطلب منج تعيين رمز سري جديد.' },
+                { role: 'customer', name: 'الزبونة (نور)', text: 'وصلتني الرسالة ودخلت الرمز وتفعلت المحفظة، شكراً جزيلاً لسرعتكم!' }
+            ],
+            qaNotes: [
+                { standard: 'الأمان والامتثال والتحقق (KYC)', score: '100%', comment: 'الالتزام التام بطلب اسم الأم وتاريخ التولد قبل تنفيذ أي إجراء أمني على الحساب.', tip: 'عدم طلب الرمز السري نهائياً من الزبون تحت أي ظرف.' },
+                { standard: 'سرعة وكفاءة المعالجة (AHT)', score: '100%', comment: 'حل المشكلة وتوليد رمز إعادة التعيين في أقل من دقيقتين.', tip: 'المتابعة مع الزبون حتى تأكيد استلام الرسالة بنجاح.' }
+            ]
+        },
+        {
+            id: 'CALL-03',
+            title: 'استلام حوالة ويسترن يونيون دولية (Western Union)',
+            category: 'ويسترن يونيون',
+            agentName: 'أحمد خليل',
+            customerName: 'حيدر جاسم كاظم',
+            grade: '100% نموذجية ⭐',
+            gradeType: 'success',
+            durationText: '01:50',
+            dialogue: [
+                { role: 'agent', name: 'الموظف (أحمد)', text: 'أهلاً بك أستاذ حيدر في زين كاش، وياك أحمد، تفضل بخدمتك.' },
+                { role: 'customer', name: 'الزبون (حيدر)', text: 'السلام عليكم أخي، واصلتني حوالة ويسترن يونيون من الإمارات وأريد أستلمها على محفظتي.' },
+                { role: 'agent', name: 'الموظف (أحمد)', text: 'وعليكم السلام والرحمة. بكل سرور أستاذ حيدر، ادخل لتطبيق زين كاش -> ويسترن يونيون -> استلام حوالة، ودخل رقم الحوالة المكون من 10 أرقام (MTCN).' },
+                { role: 'customer', name: 'الزبون (حيدر)', text: 'دخلته وطلب مني مطابقة الاسم بجواز السفر، هل هذا الإجراء ضروري؟' },
+                { role: 'agent', name: 'الموظف (أحمد)', text: 'نعم أستاذي العزيز، للامتثال للمعايير المالية الدولية، يجب أن يكون اسم المستلم في الحوالة مطابقاً تماماً للاسم باللغة الإنكليزية كما هو في الجواز الموثق بمحفظتك.' }
+            ],
+            qaNotes: [
+                { standard: 'التوجيه المالي الدقيق', score: '100%', comment: 'شرح متطلبات MTCN ومطابقة الاسم بجواز السفر بلباقة واحترافية.', tip: 'تذكير المشترك بأن استلام الحوالة مجاني ومباشر للمحفظة.' }
+            ]
+        },
+        {
+            id: 'CALL-04',
+            title: 'مكالمة تضمنت عبارات سلبية وتصعيداً خاطئاً (تحتاج تحسين)',
+            category: 'شكاوى ومعالجة أخطاء',
+            agentName: 'متدرب سابق (غير معتمد)',
+            customerName: 'سارة فاضل عباس',
+            grade: '55% تحتاج تحسين ⚠️',
+            gradeType: 'failed',
+            durationText: '02:40',
+            dialogue: [
+                { role: 'agent', name: 'الموظف', text: 'ألو زين كاش.. نعم تفضل.' },
+                { role: 'customer', name: 'الزبونة (سارة)', text: 'أخي حولت فلوس قبل ساعتين وموصلت للمستلم والرصيد انخصم من محفظتي!' },
+                { role: 'agent', name: 'الموظف', text: 'ما أدري والله، السيستم عاطل اليوم من الصبح والعمليات كلها متأخرة.' },
+                { role: 'customer', name: 'الزبونة (سارة)', text: 'شنو ما تدري؟! هاي فلوس ناس ومستعجلة، شسوي هسه؟' },
+                { role: 'agent', name: 'الموظف', text: 'هاي مو مشكلتنا أختي، المشكلة بالشبكة والبنك، راجعي الفرع ومالنا علاقة!' }
+            ],
+            qaNotes: [
+                { standard: 'الافتتاحية والترحيب', score: '20%', comment: 'افتتاحية غير مهنية ("ألو نعم تفضل") بدون ذكر اسم الموظف أو الشركة.', tip: 'استخدام الترحيب الرسمي المعتمد دائماً.' },
+                { standard: 'الكلمات المحظورة والمهنية', score: '0%', comment: 'استخدام 4 عبارات محظورة قطعية: ("ما أدري"، "السيستم عاطل"، "مو مشكلتنا"، "مالنا علاقة").', tip: 'استبدالها بـ: "سأتحقق لحضرتك فوراً من حالة الحركة عبر النظام".' },
+                { standard: 'امتصاص غضب الزبون (De-escalation)', score: '10%', comment: 'الدخول في جدال وتصعيد انفعال المشتركة بدلاً من طمأنتها والتحقق من رقم الحركة TXN ID.', tip: 'الهدوء والتعاطف هما الركيزة الأساسية لخدمة العملاء.' }
+            ]
+        }
+    ];
+
+    let currentShadowCall = CALL_SHADOWING_DATABASE[0];
+    let shadowPlaying = false;
+    let shadowInterval = null;
+    let shadowCurrentStep = 0;
+
+    function initCallShadowingLibrary() {
+        const modal = document.getElementById('modal-call-shadowing');
+        const openBtn = document.getElementById('btn-open-shadowing-lib');
+        const closeBtn = document.getElementById('btn-close-shadowing-modal');
+        const playBtn = document.getElementById('shadowing-btn-play');
+        const playIcon = document.getElementById('shadowing-play-icon');
+        const seekBar = document.getElementById('shadowing-seek-bar');
+        const timeEl = document.getElementById('shadowing-current-time');
+        const speakingInd = document.getElementById('shadowing-speaking-indicator');
+
+        if (!modal) return;
+
+        // Render Playlist
+        const listContainer = document.getElementById('shadowing-calls-list');
+        if (listContainer) {
+            listContainer.innerHTML = CALL_SHADOWING_DATABASE.map((call, idx) => `
+                <div class="shadowing-item ${idx === 0 ? 'active' : ''}" data-call-idx="${idx}">
+                    <div class="shadowing-item-title">
+                        <span>${escapeHtml(call.title)}</span>
+                        <span class="crm-status-tag ${call.gradeType}" style="font-size:0.68rem; padding:1px 6px;">${call.grade}</span>
+                    </div>
+                    <div class="shadowing-item-meta">
+                        <span><i class="fa-solid fa-user-tie"></i> ${escapeHtml(call.agentName)}</span>
+                        <span><i class="fa-solid fa-clock"></i> ${call.durationText}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            listContainer.querySelectorAll('.shadowing-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const idx = parseInt(item.getAttribute('data-call-idx'), 10);
+                    selectShadowCall(idx);
+                });
+            });
+        }
+
+        function selectShadowCall(idx) {
+            stopShadowPlayback();
+            currentShadowCall = CALL_SHADOWING_DATABASE[idx];
+            
+            document.querySelectorAll('.shadowing-item').forEach((it, i) => {
+                it.classList.toggle('active', i === idx);
+            });
+
+            // Update Header Meta
+            const titleEl = document.getElementById('shadowing-call-title');
+            const badgeEl = document.getElementById('shadowing-call-grade-badge');
+            const agentEl = document.getElementById('shadowing-agent-name');
+            const custEl = document.getElementById('shadowing-cust-name');
+            const dispEl = document.getElementById('shadowing-disp-name');
+            const durEl = document.getElementById('shadowing-duration-time');
+
+            if (titleEl) titleEl.textContent = currentShadowCall.title;
+            if (badgeEl) {
+                badgeEl.textContent = `درجة الجودة: ${currentShadowCall.grade}`;
+                badgeEl.className = `crm-status-tag ${currentShadowCall.gradeType}`;
+            }
+            if (agentEl) agentEl.textContent = currentShadowCall.agentName;
+            if (custEl) custEl.textContent = currentShadowCall.customerName;
+            if (dispEl) dispEl.textContent = currentShadowCall.category;
+            if (durEl) durEl.textContent = currentShadowCall.durationText;
+
+            renderShadowTranscript();
+            renderShadowQANotes();
+        }
+
+        function renderShadowTranscript() {
+            const pane = document.getElementById('shadow-pane-transcript');
+            if (!pane) return;
+            pane.innerHTML = currentShadowCall.dialogue.map((d, i) => `
+                <div class="shadow-speech-bubble ${d.role}" id="shadow-bubble-${i}">
+                    <div class="shadow-speech-author">
+                        <i class="fa-solid ${d.role === 'agent' ? 'fa-headset' : 'fa-user'}"></i>
+                        <span>${escapeHtml(d.name)}</span>
+                    </div>
+                    <div>${escapeHtml(d.text)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderShadowQANotes() {
+            const pane = document.getElementById('shadow-pane-qa');
+            if (!pane) return;
+            pane.innerHTML = currentShadowCall.qaNotes.map(n => `
+                <div class="shadow-qa-card">
+                    <div class="shadow-qa-header">
+                        <span><i class="fa-solid fa-award" style="color:#ff9900;"></i> ${escapeHtml(n.standard)}</span>
+                        <span class="crm-status-tag ${parseInt(n.score) >= 80 ? 'success' : 'failed'}">${n.score}</span>
+                    </div>
+                    <div class="shadow-qa-body">${escapeHtml(n.comment)}</div>
+                    ${n.tip ? `<div class="shadow-qa-tip">💡 <strong>نصيحة مسؤول الجودة:</strong> ${escapeHtml(n.tip)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Tab Switching inside Shadowing (Transcript vs QA)
+        const tabBtns = modal.querySelectorAll('.crm-tab-btn[data-shadow-tab]');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const target = btn.getAttribute('data-shadow-tab');
+                const paneTrans = document.getElementById('shadow-pane-transcript');
+                const paneQA = document.getElementById('shadow-pane-qa');
+                if (target === 'transcript') {
+                    if (paneTrans) paneTrans.classList.remove('hidden');
+                    if (paneQA) paneQA.classList.add('hidden');
+                } else {
+                    if (paneTrans) paneTrans.classList.add('hidden');
+                    if (paneQA) paneQA.classList.remove('hidden');
+                }
+            });
+        });
+
+        // Speech Audio Player Controls
+        function toggleShadowPlayback() {
+            if (shadowPlaying) {
+                stopShadowPlayback();
+            } else {
+                startShadowPlayback();
+            }
+        }
+
+        function startShadowPlayback() {
+            shadowPlaying = true;
+            if (playIcon) playIcon.className = 'fa-solid fa-pause';
+            if (speakingInd) speakingInd.style.display = 'inline-flex';
+
+            playNextDialogueStep();
+        }
+
+        function playNextDialogueStep() {
+            if (!shadowPlaying) return;
+            const dialogue = currentShadowCall.dialogue;
+            if (shadowCurrentStep >= dialogue.length) {
+                stopShadowPlayback();
+                shadowCurrentStep = 0;
+                if (seekBar) seekBar.value = 100;
+                return;
+            }
+
+            // Highlight active bubble
+            document.querySelectorAll('.shadow-speech-bubble').forEach((b, i) => {
+                b.classList.toggle('highlight', i === shadowCurrentStep);
+                if (i === shadowCurrentStep) {
+                    b.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+
+            const current = dialogue[shadowCurrentStep];
+            if (seekBar) {
+                seekBar.value = Math.round((shadowCurrentStep / dialogue.length) * 100);
+            }
+            if (timeEl) {
+                const totalSec = (shadowCurrentStep + 1) * 8;
+                const m = Math.floor(totalSec / 60);
+                const s = totalSec % 60;
+                timeEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+
+            // Text-To-Speech Synthesis
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(current.text);
+                utter.lang = 'ar-IQ';
+                utter.rate = 1.0;
+                utter.pitch = current.role === 'agent' ? 1.1 : 0.95;
+
+                utter.onend = () => {
+                    if (shadowPlaying) {
+                        shadowCurrentStep++;
+                        setTimeout(playNextDialogueStep, 500);
+                    }
+                };
+
+                utter.onerror = () => {
+                    if (shadowPlaying) {
+                        shadowCurrentStep++;
+                        setTimeout(playNextDialogueStep, 2500);
+                    }
+                };
+
+                window.speechSynthesis.speak(utter);
+            } else {
+                setTimeout(() => {
+                    if (shadowPlaying) {
+                        shadowCurrentStep++;
+                        playNextDialogueStep();
+                    }
+                }, 3000);
+            }
+        }
+
+        function stopShadowPlayback() {
+            shadowPlaying = false;
+            if (playIcon) playIcon.className = 'fa-solid fa-play';
+            if (speakingInd) speakingInd.style.display = 'none';
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            document.querySelectorAll('.shadow-speech-bubble').forEach(b => b.classList.remove('highlight'));
+        }
+
+        if (playBtn) playBtn.addEventListener('click', toggleShadowPlayback);
+
+        // Open / Close Modal
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                modal.classList.add('active');
+                selectShadowCall(0);
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                stopShadowPlayback();
+                modal.classList.remove('active');
+            });
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                stopShadowPlayback();
+                modal.classList.remove('active');
+            }
+        });
+    }
+
+    // Initialize Phase 1 & 2 Core Modules
     initMockCrmSystem();
     initProhibitedWordsDetector();
+    initTieredLearningPaths();
+    initCallShadowingLibrary();
 
     // Initial session check
     checkUserSession();

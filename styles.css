@@ -6816,3 +6816,148 @@ mark.search-highlight.active-match {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 181, 226, 0.3);
 }
+
+/* ==========================================================================
+   Phase 2: Tiered Learning Paths & Call Shadowing Library Styles
+   ========================================================================== */
+.level-card {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.level-card.active:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 181, 226, 0.15) !important;
+}
+
+.level-card.locked {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+.level-card.completed {
+    border-color: #10b981 !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Shadowing Playlist Item */
+.shadowing-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.shadowing-item:hover {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.4);
+}
+
+.shadowing-item.active {
+    background: rgba(124, 58, 237, 0.25);
+    border-color: #7c3aed;
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
+}
+
+.shadowing-item-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.shadowing-item-meta {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Transcript Dialogue Bubbles */
+.shadow-speech-bubble {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.shadow-speech-bubble.agent {
+    background: rgba(0, 181, 226, 0.1);
+    border: 1px solid rgba(0, 181, 226, 0.25);
+    color: #e2e8f0;
+    border-top-right-radius: 2px;
+}
+
+.shadow-speech-bubble.customer {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    border-top-left-radius: 2px;
+}
+
+.shadow-speech-bubble.highlight {
+    border-color: #ff9900 !important;
+    background: rgba(255, 153, 0, 0.15) !important;
+    box-shadow: 0 0 14px rgba(255, 153, 0, 0.25);
+}
+
+.shadow-speech-author {
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.shadow-speech-bubble.agent .shadow-speech-author {
+    color: #38bdf8;
+}
+
+.shadow-speech-bubble.customer .shadow-speech-author {
+    color: #fca5a5;
+}
+
+/* QA Critique Card */
+.shadow-qa-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.shadow-qa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.shadow-qa-body {
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+.shadow-qa-tip {
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 3px solid #10b981;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.74rem;
+    color: #86efac;
+}
