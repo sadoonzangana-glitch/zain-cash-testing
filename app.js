@@ -8799,11 +8799,172 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initialize Phase 1 & 2 Core Modules
+    // ==========================================================================
+    // PHASE 3: GAMIFICATION & LEADERBOARD (لوحة الشرف والشارات)
+    // ==========================================================================
+    function initLeaderboard() {
+        const modal = document.getElementById('modal-leaderboard');
+        const openBtn = document.getElementById('btn-open-leaderboard');
+        const closeBtn = document.getElementById('btn-close-leaderboard-modal');
+
+        if (!modal) return;
+
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                modal.classList.add('active');
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+    }
+
+    // ==========================================================================
+    // PHASE 3: SKILL RADAR PERFORMANCE CHART (تقرير الأداء الراداري الخماسي)
+    // ==========================================================================
+    function initRadarPerformance() {
+        const modal = document.getElementById('modal-radar-performance');
+        const openBtn = document.getElementById('btn-open-radar');
+        const closeBtn = document.getElementById('btn-close-radar-modal');
+
+        if (!modal) return;
+
+        function updateRadarChart() {
+            // Calculate dynamic scores based on user results or realistic high baseline
+            let soft = 95;
+            let know = 92;
+            let aht = 88;
+            let disp = 90;
+            let kyc = 96;
+
+            const progress = getTraineeLearningProgress();
+            if (progress.level1Completed && progress.level1Score) {
+                know = Math.min(100, Math.max(70, progress.level1Score));
+            }
+
+            const el1 = document.getElementById('radar-score-1');
+            const el2 = document.getElementById('radar-score-2');
+            const el3 = document.getElementById('radar-score-3');
+            const el4 = document.getElementById('radar-score-4');
+            const el5 = document.getElementById('radar-score-5');
+
+            if (el1) el1.textContent = `${soft}%`;
+            if (el2) el2.textContent = `${know}%`;
+            if (el3) el3.textContent = `${aht}%`;
+            if (el4) el4.textContent = `${disp}%`;
+            if (el5) el5.textContent = `${kyc}%`;
+
+            // Calculate SVG polygon points centered at (160, 160) with max radius 140
+            // Angles for 5-axis: -90° (top), -18° (top-right), 54° (bottom-right), 126° (bottom-left), 198° (top-left)
+            const cx = 160, cy = 160, maxR = 135;
+            const angles = [-90, -18, 54, 126, 198];
+            const vals = [soft / 100, know / 100, aht / 100, disp / 100, kyc / 100];
+
+            const pts = angles.map((ang, i) => {
+                const rad = (ang * Math.PI) / 180;
+                const r = maxR * vals[i];
+                const x = Math.round(cx + r * Math.cos(rad));
+                const y = Math.round(cy + r * Math.sin(rad));
+                return `${x},${y}`;
+            }).join(' ');
+
+            const poly = document.getElementById('radar-trainee-poly');
+            if (poly) poly.setAttribute('points', pts);
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                updateRadarChart();
+                modal.classList.add('active');
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+    }
+
+    // ==========================================================================
+    // PHASE 3: OFFICIAL CERTIFICATE GENERATION & PRINT (شهادة التخرج الرسمية)
+    // ==========================================================================
+    function initCertificateSystem() {
+        const modal = document.getElementById('modal-certificate');
+        const openBtn = document.getElementById('btn-open-certificate');
+        const closeBtn = document.getElementById('btn-close-cert-modal');
+        const printBtn = document.getElementById('btn-print-certificate');
+
+        if (!modal) return;
+
+        function updateCertificateDetails() {
+            const user = currentUser || { name: 'Amr Nasr', id: 'ZC599' };
+            const nameEl = document.getElementById('cert-trainee-name');
+            const idEl = document.getElementById('cert-trainee-id');
+            const dateEl = document.getElementById('cert-issue-date');
+            const serialEl = document.getElementById('cert-code-serial');
+            const scoreEl = document.getElementById('cert-final-score');
+
+            if (nameEl) nameEl.textContent = user.name || user.id || 'Amr Nasr';
+            if (idEl) idEl.textContent = `ZC Code: ${user.id || 'ZC599'}`;
+            if (dateEl) {
+                const now = new Date();
+                dateEl.textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            }
+            if (serialEl) {
+                const uid = (user.id || 'ZC599').replace(/\D/g, '') || '98401';
+                serialEl.textContent = `SERIAL: ZC-CERT-${new Date().getFullYear()}-${uid}`;
+            }
+            if (scoreEl) {
+                const progress = getTraineeLearningProgress();
+                const avgScore = progress.level1Completed ? Math.max(88, progress.level1Score) : 92.5;
+                scoreEl.textContent = `${avgScore}% - مرتبة الشرف (Excellence)`;
+            }
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                updateCertificateDetails();
+                modal.classList.add('active');
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+        }
+
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+    }
+
+    // Initialize Phase 1, 2, & 3 Core Modules
     initMockCrmSystem();
     initProhibitedWordsDetector();
     initTieredLearningPaths();
     initCallShadowingLibrary();
+    initLeaderboard();
+    initRadarPerformance();
+    initCertificateSystem();
 
     // Initial session check
     checkUserSession();
