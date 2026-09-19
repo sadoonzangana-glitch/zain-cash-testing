@@ -743,6 +743,7 @@ ${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 3500)
 
     // 3. Try Gemini Multi-Key Cloud Pool
     const startTime = Date.now();
+    try {
         const systemInstructionText = `أنت المساعد الذكي والمستشار التشغيلي المعتمد لموظفي خدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
 قواعد الإجابة التشغيلية الاحترافية:
 1. ابدأ فوراً بتقديم الحل والخطوات الإجرائية الكاملة بشكل نقاط مرقمة وواضحة (1. 2. 3.)، بدون مقدمات شكلية مطولة.
