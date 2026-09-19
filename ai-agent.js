@@ -1744,7 +1744,7 @@ ${transcript3}`;
             
             const sourcesText = Array.isArray(data?.sources) && data.sources.length > 0
                 ? data.sources.map(s => typeof s === 'object' ? (s.title || s.name || s.id) : s).filter(Boolean).join(' • ')
-                : 'دليل المعرفة المعتمد (37 مقال)';
+                : 'دليل المعرفة المعتمد';
 
             if (metricsEl) {
                 metricsEl.textContent = `${data?.engine || data?.modelUsed || 'Google Gemini'} | ⚡ ${data?.latency || dt}ms | 📚 ${sourcesText}`;

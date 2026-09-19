@@ -197,6 +197,9 @@ app.use('/api/', (req, res, next) => {
     }
     next();
 });
+app.use('/kb-media', express.static(path.join(__dirname, 'public', 'kb-media')));
+app.use('/public/kb-media', express.static(path.join(__dirname, 'public', 'kb-media')));
+
 // Static assets with cache-busting headers
 app.use(express.static(__dirname, {
     maxAge: 0,
@@ -676,42 +679,56 @@ app.post('/api/ai/chat', async (req, res) => {
         let score = 0;
         const words = qLower.split(/\s+/).filter(w => w.length > 1);
         words.forEach(w => {
-            if (title.includes(w)) score += 25;
-            if (kw.includes(w)) score += 15;
+            if (title.includes(w)) score += 30;
+            if (kw.includes(w)) score += 20;
             if (cat.includes(w)) score += 10;
-            if (content.includes(w)) score += 2;
+            if (content.includes(w)) score += 3;
         });
 
-        if (qLower.includes('ماستر') || qLower.includes('بطاقة') || qLower.includes('بلاتينيوم')) {
-            if (title.includes('ماستر') || title.includes('والت')) score += 25;
+        // Specific Domain Intent Boosts
+        if (qLower.includes('بوابة') || qLower.includes('بوابات') || qLower.includes('gateway') || qLower.includes('موقع') || qLower.includes('تاجر') || qLower.includes('تجار') || qLower.includes('متجر') || qLower.includes('استقطع') || qLower.includes('استقطاع') || qLower.includes('موصلت') || qLower.includes('ما وصلت') || qLower.includes('ما وصل')) {
+            if (title.includes('تجار') || title.includes('بوابة') || kw.includes('بوابة دفع') || title.includes('بوابات')) score += 80;
+            if (title.includes('اعمال') || title.includes('أعمال')) score += 50;
         }
-        if (qLower.includes('اسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben') || qLower.includes('سهم')) {
-            if (title.includes('اسهم') || title.includes('أسهم')) score += 30;
+        if (qLower.includes('ماستر') || qLower.includes('بطاقة') || qLower.includes('بلاتينيوم') || qLower.includes('والت كارد') || qLower.includes('كلاسيك')) {
+            if (title.includes('ماستر') || title.includes('والت')) score += 60;
         }
-        if (qLower.includes('ci') || qLower.includes('حظر') || qLower.includes('متوقف') || qLower.includes('موقوفة') || qLower.includes('معلق')) {
-            if (title.includes('ci') || title.includes('موقوفة') || content.includes('additional customer')) score += 30;
+        if (qLower.includes('اسهم') || qLower.includes('أسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben') || qLower.includes('سهم') || qLower.includes('تداول')) {
+            if (title.includes('اسهم') || title.includes('أسهم') || title.includes('تداول')) score += 70;
         }
-        if (qLower.includes('رمز') || qLower.includes('pin') || qLower.includes('سري') || qLower.includes('نسيت')) {
-            if (title.includes('رمز') || title.includes('pin')) score += 25;
+        if (qLower.includes('ci') || qLower.includes('حظر') || qLower.includes('متوقف') || qLower.includes('موقوفة') || qLower.includes('معلق') || qLower.includes('واكفة') || qLower.includes('واقفة')) {
+            if (title.includes('إيقاف') || title.includes('حظر') || title.includes('متوقف') || content.includes('additional customer')) score += 60;
         }
-        if (qLower.includes('ويسترن') || qLower.includes('western') || qLower.includes('حوالة')) {
-            if (title.includes('ويسترن') || title.includes('حوالة')) score += 25;
+        if (qLower.includes('رمز') || qLower.includes('pin') || qLower.includes('سري') || qLower.includes('نسيت') || qLower.includes('ناسي') || qLower.includes('باسورد')) {
+            if (title.includes('رمز') || title.includes('pin') || kw.includes('رمز سري')) score += 70;
+        }
+        if (qLower.includes('ويسترن') || qLower.includes('western') || qLower.includes('حوالة') || qLower.includes('mtcn')) {
+            if (title.includes('ويسترن') || title.includes('western')) score += 70;
         }
         if (qLower.includes('عمولة') || qLower.includes('سحب') || qLower.includes('صراف') || qLower.includes('وكيل') || qLower.includes('حدود') || qLower.includes('رسوم')) {
-            if (title.includes('سحب') || title.includes('رسوم') || title.includes('حدود') || title.includes('عمولات')) score += 25;
+            if (title.includes('سحب') || title.includes('رسوم') || title.includes('حدود') || title.includes('عمولات') || title.includes('جدول')) score += 50;
+        }
+        if (qLower.includes('تسجيل') || qLower.includes('فتح محفظة') || qLower.includes('انشاء محفظة') || qLower.includes('شاشة بيضاء')) {
+            if (title.includes('تسجيل') || title.includes('فتح محفظة') || kw.includes('تسجيل')) score += 60;
+        }
+        if (qLower.includes('ameyo') || qLower.includes('اميو') || qLower.includes('كول سنتر') || qLower.includes('تذكرة') || qLower.includes('ticket')) {
+            if (title.includes('Ameyo') || title.includes('تذاكر')) score += 70;
+        }
+        if (qLower.includes('بوت') || qLower.includes('bot') || qLower.includes('واتساب') || qLower.includes('whatsapp') || qLower.includes('تعميم') || qLower.includes('تحديثات')) {
+            if (title.includes('التحديثات اليومية') || title.includes('WhatsApp')) score += 70;
         }
 
         return { article: art, score, id: art.id || (idx + 1) };
     }).filter(a => a.score > 0).sort((a, b) => b.score - a.score);
 
-    const topArticles = scoredArticles.slice(0, 4).map(s => ({
+    const topArticles = scoredArticles.slice(0, 5).map(s => ({
         id: s.article.id || s.id,
         title: s.article.title,
         category: s.article.category,
         content: s.article.content
     }));
 
-    const articlesToUse = topArticles.length > 0 ? topArticles : (kbArticles || []).slice(0, 3).map((a, i) => ({
+    const articlesToUse = topArticles.length > 0 ? topArticles : (kbArticles || []).slice(0, 4).map((a, i) => ({
         id: a.id || (i + 1),
         title: a.title,
         category: a.category,
@@ -721,7 +738,7 @@ app.post('/api/ai/chat', async (req, res) => {
     const articlesContext = articlesToUse.map((a, idx) => `
 [مقال ${idx + 1} - معرّف: ${a.id}]: ${a.title} (القسم: ${a.category})
 المحتوى الرسمي:
-${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1600)}
+${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 3500)}
 `).join('\n---\n');
 
     // 3. Try Gemini Multi-Key Cloud Pool
@@ -731,10 +748,11 @@ ${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1600)
 قواعد الإجابة الصارمة والمباشرة:
 1. ممنوع نهائياً وضع أي مقدمات إنشائية أو ترحيبية أو عبارات مثل: (أهلاً بك، يسرني مساعدتك، بناءً على المقال...).
 2. ابدأ فوراً بكتابة الخطوات أو المعلومات المطلوبة بشكل نقاط مرقمة وواضحة ومباشرة (1. 2. 3.) جاهزة لنسخها وإرسالها للزبون فوراً.
-3. افهم اللهجة العراقية بالكامل (مثال: محفظتي واكفة، فلوسي ما وصلت، نسيت الباسورد، شلون اشتري اسهم).
+3. افهم اللهجة العراقية بالكامل (مثال: محفظتي واكفة، فلوسي ما وصلت، نسيت الباسورد، شلون اشتري اسهم، اريد اسوي بوابة دفع).
 4. استند بنسبة 100% إلى دليل مقالات زين كاش المرفق أدناه.
 5. إذا كان السؤال عشوائياً أو غير واضح، أجب فقط: "يرجى كتابة استفسار واضح بخصوص خدمات زين كاش."
 6. اذكر الأرقام والعمولات والنسب بالدينار العراقي بدقة وفق المعطيات الرسمية.
+7. لا تقم بتضمين أي أفكار داخلية أو نصوص باللغة الإنجليزية للمراجعة، اكتب الإجابة العربية النهائية مباشرة فقط.
 
 دليل مقالات المعرفة المتاحة لزين كاش:
 ${articlesContext}`;
@@ -755,11 +773,18 @@ ${articlesContext}`;
             parts: [{ text: trimmedMsg }]
         });
 
-        const geminiResult = await executeGeminiWithKeyRotation(contents, systemInstructionText, 0.25);
+        const geminiResult = await executeGeminiWithKeyRotation(contents, systemInstructionText, 0.2);
         if (geminiResult && geminiResult.reply) {
+            let finalCleanReply = geminiResult.reply;
+            // Strip any thinking tags or chain of thought leaked by reasoning models
+            finalCleanReply = finalCleanReply.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
+            finalCleanReply = finalCleanReply.replace(/(:?Let's re-verify[\s\S]*?\n\n|:?Let's verify[\s\S]*?\n\n)/gi, '');
+            finalCleanReply = finalCleanReply.replace(/Does the prompt strictly require[\s\S]*?\n/gi, '');
+            finalCleanReply = finalCleanReply.trim();
+
             const primaryArticle = articlesToUse[0];
             const responseData = {
-                reply: geminiResult.reply,
+                reply: finalCleanReply,
                 modelUsed: geminiResult.modelUsed,
                 latency: Date.now() - startTime,
                 sources: articlesToUse.map(a => ({ id: a.id, title: a.title, category: a.category })),
