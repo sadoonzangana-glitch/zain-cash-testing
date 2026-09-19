@@ -2082,21 +2082,47 @@ ${stepsText}
             else if (typeof defaultKb !== 'undefined') kbArticlesList = defaultKb;
         }
 
-        const articlesContext = (kbArticlesList || []).map(a => `
+        const qLower = (userMessage || '').toLowerCase();
+        const scoredArticles = (kbArticlesList || []).map((art, idx) => {
+            const title = (art.title || '').toLowerCase();
+            const cat = (art.category || '').toLowerCase();
+            const kw = (art.keywords || '').toLowerCase();
+            const content = (art.content || '').replace(/<[^>]+>/g, ' ').toLowerCase();
+
+            let score = 0;
+            const words = qLower.split(/\s+/).filter(w => w.length > 1);
+            words.forEach(w => {
+                if (title.includes(w)) score += 30;
+                if (kw.includes(w)) score += 20;
+                if (cat.includes(w)) score += 10;
+                if (content.includes(w)) score += 3;
+            });
+            return { art, score };
+        }).filter(s => s.score > 0).sort((a, b) => b.score - a.score);
+
+        const relevantArts = scoredArticles.slice(0, 5).map(s => s.art);
+        const artsToUse = relevantArts.length > 0 ? relevantArts : (kbArticlesList || []).slice(0, 4);
+
+        const articlesContext = artsToUse.map(a => `
 مقال: ${a.title} (الفئة: ${a.category})
 المحتوى:
-${(a.content || '').replace(/<[^>]+>/g, ' ').slice(0, 1200)}
+${(a.content || '').replace(/<[^>]+>/g, ' ').slice(0, 3000)}
 ---
 `).join('\n');
 
-        const systemPrompt = `أنت المساعد الذكي لخدمة عملاء زين كاش (Zain Cash).
-مهمتك هي الإجابة على أسئلة الموظفين بالعامية العراقية وبأسلوب مهذب ومباشر ومختصر ومفيد جداً.
-معلومات وقواعد مهمة:
-- يجب أن تجيب على السؤال بالاعتماد **فقط** على المقالات المعرفية المرفقة أدناه.
-- **لا تذكر أبداً أي تفاصيل إضافية مثل التصنيف المعتمد (Main & Sub Disposition) أو فئة المقال**، فقط قدم الإجابة والخطوات العملية بشكل مباشر ومختصر ومفيد جداً للموظف.
-- إذا لم تكن الإجابة موجودة في المقالات المعرفية المرفقة، قل للموظف بلطف وبلهجة عراقية: "عذراً عيني، هالمعلومة ما متوفرة حالياً بدليل المعرفة الخاص بي."
+        const systemPrompt = `أنت المساعد الذكي والمستشار التشغيلي المعتمد لموظفي خدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
+قواعد الإجابة التشغيلية الاحترافية:
+1. ابدأ فوراً بتقديم الحل والخطوات الإجرائية الكاملة بشكل نقاط مرقمة وواضحة (1. 2. 3.)، بدون مقدمات شكلية مطولة.
+2. لا تقتصر إجابتك على طلب رقم المحفظة فقط، بل قدّم الشرح والخطوات التشغيلية الكاملة للحالة، بما في ذلك:
+   - التحقق الفوري (فحص كشف الحساب، رمز الخطأ، حالة العملية).
+   - توضيح مدد التسوية التلقائية (إن وجدت، مثل تسوية المصارف خلال 24-48 ساعة).
+   - إجراءات نظام خدمة العملاء Ameyo (مثل اسم الـ Queue المخصص كـ MC-Deduction أو Business Support وتحديد الـ Priority).
+   - المعلومات والمستندات المطلوب جمعها من المشترك (رقم المحفظة، تاريخ العملية، المبلغ، الرقم التسلسلي، أو صور الإشعار).
+3. افهم بدقة اللهجة العراقية اليومية (مثال: محفظتي واكفة، فلوسي ما وصلت، دفعت بالبطاقة وفشل واستقطع، نسيت الباسورد، شلون اسوي بوابة دفع).
+4. استند بنسبة 100% إلى دليل مقالات زين كاش المرفق أدناه وكن دقيقاً بالأرقام والرسوم والتعليمات الرسمية.
+5. اكتب الإجابة العربية المباشرة والنهائية فقط بدون أي أفكار داخلية أو مراجعات بالإنجليزية.
 
-دليل المقالات المعرفية المتاحة:
+دليل مقالات المعرفة المتاحة لزين كاش:
 ${articlesContext}
 `;
 
@@ -2118,8 +2144,8 @@ ${articlesContext}
                 parts: [{ text: systemPrompt }]
             },
             generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 800
+                temperature: 0.2,
+                maxOutputTokens: 1500
             }
         };
 

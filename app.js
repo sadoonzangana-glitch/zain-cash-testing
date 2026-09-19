@@ -153,8 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     window.DISPOSITION_DATA = GLOBAL_DISPOSITION_DATA;
 
-    // API base URL
-    const API_BASE = window.location.origin.startsWith('http') ? window.location.origin : '';
+    // API base URL (Auto-detects localhost:3000 even when opened via VSCode Live Server on port 8888, 5500, etc.)
+    let API_BASE = window.location.origin.startsWith('http') ? window.location.origin : '';
+    if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port && window.location.port !== '3000') {
+        API_BASE = 'http://localhost:3000';
+    }
     
     async function apiCall(endpoint, method = 'GET', data = null) {
         if (!API_BASE) {
