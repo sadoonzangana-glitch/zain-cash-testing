@@ -5331,6 +5331,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function isClientGibberish(text) {
+        if (!text || typeof text !== 'string') return true;
+        const str = text.trim();
+        if (str.length < 2) return true;
+        if (/^[0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(str)) return true;
+        if (/^[a-zA-Z]{4,}$/.test(str)) {
+            const vowels = str.match(/[aeiouyAEIOUY]/g) || [];
+            const commonWords = ['hello', 'hi', 'zain', 'cash', 'master', 'card', 'western', 'union', 'stock', 'stocks', 'wallet', 'transfer', 'balance', 'help', 'pin', 'error', 'kyc', 'alpaca', 'status', 'agent', 'support', 'atm', 'pos', 'mtcn'];
+            const lower = str.toLowerCase();
+            if (!commonWords.some(w => lower.includes(w)) && (vowels.length / str.length < 0.18 || /(.)\1{3,}/.test(str))) {
+                return true;
+            }
+        }
+        if (/^(.)\1{4,}$/.test(str)) return true;
+        return false;
+    }
+
     function fallbackSearchKb(query, articles) {
         let list = articles;
         if (!list || !list.length) {
@@ -5340,7 +5357,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!list || !list.length) return "عذراً، دليل المعرفة غير متوفر حالياً.";
 
         const q = String(query || '').toLowerCase().trim();
-        if (!q) return "تفضل عيني، شلون أقدر أساعدك بخصوص خدمات زين كاش؟";
+        if (!q || isClientGibberish(q)) {
+            return "يرجى كتابة استفسار واضح بخصوص خدمات زين كاش لتقديم الخطوات والإجراءات المعتمدة فوراً.";
+        }
 
         if (q.includes('سهم') || q.includes('اسهم') || q.includes('تداول') || q.includes('بورصة') || q.includes('alpaca')) {
             return `خطوات شراء وتداول الأسهم الأمريكية عبر زين كاش:
@@ -5401,11 +5420,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }).sort((a, b) => b.score - a.score);
 
         const top = scored[0];
-        if (!top || top.score < 5) {
-            return `الخطوات والإجراءات المعتمدة:
-1. افتح تطبيق زين كاش وتوجه إلى قائمة الخدمات.
-2. اختر الخدمة المطلوبة واتبع التعليمات الظاهرة على الشاشة.
-3. للمساعدة المباشرة يرجى الاتصال بخدمة العملاء على الرقم 107.`;
+        if (!top || top.score < 10) {
+            return `يرجى كتابة استفسار واضح بخصوص خدمات زين كاش لتقديم الإجراءات والخطوات المعتمدة فوراً.`;
         }
 
         const clean = (top.article.content || '')
@@ -5418,8 +5434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clean.length > 0) {
             return `الخطوات المعتمدة:\n` + clean.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n');
         }
-
-        return `1. افتح تطبيق زين كاش وتوجه للخدمة المطلوبة.\n2. اتبع التعليمات على الشاشة.\n3. للمساعدة تواصل مع 107.`;
+        return `يرجى كتابة استفسار واضح بخصوص خدمات زين كاش لتقديم الإجراءات المعتمدة فوراً.`;
     }
 
     async function handleKbAiChat() {

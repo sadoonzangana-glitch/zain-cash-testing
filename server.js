@@ -475,16 +475,103 @@ app.get('/api/ai-scenarios', async (req, res) => {
     res.json(dbStorage.getConfig('aiScenarios', defaultAiScenarios));
 });
 
+// ==========================================
+// ENTERPRISE AI GEMINI GATEWAY & HYBRID ENGINE
+// ==========================================
+const DEFAULT_GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+const AI_SUPPORTED_MODELS = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+const aiResponseCache = new Map();
+let currentKeyIndex = 0;
+
+function isGibberishInput(text) {
+    if (!text || typeof text !== 'string') return true;
+    const str = text.trim();
+    if (str.length < 2) return true;
+    if (/^[0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(str)) return true;
+    
+    // Check for random latin keyboard mash (e.g. dncndivcdsnvj, asdfghjkl, qweqwe)
+    if (/^[a-zA-Z]{4,}$/.test(str)) {
+        const vowels = str.match(/[aeiouyAEIOUY]/g) || [];
+        const vowelRatio = vowels.length / str.length;
+        const commonWords = ['hello', 'hi', 'zain', 'cash', 'master', 'card', 'western', 'union', 'stock', 'stocks', 'wallet', 'transfer', 'balance', 'help', 'pin', 'error', 'kyc', 'alpaca', 'status', 'agent', 'support', 'atm', 'pos', 'mtcn'];
+        const lower = str.toLowerCase();
+        if (!commonWords.some(w => lower.includes(w)) && (vowelRatio < 0.18 || /(.)\1{3,}/.test(str))) {
+            return true;
+        }
+    }
+    // Check for repeated characters (e.g. سسسسسسسس, aaaaaaaa)
+    if (/^(.)\1{4,}$/.test(str)) return true;
+    return false;
+}
+
+function getAllConfiguredApiKeys() {
+    const rawKeys = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || DEFAULT_GEMINI_KEY || '');
+    const list = String(rawKeys || '')
+        .split(/[\n,;]+/)
+        .map(k => k.trim())
+        .filter(k => k && !k.includes('••••'));
+    if (DEFAULT_GEMINI_KEY && !list.includes(DEFAULT_GEMINI_KEY)) {
+        list.push(DEFAULT_GEMINI_KEY);
+    }
+    return list;
+}
+
+async function executeGeminiWithKeyRotation(contents, systemInstructionText, temperature = 0.3) {
+    const keys = getAllConfiguredApiKeys();
+    if (!keys.length) return null;
+
+    for (let attempt = 0; attempt < keys.length; attempt++) {
+        const keyIdx = (currentKeyIndex + attempt) % keys.length;
+        const activeKey = keys[keyIdx];
+
+        for (const model of AI_SUPPORTED_MODELS) {
+            try {
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(activeKey)}`;
+                const payload = {
+                    contents: contents,
+                    systemInstruction: systemInstructionText ? { parts: [{ text: systemInstructionText }] } : undefined,
+                    generationConfig: {
+                        temperature: temperature,
+                        maxOutputTokens: 900
+                    }
+                };
+
+                const resp = await fetch(geminiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (replyText && replyText.trim()) {
+                        currentKeyIndex = (keyIdx + 1) % keys.length;
+                        return { reply: replyText.trim(), modelUsed: model, keyUsedIndex: keyIdx + 1, totalKeys: keys.length };
+                    }
+                } else if (resp.status === 429 || resp.status === 403) {
+                    console.warn(`[AI Pool] Key ${keyIdx + 1} hit rate limit / quota (${resp.status}), rotating to next key...`);
+                    break; // try next key
+                }
+            } catch (err) {
+                console.warn(`[AI Pool] Error calling model ${model} on key ${keyIdx + 1}:`, err.message);
+            }
+        }
+    }
+    return null;
+}
+
 app.get('/api/ai/config', async (req, res) => {
-    const key = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || '');
-    const model = dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
+    const keys = getAllConfiguredApiKeys();
+    const model = dbStorage.getConfig('geminiModel', 'gemini-3.6-flash');
     const temperature = dbStorage.getConfig('geminiTemp', 0.3);
-    const mode = dbStorage.getConfig('geminiMode', 'cloud'); // 'cloud' or 'local'
+    const mode = dbStorage.getConfig('geminiMode', 'cloud');
     const prompt = dbStorage.getConfig('geminiPrompt', '');
     res.json({
-        hasKey: !!key,
-        maskedKey: key ? (key.length > 8 ? key.substring(0, 4) + '••••••••' + key.substring(key.length - 4) : '••••••••') : '',
-        model: model || 'gemini-2.0-flash',
+        hasKey: keys.length > 0,
+        keysCount: keys.length,
+        maskedKey: keys.length > 0 ? `${keys.length} Active Key(s) Pool (${keys[0].substring(0, 4)}••••${keys[0].substring(keys[0].length - 4)})` : '',
+        model: model || 'gemini-3.6-flash',
         temperature: typeof temperature === 'number' ? temperature : 0.3,
         mode: mode || 'cloud',
         systemPrompt: prompt || ''
@@ -508,60 +595,37 @@ app.post('/api/ai/config', requireAdminRole, async (req, res) => {
     if (typeof systemPrompt === 'string') {
         dbStorage.setConfig('geminiPrompt', systemPrompt);
     }
-    res.json({ success: true, message: "AI configuration saved successfully" });
+    res.json({ success: true, message: "تم حفظ إعدادات الذكاء الاصطناعي وتفعيل مجموعة المفاتيح بنجاح." });
 });
 
 app.post('/api/ai/test-key', requireAdminRole, async (req, res) => {
-    let { apiKey, model } = req.body || {};
-    if (!apiKey || apiKey.includes('••••')) {
-        apiKey = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || '');
-    }
-    if (!apiKey || !apiKey.trim()) {
-        return res.status(400).json({ success: false, error: 'لم يتم توفير أو حفظ مفتاح Gemini API' });
-    }
-
-    const targetModel = model || dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
+    const keys = getAllConfiguredApiKeys();
     const startTime = Date.now();
 
+    if (!keys.length) {
+        return res.status(400).json({ success: false, error: 'لم يتم العثور على أي مفتاح نشط' });
+    }
+
     try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-        const testPayload = {
-            contents: [{ parts: [{ text: "اختبار الاتصال السريع: أجب بكلمة 'متصل' فقط." }] }],
-            generationConfig: { maxOutputTokens: 10, temperature: 0.1 }
-        };
+        const testContents = [{ role: 'user', parts: [{ text: "اختبار الاتصال السريع: أجب بكلمة 'متصل'." }] }];
+        const result = await executeGeminiWithKeyRotation(testContents, undefined, 0.1);
 
-        const resp = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(testPayload)
-        });
-
-        const latency = Date.now() - startTime;
-        const data = await resp.json();
-
-        if (resp.ok && data.candidates && data.candidates.length > 0) {
-            const replyText = data.candidates[0]?.content?.parts?.[0]?.text || 'متصل';
+        if (result && result.reply) {
+            const latency = Date.now() - startTime;
             return res.json({
                 success: true,
                 latency,
-                model: targetModel,
-                reply: replyText.trim(),
-                message: `الاتصال ناجح بمحرك Google Gemini (${targetModel}) في زمن استجابة ${latency}ms`
+                model: result.modelUsed,
+                keysCount: result.totalKeys,
+                activeKeyIndex: result.keyUsedIndex,
+                reply: result.reply,
+                message: `الاتصال ممتاز ومستقر مع خوادم Google (${result.modelUsed}) عبر ${result.totalKeys} مفاتيح في زمن استجابة ${latency}ms`
             });
         } else {
-            const errorMsg = data.error?.message || `HTTP ${resp.status}: فشل التحقق من المفتاح`;
-            return res.status(400).json({
-                success: false,
-                latency,
-                error: errorMsg
-            });
+            return res.status(500).json({ success: false, error: 'تعذر الاتصال بخوادم Google Gemini' });
         }
     } catch (err) {
-        return res.status(500).json({
-            success: false,
-            latency: Date.now() - startTime,
-            error: 'تعذر الاتصال بخوادم Google Gemini: ' + err.message
-        });
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -571,16 +635,38 @@ app.post('/api/ai/chat', async (req, res) => {
         return res.status(400).json({ error: "Message is required" });
     }
 
-    const apiKey = dbStorage.getConfig('geminiApiKey', process.env.GEMINI_API_KEY || req.headers['x-gemini-key'] || '');
-    const activeModel = model || dbStorage.getConfig('geminiModel', 'gemini-2.0-flash');
-    const temp = typeof temperature === 'number' ? temperature : dbStorage.getConfig('geminiTemp', 0.3);
-    const mode = dbStorage.getConfig('geminiMode', 'cloud');
+    const trimmedMsg = message.trim();
+
+    // 1. Check for Gibberish / Random mash input
+    if (isGibberishInput(trimmedMsg)) {
+        return res.json({
+            reply: "يرجى كتابة استفسار واضح بخصوص خدمات ومعاملات زين كاش لتقديم الخطوات والإجراءات المعتمدة فوراً.",
+            modelUsed: "Garbage Guard 🛡️",
+            cached: false,
+            latency: 2,
+            sources: [],
+            primaryArticle: null,
+            engine: "ZainCash Protection"
+        });
+    }
+
+    // 2. Check Smart Memory Cache for repeated queries
+    const cacheKey = trimmedMsg.toLowerCase().replace(/[^\w\u0600-\u06FF]/g, '');
+    if (aiResponseCache.has(cacheKey)) {
+        const cached = aiResponseCache.get(cacheKey);
+        return res.json({
+            ...cached,
+            cached: true,
+            latency: 5,
+            engine: cached.engine + ' (Fast Cache ⚡)'
+        });
+    }
 
     // Retrieve Knowledge Base articles from SQLite/Memory
     const kbArticles = dbStorage.getConfig('knowledgeBase', defaultKb) || defaultKb;
     
     // RAG: Enhanced Hybrid Keyword & Intent Matcher
-    const qLower = message.toLowerCase().trim();
+    const qLower = trimmedMsg.toLowerCase();
     const scoredArticles = (kbArticles || []).map((art, idx) => {
         const title = (art.title || '').toLowerCase();
         const cat = (art.category || '').toLowerCase();
@@ -596,23 +682,22 @@ app.post('/api/ai/chat', async (req, res) => {
             if (content.includes(w)) score += 2;
         });
 
-        // Specific Zain Cash synonym intents
         if (qLower.includes('ماستر') || qLower.includes('بطاقة') || qLower.includes('بلاتينيوم')) {
-            if (title.includes('ماستر') || title.includes('والت')) score += 20;
+            if (title.includes('ماستر') || title.includes('والت')) score += 25;
         }
-        if (qLower.includes('اسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben')) {
+        if (qLower.includes('اسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben') || qLower.includes('سهم')) {
             if (title.includes('اسهم') || title.includes('أسهم')) score += 30;
         }
-        if (qLower.includes('ci') || qLower.includes('حظر') || qLower.includes('متوقف') || qLower.includes('موقوفة')) {
+        if (qLower.includes('ci') || qLower.includes('حظر') || qLower.includes('متوقف') || qLower.includes('موقوفة') || qLower.includes('معلق')) {
             if (title.includes('ci') || title.includes('موقوفة') || content.includes('additional customer')) score += 30;
         }
-        if (qLower.includes('رمز') || qLower.includes('pin') || qLower.includes('سري')) {
+        if (qLower.includes('رمز') || qLower.includes('pin') || qLower.includes('سري') || qLower.includes('نسيت')) {
             if (title.includes('رمز') || title.includes('pin')) score += 25;
         }
         if (qLower.includes('ويسترن') || qLower.includes('western') || qLower.includes('حوالة')) {
             if (title.includes('ويسترن') || title.includes('حوالة')) score += 25;
         }
-        if (qLower.includes('عمولة') || qLower.includes('سحب') || qLower.includes('صراف') || qLower.includes('وكيل') || qLower.includes('حدود')) {
+        if (qLower.includes('عمولة') || qLower.includes('سحب') || qLower.includes('صراف') || qLower.includes('وكيل') || qLower.includes('حدود') || qLower.includes('رسوم')) {
             if (title.includes('سحب') || title.includes('رسوم') || title.includes('حدود') || title.includes('عمولات')) score += 25;
         }
 
@@ -639,97 +724,66 @@ app.post('/api/ai/chat', async (req, res) => {
 ${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1600)}
 `).join('\n---\n');
 
-    // Default follow-up chips based on context
-    const defaultChips = [
-        "💳 ما هي شروط طلب البطاقة؟",
-        "📈 شروط تداول الأسهم ونموذج W-8BEN",
-        "🔒 كيفية فك حظر المحفظة الموقوفة CI",
-        "💰 ما هي حدود وعمولات السحب؟"
-    ];
-
-    // Try Gemini Cloud API first if key exists and mode is cloud
-    if (apiKey && apiKey.trim() && mode !== 'local') {
-        try {
-            const systemInstructionText = `أنت المساعد الذكي المعتمد لخدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
+    // 3. Try Gemini Multi-Key Cloud Pool
+    const startTime = Date.now();
+    try {
+        const systemInstructionText = `أنت المساعد الذكي المعتمد لموظفي خدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
 قواعد الإجابة الصارمة والمباشرة:
-1. ممنوع نهائياً وضع أي مقدمات إنشائية أو ترحيبية أو ذكر أسماء المقالات (مثل: "أهلاً بك عيني بخصوص استفسارك حول...").
-2. ابدأ فوراً بكتابة الخطوات أو المعلومات المطلوبة بشكل نقاط مرقمة وواضحة ومباشرة (1. 2. 3.) بحيث تكون جاهزة للإرسال للزبون فوراً.
-3. اكتب بلغة مهذبة ومباشرة ودقيقة مستندة 100% إلى دليل المقالات المرفق أدناه.
-4. اذكر الأرقام والعمولات والنسب بالدينار العراقي بدقة وفق المعطيات الرسمية.
-5. إذا لم تجد الإجابة في المقالات، أجب مباشرة: "عذراً، هذه المعلومة غير متوفرة حالياً في دليل المعرفة، يرجى مراجعة خدمة العملاء 107."
+1. ممنوع نهائياً وضع أي مقدمات إنشائية أو ترحيبية أو عبارات مثل: (أهلاً بك، يسرني مساعدتك، بناءً على المقال...).
+2. ابدأ فوراً بكتابة الخطوات أو المعلومات المطلوبة بشكل نقاط مرقمة وواضحة ومباشرة (1. 2. 3.) جاهزة لنسخها وإرسالها للزبون فوراً.
+3. افهم اللهجة العراقية بالكامل (مثال: محفظتي واكفة، فلوسي ما وصلت، نسيت الباسورد، شلون اشتري اسهم).
+4. استند بنسبة 100% إلى دليل مقالات زين كاش المرفق أدناه.
+5. إذا كان السؤال عشوائياً أو غير واضح، أجب فقط: "يرجى كتابة استفسار واضح بخصوص خدمات زين كاش."
+6. اذكر الأرقام والعمولات والنسب بالدينار العراقي بدقة وفق المعطيات الرسمية.
 
 دليل مقالات المعرفة المتاحة لزين كاش:
 ${articlesContext}`;
 
-            const contents = [];
-            if (Array.isArray(history)) {
-                history.forEach(h => {
-                    if (h.text) {
-                        contents.push({
-                            role: h.role === 'user' ? 'user' : 'model',
-                            parts: [{ text: h.text }]
-                        });
-                    }
-                });
-            }
-            contents.push({
-                role: 'user',
-                parts: [{ text: message }]
-            });
-
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-            const geminiReqBody = {
-                contents: contents,
-                systemInstruction: { parts: [{ text: systemInstructionText }] },
-                generationConfig: {
-                    temperature: temp,
-                    maxOutputTokens: 800
+        const contents = [];
+        if (Array.isArray(history)) {
+            history.forEach(h => {
+                if (h.text) {
+                    contents.push({
+                        role: h.role === 'user' ? 'user' : 'model',
+                        parts: [{ text: h.text }]
+                    });
                 }
+            });
+        }
+        contents.push({
+            role: 'user',
+            parts: [{ text: trimmedMsg }]
+        });
+
+        const geminiResult = await executeGeminiWithKeyRotation(contents, systemInstructionText, 0.25);
+        if (geminiResult && geminiResult.reply) {
+            const primaryArticle = articlesToUse[0];
+            const responseData = {
+                reply: geminiResult.reply,
+                modelUsed: geminiResult.modelUsed,
+                latency: Date.now() - startTime,
+                sources: articlesToUse.map(a => ({ id: a.id, title: a.title, category: a.category })),
+                primaryArticle: primaryArticle ? { id: primaryArticle.id, title: primaryArticle.title, category: primaryArticle.category } : null,
+                engine: `Google Gemini (${geminiResult.modelUsed})`
             };
 
-            const startTime = Date.now();
-            const resp = await fetch(geminiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(geminiReqBody)
-            });
-
-            const data = await resp.json();
-            const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (resp.ok && replyText && replyText.trim()) {
-                const primaryArticle = articlesToUse[0];
-                return res.json({
-                    reply: replyText.trim(),
-                    modelUsed: activeModel,
-                    latency: Date.now() - startTime,
-                    sources: articlesToUse.map(a => ({ id: a.id, title: a.title, category: a.category })),
-                    primaryArticle: primaryArticle ? { id: primaryArticle.id, title: primaryArticle.title, category: primaryArticle.category } : null,
-                    followUpChips: defaultChips,
-                    engine: 'Gemini Cloud AI'
-                });
+            // Save to memory cache
+            aiResponseCache.set(cacheKey, responseData);
+            if (aiResponseCache.size > 500) {
+                const firstKey = aiResponseCache.keys().next().value;
+                aiResponseCache.delete(firstKey);
             }
-        } catch (err) {
-            console.warn('[AI Chat] Gemini API error, falling back to local NLP engine:', err.message);
+
+            return res.json(responseData);
         }
+    } catch (err) {
+        console.warn('[AI Chat] Gemini API pool error, falling back to local engine:', err.message);
     }
 
-    // Fallback: Local NLP Intelligent Procedure Extractor (Direct & Concise)
-    const topArt = articlesToUse[0] || (kbArticles && kbArticles[0]);
-    if (!topArt) {
-        return res.json({
-            reply: "عذراً، دليل المعرفة غير متوفر حالياً.",
-            modelUsed: 'Local NLP Fallback',
-            latency: 5,
-            sources: [],
-            followUpChips: defaultChips,
-            engine: 'Local NLP'
-        });
-    }
-
+    // 4. Fallback: Local Semantic Engine (High Quality Steps)
     let directReply = '';
+    const topArt = articlesToUse[0];
 
-    // Semantic matching for direct high-quality steps
     if (qLower.includes('سهم') || qLower.includes('اسهم') || qLower.includes('تداول') || qLower.includes('بورصة') || qLower.includes('alpaca')) {
         directReply = `خطوات شراء وتداول الأسهم الأمريكية عبر زين كاش:
 1. افتح تطبيق زين كاش واضغط على أيقونة (الأسهم والتداول).
@@ -766,32 +820,29 @@ ${articlesContext}`;
 • سحب الكاش من الوكلاء المعتمدين: العمولة 0.8% (حد أدنى 1,000 د.ع).
 • الإيداع وتعبئة رصيد المحفظة: مجاني تماماً وبدون أي عمولة إضافية.
 • التحويل بين المحافظ: عمولة رمزية وفق جدول الرسوم المعتمد.`;
-    } else {
-        // Intelligent HTML Extraction without intros
-        const rawContent = (topArt.content || '')
+    } else if (topArt && topArt.content) {
+        const textParts = (topArt.content || '')
             .replace(/<style[\s\S]*?<\/style>/gi, '')
-            .replace(/<script[\s\S]*?<\/script>/gi, '');
-        
-        const textParts = rawContent
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
             .split(/<\/p>|<\/li>|<br\s*\/?>|<\/h[1-6]>|<\/tr>/gi)
             .map(s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
             .filter(s => s.length > 20 && !s.includes('دليل تشغيلي') && !s.includes('جميع الحقوق') && !s.includes('الدليل الشامل') && !s.includes('المفاهيم الأساسية'));
 
         if (textParts.length > 0) {
-            const steps = textParts.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n');
-            directReply = `الخطوات والإجراءات المعتمدة:\n${steps}`;
+            directReply = `الخطوات والإجراءات المعتمدة:\n` + textParts.slice(0, 4).map((p, i) => `${i + 1}. ${p}`).join('\n');
         } else {
-            directReply = `الإجراء المعتمد:\n1. افتح تطبيق زين كاش وتوجه إلى قائمة الخدمات.\n2. اختر الخدمة المطلوبة واتبع التعليمات الظاهرة على الشاشة.\n3. للمساعدة المباشرة يرجى الاتصال على 107.`;
+            directReply = `الإجراء المعتمد:\n1. افتح تطبيق زين كاش وتوجه إلى قائمة الخدمات.\n2. اختر الخدمة المطلوبة واتبع التعليمات الظاهرة على الشاشة.\n3. للمساعدة المباشرة يرجى الاتصال بخدمة العملاء على 107.`;
         }
+    } else {
+        directReply = `يرجى كتابة استفسار واضح بخصوص خدمات زين كاش لتقديم الإجراءات المعتمدة فوراً.`;
     }
 
     return res.json({
         reply: directReply,
-        modelUsed: 'Local NLP Engine',
+        modelUsed: 'Local Semantic Engine',
         latency: 10,
-        sources: [{ id: topArt.id, title: topArt.title, category: topArt.category }],
-        primaryArticle: { id: topArt.id, title: topArt.title, category: topArt.category },
-        followUpChips: defaultChips,
+        sources: topArt ? [{ id: topArt.id, title: topArt.title, category: topArt.category }] : [],
+        primaryArticle: topArt ? { id: topArt.id, title: topArt.title, category: topArt.category } : null,
         engine: 'Local NLP'
     });
 });
