@@ -1710,7 +1710,7 @@ ${transcript3}`;
         const runBtn = document.getElementById('btn-run-kb-test');
 
         if (!inputEl || !inputEl.value.trim()) {
-            showAIToast('يرجى كتابة سؤال بالعامية العراقية للتجربة', 'info');
+            if (typeof showAIToast === 'function') showAIToast('يرجى كتابة سؤال بالعامية العراقية للتجربة', 'info');
             return;
         }
 
@@ -1721,7 +1721,7 @@ ${transcript3}`;
         }
 
         if (outputBox) outputBox.classList.remove('hidden');
-        if (replyEl) replyEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري استشارة محرك الذكاء والبحث في دليل المعرفة...';
+        if (replyEl) replyEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: #ff9900;"></i> جاري استشارة محرك الذكاء والبحث في دليل المعرفة...';
         if (metricsEl) metricsEl.textContent = 'جاري المعالجة...';
 
         try {
@@ -1729,15 +1729,25 @@ ${transcript3}`;
             let data = null;
             if (window.apiCall) {
                 data = await window.apiCall('/api/ai/chat', 'POST', { message: msg, history: [] });
-            } else if (typeof window.askKnowledgeBaseAI === 'function') {
-                const rep = await window.askKnowledgeBaseAI(msg, [], window.kbArticles || []);
-                data = { reply: rep, modelUsed: 'Gemini 2.0 Flash', latency: Date.now() - t0, sources: [] };
+            } else {
+                const res = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg, history: [] })
+                });
+                data = await res.json();
             }
 
             const dt = Date.now() - t0;
-            if (replyEl) replyEl.textContent = data?.reply || 'لم يتم استلام رد.';
+            const replyText = data?.reply || 'لم يتم استلام رد من المحرك.';
+            if (replyEl) replyEl.innerHTML = replyText.replace(/\n/g, '<br>');
+            
+            const sourcesText = Array.isArray(data?.sources) && data.sources.length > 0
+                ? data.sources.map(s => typeof s === 'object' ? (s.title || s.name || s.id) : s).filter(Boolean).join(' • ')
+                : 'دليل المعرفة المعتمد (37 مقال)';
+
             if (metricsEl) {
-                metricsEl.textContent = `${data?.engine || data?.modelUsed || 'AI Engine'} | ⚡ ${data?.latency || dt}ms | 📚 ${data?.sources?.length ? data.sources.join(', ') : 'دليل المعرفة'}`;
+                metricsEl.textContent = `${data?.engine || data?.modelUsed || 'Google Gemini'} | ⚡ ${data?.latency || dt}ms | 📚 ${sourcesText}`;
             }
         } catch (err) {
             if (replyEl) replyEl.textContent = '⚠️ تعذر الحصول على رد: ' + err.message;
