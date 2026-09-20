@@ -5023,6 +5023,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         selectedKbArticleId = articleId;
         
+        // Synchronize and highlight the active item in the right sidebar
+        const ul = document.getElementById('kb-categories-ul');
+        if (ul) {
+            ul.querySelectorAll('li[data-article-id]').forEach(li => {
+                const isMatch = String(li.getAttribute('data-article-id')) === String(articleId);
+                li.classList.toggle('active', isMatch);
+                if (isMatch) {
+                    li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        }
+        
         const welcomeDiv = document.getElementById('kb-no-article-selected');
         if (welcomeDiv) welcomeDiv.classList.add('hidden');
         

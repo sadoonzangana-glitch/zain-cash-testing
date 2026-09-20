@@ -686,15 +686,15 @@ app.post('/api/ai/chat', async (req, res) => {
         });
 
         // Specific Domain Intent Boosts
+        if (qLower.includes('طلب بطاقة') || qLower.includes('اطلب بطاقة') || qLower.includes('ما اكدر اطلب') || qLower.includes('مجاي اكدر اطلب') || qLower.includes('اصدار بطاقة') || qLower.includes('شراء بطاقة') || qLower.includes('ماستر') || qLower.includes('ماستركارد') || qLower.includes('والت كارد') || qLower.includes('كلاسيك') || qLower.includes('بلاتينيوم')) {
+            if (title.includes('ماستركارد') || title.includes('بطاقة') || kw.includes('ماستر كارد') || kw.includes('والت كارد')) score += 110;
+        }
         if (qLower.includes('اربيل') || qLower.includes('أربيل') || qLower.includes('بغداد') || qLower.includes('بصرة') || qLower.includes('البصرة') || qLower.includes('نجف') || qLower.includes('النجف') || qLower.includes('كربلاء') || qLower.includes('سليمانية') || qLower.includes('السليمانية') || qLower.includes('دهوك') || qLower.includes('كركوك') || qLower.includes('بابل') || qLower.includes('موقع') || qLower.includes('مواقع') || qLower.includes('فرع') || qLower.includes('فروع') || qLower.includes('وين') || qLower.includes('مكان') || qLower.includes('عنوان') || qLower.includes('مقر') || qLower.includes('مركز') || qLower.includes('مراكز')) {
             if (title.includes('فروع') || title.includes('مواقع') || title.includes('مراكز') || kw.includes('فروع') || kw.includes('اربيل') || kw.includes('أربيل') || kw.includes('بغداد')) score += 120;
         }
         if (qLower.includes('بوابة') || qLower.includes('بوابات') || qLower.includes('gateway') || qLower.includes('موقع') || qLower.includes('تاجر') || qLower.includes('تجار') || qLower.includes('متجر') || qLower.includes('استقطع') || qLower.includes('استقطاع') || qLower.includes('موصلت') || qLower.includes('ما وصلت') || qLower.includes('ما وصل')) {
             if (title.includes('تجار') || title.includes('بوابة') || kw.includes('بوابة دفع') || title.includes('بوابات')) score += 80;
             if (title.includes('اعمال') || title.includes('أعمال')) score += 50;
-        }
-        if (qLower.includes('ماستر') || qLower.includes('بطاقة') || qLower.includes('بلاتينيوم') || qLower.includes('والت كارد') || qLower.includes('كلاسيك')) {
-            if (title.includes('ماستر') || title.includes('والت')) score += 60;
         }
         if (qLower.includes('اسهم') || qLower.includes('أسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben') || qLower.includes('سهم') || qLower.includes('تداول')) {
             if (title.includes('اسهم') || title.includes('أسهم') || title.includes('تداول')) score += 70;
@@ -743,8 +743,8 @@ app.post('/api/ai/chat', async (req, res) => {
 
     const articlesContext = articlesToUse.map((a, idx) => `
 [مقال ${idx + 1} - معرّف: ${a.id}]: ${a.title} (القسم: ${a.category})
-المحتوى الرسمي:
-${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 3500)}
+المحتوى الرسمي الكامل:
+${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 8000)}
 `).join('\n---\n');
 
     // 3. Try Gemini Multi-Key Cloud Pool
@@ -752,20 +752,29 @@ ${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 3500)
     try {
         const systemInstructionText = `أنت المساعد الذكي والمستشار التشغيلي المعتمد لموظفي خدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
 
+هدف الإجابة: تقديم إجابة تشغيلية عميقة، مفصلة، احترافية، وشاملة جداً (NotebookLM-Grade) تغطي كافة الشروط، المحددات، الأخطاء الشائعة، الإجراءات الفنية للموظف، والسكربت المعتمد للزبون.
+
 قواعد الإجابة التشغيلية الصارمة والواجب اتباعها في كل رد:
-يجب تقسيم إجابتك دائماً إلى قسمين رئيسيين منظمين وواضحين:
+يجب تقسيم كل إجابة بدقة إلى الأقسام التالية:
 
-🛠️ أولاً: الإجراء التشغيلي المعتمد للموظف (Staff Action):
-1. الخطوات التشغيلية الفورية التي يجب على الموظف اتخاذها في الأنظمة (Ameyo, Utilities, Portal).
-2. التحقق من كشف الحساب، رمز الخطأ، حالة العملية، ونوع المحفظة.
-3. الإجراء النظامي المعتمد (المدة الزمنية للتسوية التلقائية إن وجدت، الـ Queue المخصص للتذكرة مثل MC-Deduction أو Business Support وتحديد الـ Priority، أو المستمسكات والبيانات المطلوب جمعها من المشترك).
+📌 أولاً: الشروط والتعليمات الأساسية المعتمدة (Detailed Requirements & Conditions):
+- تفصيل كافة الشروط بدقة وعمق (مثال في البطاقات: حالة المحفظة فعالة، امتلاك بطاقة فعالة واحدة فقط في الوقت نفسه، منع إصدار البطاقات لمحافظ الوكلاء والمحافظ الخيرية، عدم تجاوز سقف الشراء السنوي 4 بطاقات بالسنة).
+- الإرشادات التقنية للمشترك (التأكد من إغلاق الـ VPN نهائياً، تحديث تطبيق زين كاش لأحدث إصدار، التحقق من استقرار الإنترنت والتبديل إلى 4G بدلاً من Wi-Fi).
 
-💬 ثانياً: السكربت المعتمد للرد على الزبون (Customer Script):
-نص احترافي، مهذب، وباللهجة العراقية الراقية أو العربية المبسطة، جاهز للنسخ والإرسال المباشر للزبون يشرح له الحالة وما تم أو ما المطلوب منه بلباقة واطمئنان.
+🔍 ثانياً: الحالات الشائعة والرسائل ورموز الخطأ (Common Cases & Error Messages):
+- توضيح الرسائل الشائعة ومعنى كل رسالة (مثال: ظهور عبارة "تفعيل البطاقة وسوف تستلم البطاقة خلال 72 ساعة عمل" أو "يسمح لك بامتلاك بطاقة واحدة فقط" يعني وجود طلب سابق قيد المعالجة والتوصيل).
+
+🛠️ ثالثاً: الإجراء التشغيلي المعتمد للموظف (Staff Action):
+1. خطوات التدقيق والفحص في الأنظمة (Utilities / CC Portal / Ameyo).
+2. التحقق من كشف الحساب ورمز الخطأ وحالة المحفظة.
+3. تفاصيل التذكرة إن لزم الأمر (اسم الـ Queue مثل Ticketing Center / MC-Deduction، والـ Transfer، والـ Priority، والـ SLA).
+
+💬 رابعاً: السكربت المعتمد للرد على الزبون (Customer Script):
+نص لبق، احترافي، وباللهجة العراقية الراقية أو العربية الفصحى المبسطة، جاهز للنسخ والإرسال المباشر للزبون يوضح له الحالة والخطوات باطمئنان.
 
 قواعد إضافية:
 - في حال كان السؤال عن موقع فرع أو مركز (مثل أربيل، بغداد، البصرة...)، اذكر الموقع الرسمي وساعات العمل بدقة مع سكربت ترحيبي يوجه الزبون للفرع.
-- افهم بدقة اللهجة العراقية اليومية (مثال: محفظتي واكفة، فلوسي ما وصلت، دفعت بالبطاقة وفشل واستقطع، نسيت الباسورد، موقعكم وين).
+- افهم بدقة اللهجة العراقية اليومية (مثال: محفظتي واكفة، مجاي اكدر اطلب بطاقة، فلوسي ما وصلت، دفعت بالبطاقة وفشل واستقطع، نسيت الباسورد، موقعكم وين).
 - استند بنسبة 100% إلى دليل مقالات زين كاش المرفق أدناه وكن دقيقاً بالأرقام والرسوم والتعليمات الرسمية.
 - اكتب الإجابة العربية المباشرة والنهائية فقط بدون أي أفكار داخلية أو نصوص إنجليزية غير لازمة.
 
