@@ -153,10 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     window.DISPOSITION_DATA = GLOBAL_DISPOSITION_DATA;
 
-    // API base URL (Auto-detects localhost:3000 even when opened via VSCode Live Server on port 8888, 5500, etc.)
+    // API base URL (Auto-detects localhost:8888 even when opened via VSCode Live Server on port 5500, etc.)
     let API_BASE = window.location.origin.startsWith('http') ? window.location.origin : '';
-    if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port && window.location.port !== '3000') {
-        API_BASE = 'http://localhost:3000';
+    if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (window.location.port === '5500' || window.location.port === '5501' || !window.location.port)) {
+        API_BASE = 'http://localhost:8888';
     }
     
     async function apiCall(endpoint, method = 'GET', data = null) {
@@ -5542,7 +5542,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button type="button" class="ai-lang-pill" data-lang="ku" data-msg-id="${msgId}">☀️ کوردی</button>
                     </div>
                     <span style="font-size:0.72rem; color:#64748b; font-weight:700;">
-                        <i class="fa-solid fa-bolt" style="color:#ff9900;"></i> ${aiMeta && aiMeta.engine ? escapeHtml(aiMeta.engine) : 'Gemini 2.0 Flash'}
+                        <i class="fa-solid fa-bolt" style="color:#ff9900;"></i> ${aiMeta && aiMeta.engine ? escapeHtml(aiMeta.engine) : 'Gemini 3.6 Flash'}
                     </span>
                 </div>
 
@@ -5550,10 +5550,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="ai-reply-text" id="text-${msgId}" style="margin:0; white-space: pre-line;"></p>
                 </div>
 
-                <div class="ai-msg-actions-bar" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                    <button type="button" class="ai-copy-btn" data-msg-id="${msgId}" title="نسخ هذا الرد لإرساله مباشرة للزبون" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-size:0.78rem; font-weight:700; padding:6px 14px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;">
+                <div class="ai-msg-actions-bar" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: flex-start; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="ai-copy-script-btn" data-msg-id="${msgId}" title="نسخ سكربت الرد المعتمد لإرساله للزبون مباشرة" style="background:#fff7ed; border:1px solid #fdba74; color:#c2410c; font-size:0.78rem; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s;">
+                        <i class="fa-solid fa-comment-dots" style="color:#ea580c;"></i>
+                        <span class="copy-script-label">نسخ سكربت الزبون 💬</span>
+                    </button>
+                    <button type="button" class="ai-copy-btn" data-msg-id="${msgId}" title="نسخ كامل الخطوات والإجراءات التشغيلية" style="background:#f8fafc; border:1px solid #cbd5e1; color:#334155; font-size:0.78rem; font-weight:700; padding:6px 12px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s;">
                         <i class="fa-regular fa-clone"></i>
-                        <span class="copy-btn-label">نسخ الرد للزبون 📋</span>
+                        <span class="copy-btn-label">نسخ كامل الإجراء 📋</span>
                     </button>
                 </div>
 
@@ -5617,7 +5621,39 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Event: Copy to Clipboard
+        // Event: Copy Script to Clipboard
+        const copyScriptBtn = aiMsgDiv.querySelector('.ai-copy-script-btn');
+        if (copyScriptBtn) {
+            copyScriptBtn.addEventListener('click', () => {
+                const mId = copyScriptBtn.getAttribute('data-msg-id');
+                const textEl = document.getElementById(`text-${mId}`);
+                const fullText = textEl ? textEl.innerText : '';
+                
+                // Extract script portion if formatted with section header or quotes
+                let scriptText = fullText;
+                const scriptMarker = fullText.match(/(?:💬|ثانياً|ثانيا|السكربت|سكربت)[^\n]*:(?:[\s\S]*)/i);
+                if (scriptMarker) {
+                    scriptText = scriptMarker[0].replace(/^(?:💬|ثانياً|ثانيا|السكربت|سكربت)[^\n]*:\s*/i, '').trim();
+                }
+
+                navigator.clipboard.writeText(scriptText).then(() => {
+                    const label = copyScriptBtn.querySelector('.copy-script-label');
+                    const prev = label ? label.innerHTML : 'نسخ سكربت الزبون 💬';
+                    if (label) label.innerHTML = 'تم نسخ السكربت! ✅';
+                    copyScriptBtn.style.background = '#ecfdf5';
+                    copyScriptBtn.style.borderColor = '#10b981';
+                    copyScriptBtn.style.color = '#047857';
+                    setTimeout(() => {
+                        if (label) label.innerHTML = prev;
+                        copyScriptBtn.style.background = '';
+                        copyScriptBtn.style.borderColor = '';
+                        copyScriptBtn.style.color = '';
+                    }, 2000);
+                }).catch(err => console.warn('Clipboard write failed:', err));
+            });
+        }
+
+        // Event: Copy Full Action to Clipboard
         const copyBtn = aiMsgDiv.querySelector('.ai-copy-btn');
         if (copyBtn) {
             copyBtn.addEventListener('click', () => {
@@ -5627,7 +5663,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (textToCopy) {
                     navigator.clipboard.writeText(textToCopy).then(() => {
                         const label = copyBtn.querySelector('.copy-btn-label');
-                        const prev = label ? label.innerHTML : 'نسخ الرد للزبون 📋';
+                        const prev = label ? label.innerHTML : 'نسخ كامل الإجراء 📋';
                         if (label) label.innerHTML = 'تم النسخ بنجاح! ✅';
                         copyBtn.style.background = '#ecfdf5';
                         copyBtn.style.borderColor = '#10b981';

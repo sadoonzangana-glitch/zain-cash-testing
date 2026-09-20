@@ -686,6 +686,9 @@ app.post('/api/ai/chat', async (req, res) => {
         });
 
         // Specific Domain Intent Boosts
+        if (qLower.includes('اربيل') || qLower.includes('أربيل') || qLower.includes('بغداد') || qLower.includes('بصرة') || qLower.includes('البصرة') || qLower.includes('نجف') || qLower.includes('النجف') || qLower.includes('كربلاء') || qLower.includes('سليمانية') || qLower.includes('السليمانية') || qLower.includes('دهوك') || qLower.includes('كركوك') || qLower.includes('بابل') || qLower.includes('موقع') || qLower.includes('مواقع') || qLower.includes('فرع') || qLower.includes('فروع') || qLower.includes('وين') || qLower.includes('مكان') || qLower.includes('عنوان') || qLower.includes('مقر') || qLower.includes('مركز') || qLower.includes('مراكز')) {
+            if (title.includes('فروع') || title.includes('مواقع') || title.includes('مراكز') || kw.includes('فروع') || kw.includes('اربيل') || kw.includes('أربيل') || kw.includes('بغداد')) score += 120;
+        }
         if (qLower.includes('بوابة') || qLower.includes('بوابات') || qLower.includes('gateway') || qLower.includes('موقع') || qLower.includes('تاجر') || qLower.includes('تجار') || qLower.includes('متجر') || qLower.includes('استقطع') || qLower.includes('استقطاع') || qLower.includes('موصلت') || qLower.includes('ما وصلت') || qLower.includes('ما وصل')) {
             if (title.includes('تجار') || title.includes('بوابة') || kw.includes('بوابة دفع') || title.includes('بوابات')) score += 80;
             if (title.includes('اعمال') || title.includes('أعمال')) score += 50;
@@ -717,6 +720,9 @@ app.post('/api/ai/chat', async (req, res) => {
         if (qLower.includes('بوت') || qLower.includes('bot') || qLower.includes('واتساب') || qLower.includes('whatsapp') || qLower.includes('تعميم') || qLower.includes('تحديثات')) {
             if (title.includes('التحديثات اليومية') || title.includes('WhatsApp')) score += 70;
         }
+        if (qLower.includes('فيديو') || qLower.includes('شرح') || qLower.includes('يوتيوب') || qLower.includes('youtube')) {
+            if (title.includes('فيديو') || title.includes('شروحات') || kw.includes('فيديو')) score += 80;
+        }
 
         return { article: art, score, id: art.id || (idx + 1) };
     }).filter(a => a.score > 0).sort((a, b) => b.score - a.score);
@@ -745,16 +751,23 @@ ${(a.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 3500)
     const startTime = Date.now();
     try {
         const systemInstructionText = `أنت المساعد الذكي والمستشار التشغيلي المعتمد لموظفي خدمة عملاء زين كاش العراق (Zain Cash Iraq AI Assistant).
-قواعد الإجابة التشغيلية الاحترافية:
-1. ابدأ فوراً بتقديم الحل والخطوات الإجرائية الكاملة بشكل نقاط مرقمة وواضحة (1. 2. 3.)، بدون مقدمات شكلية مطولة.
-2. لا تقتصر إجابتك على طلب رقم المحفظة فقط، بل قدّم الشرح والخطوات التشغيلية الكاملة للحالة، بما في ذلك:
-   - التحقق الفوري (فحص كشف الحساب، رمز الخطأ، حالة العملية).
-   - توضيح مدد التسوية التلقائية (إن وجدت، مثل تسوية المصارف خلال 24-48 ساعة).
-   - إجراءات نظام خدمة العملاء Ameyo (مثل اسم الـ Queue المخصص كـ MC-Deduction أو Business Support وتحديد الـ Priority).
-   - المعلومات والمستندات المطلوب جمعها من المشترك (رقم المحفظة، تاريخ العملية، المبلغ، الرقم التسلسلي، أو صور الإشعار).
-3. افهم بدقة اللهجة العراقية اليومية (مثال: محفظتي واكفة، فلوسي ما وصلت، دفعت بالبطاقة وفشل واستقطع، نسيت الباسورد، شلون اسوي بوابة دفع).
-4. استند بنسبة 100% إلى دليل مقالات زين كاش المرفق أدناه وكن دقيقاً بالأرقام والرسوم والتعليمات الرسمية.
-5. اكتب الإجابة العربية المباشرة والنهائية فقط بدون أي أفكار داخلية أو مراجعات بالإنجليزية.
+
+قواعد الإجابة التشغيلية الصارمة والواجب اتباعها في كل رد:
+يجب تقسيم إجابتك دائماً إلى قسمين رئيسيين منظمين وواضحين:
+
+🛠️ أولاً: الإجراء التشغيلي المعتمد للموظف (Staff Action):
+1. الخطوات التشغيلية الفورية التي يجب على الموظف اتخاذها في الأنظمة (Ameyo, Utilities, Portal).
+2. التحقق من كشف الحساب، رمز الخطأ، حالة العملية، ونوع المحفظة.
+3. الإجراء النظامي المعتمد (المدة الزمنية للتسوية التلقائية إن وجدت، الـ Queue المخصص للتذكرة مثل MC-Deduction أو Business Support وتحديد الـ Priority، أو المستمسكات والبيانات المطلوب جمعها من المشترك).
+
+💬 ثانياً: السكربت المعتمد للرد على الزبون (Customer Script):
+نص احترافي، مهذب، وباللهجة العراقية الراقية أو العربية المبسطة، جاهز للنسخ والإرسال المباشر للزبون يشرح له الحالة وما تم أو ما المطلوب منه بلباقة واطمئنان.
+
+قواعد إضافية:
+- في حال كان السؤال عن موقع فرع أو مركز (مثل أربيل، بغداد، البصرة...)، اذكر الموقع الرسمي وساعات العمل بدقة مع سكربت ترحيبي يوجه الزبون للفرع.
+- افهم بدقة اللهجة العراقية اليومية (مثال: محفظتي واكفة، فلوسي ما وصلت، دفعت بالبطاقة وفشل واستقطع، نسيت الباسورد، موقعكم وين).
+- استند بنسبة 100% إلى دليل مقالات زين كاش المرفق أدناه وكن دقيقاً بالأرقام والرسوم والتعليمات الرسمية.
+- اكتب الإجابة العربية المباشرة والنهائية فقط بدون أي أفكار داخلية أو نصوص إنجليزية غير لازمة.
 
 دليل مقالات المعرفة المتاحة لزين كاش:
 ${articlesContext}`;

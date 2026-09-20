@@ -118,28 +118,26 @@ def read_xlsx_rows(xlsx_filename):
                     t_attr = c.get('t')
                     v_tag = c.find('main:v', ns)
                     val = ''
-                    if v_tag is not None and v_tag.text:
-                        raw_v = v_tag.text
-                        if t_attr == 's':
-                            idx = int(raw_v)
-                            if idx < len(shared_strings):
-                                val = shared_strings[idx]
-                        else:
-                            val = raw_v
-                    cells.append(val.strip())
-                # filter trailing empty cells
-                while cells and not cells[-1]:
-                    cells.pop()
-                if cells and any(c for c in cells):
+                    if t_attr == 's' and v_tag is not None and v_tag.text:
+                        idx = int(v_tag.text)
+                        if idx < len(shared_strings):
+                            val = shared_strings[idx]
+                    elif t_attr == 'inlineStr':
+                        is_t = c.find('.//main:t', ns)
+                        if is_t is not None and is_t.text:
+                            val = is_t.text
+                    elif v_tag is not None and v_tag.text:
+                        val = v_tag.text
+                    cells.append(str(val).strip())
+                if any(c for c in cells):
                     rows.append(cells)
-            if rows:
-                sheets_data.extend(rows)
+            sheets_data.extend(rows)
     return sheets_data
 
 # -------------------------------------------------------------
-# STEP 2: HTML RENDERING ENGINE WITH CLEAN TYPOGRAPHY
+# STEP 2: HTML RENDERING ENGINE WITH VIBRANT SEMANTIC STYLING
 # -------------------------------------------------------------
-def render_clean_article_html(title, category, elements, badge_text="الدليل الرسمي المعتمد 100%"):
+def render_clean_article_html(title, category, elements, badge_text="الدليل المعتمد لخدمة العملاء"):
     body_html = ""
     
     for el in elements:
@@ -148,18 +146,18 @@ def render_clean_article_html(title, category, elements, badge_text="الدلي�
             if not rows:
                 continue
             headers = rows[0]
-            body_html += '<div style="overflow-x:auto; margin:20px 0; border:1px solid #cbd5e1; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">'
+            body_html += '<div style="overflow-x:auto; margin:22px 0; border:1px solid #cbd5e1; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">'
             body_html += '<table style="width:100%; border-collapse:collapse; text-align:right; font-size:0.88rem; font-family:inherit;">'
-            body_html += '<thead style="background:#0f172a; color:#ffffff;"><tr>'
+            body_html += '<thead style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff;"><tr>'
             for h in headers:
-                body_html += f'<th style="padding:12px 14px; border:1px solid #334155; font-weight:700; font-size:0.9rem;">{h}</th>'
+                body_html += f'<th style="padding:12px 16px; border:1px solid #334155; font-weight:800; font-size:0.88rem;">{h}</th>'
             body_html += '</tr></thead><tbody>'
             for r_idx, row in enumerate(rows[1:]):
                 bg = '#f8fafc' if r_idx % 2 == 0 else '#ffffff'
-                body_html += f'<tr style="background:{bg};">'
+                body_html += f'<tr style="background:{bg}; transition:background 0.2s;">'
                 for c_idx in range(len(headers)):
                     cell_text = row[c_idx] if c_idx < len(row) else ''
-                    body_html += f'<td style="padding:10px 14px; border:1px solid #e2e8f0; color:#334155; line-height:1.6;">{cell_text}</td>'
+                    body_html += f'<td style="padding:10px 14px; border:1px solid #e2e8f0; color:#334155; line-height:1.65;">{cell_text}</td>'
                 body_html += '</tr>'
             body_html += '</tbody></table></div>'
             continue
@@ -169,42 +167,64 @@ def render_clean_article_html(title, category, elements, badge_text="الدلي�
         p_imgs = el.get('images', [])
         
         if p_text and not p_text.startswith('Zainab Ali') and len(p_text) > 1:
-            # Check for Major Heading
-            if len(p_text) < 90 and (
+            clean_text = re.sub(r'^[:●■🔶⚠️\s]+', '', p_text).strip()
+            
+            # 1. Check for Requirements / Conditions (المتطلبات والشروط والمستمسكات) -> Emerald Green Box
+            if any(k in p_text for k in ['المتطلبات', 'الشروط المطلوبة', 'المستمسكات المطلوبة', 'وثائق التسجيل', 'الوثائق المطلوبة', 'شروط الخدمة', 'شروط التفعيل']):
+                body_html += f'''
+        <div style="background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-right:4px solid #16a34a; border-radius:12px; padding:14px 18px; margin:18px 0; border:1px solid #bbf7d0; box-shadow:0 2px 6px rgba(22,163,74,0.05);">
+            <div style="font-weight:800; color:#15803d; font-size:0.95rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-list-check" style="color:#16a34a; font-size:1.05rem;"></i> المتطلبات والشروط المعتمدة
+            </div>
+            <div style="color:#166534; font-size:0.92rem; line-height:1.8;">{p_text}</div>
+        </div>'''
+            # 2. Check for Fees & Limits (الرسوم، العمولات، الحدود المالية) -> Purple/Violet Box
+            elif any(k in p_text for k in ['الرسوم والعمولات', 'رسوم الخدمة', 'الحدود المالية', 'جدول الرسوم', 'العمولة المقررة', 'سقف السحب', 'سقف الإيداع', 'الحد اليومي']):
+                body_html += f'''
+        <div style="background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-right:4px solid #9333ea; border-radius:12px; padding:14px 18px; margin:18px 0; border:1px solid #e9d5ff; box-shadow:0 2px 6px rgba(147,51,234,0.05);">
+            <div style="font-weight:800; color:#7e22ce; font-size:0.95rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-coins" style="color:#9333ea; font-size:1.05rem;"></i> الرسوم والحدود المالية المقررة
+            </div>
+            <div style="color:#6b21a8; font-size:0.92rem; line-height:1.8;">{p_text}</div>
+        </div>'''
+            # 3. Check for Important Notes/Alerts -> Amber/Gold Warning Box
+            elif 'ملاحظة' in p_text or 'تنبيه' in p_text or 'تحذير' in p_text or 'مهم' in p_text or 'تحذيري' in p_text:
+                body_html += f'''
+        <div style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-right:4px solid #f59e0b; border-radius:12px; padding:14px 18px; margin:18px 0; border:1px solid #fde68a; box-shadow:0 2px 6px rgba(245,158,11,0.05);">
+            <div style="font-weight:800; color:#b45309; font-size:0.95rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b; font-size:1.05rem;"></i> تنبيه تشغيلي هام
+            </div>
+            <div style="color:#92400e; font-size:0.92rem; line-height:1.8;">{p_text}</div>
+        </div>'''
+            # 4. Check for Major Headings -> Blue Header Banner
+            elif len(p_text) < 95 and (
                 p_text.endswith(':') or p_text.startswith('●') or p_text.startswith('■') or 
                 p_text.startswith('خطوات') or p_text.startswith('شروط') or p_text.startswith('كيفية') or 
-                p_text.startswith('الاجراء') or p_text.startswith('الهدف') or p_text.startswith('المتطلبات') or 
+                p_text.startswith('الاجراء') or p_text.startswith('الهدف') or 
                 p_text.startswith('الحالات') or p_text.startswith('التعليمات') or p_text.startswith('تحديات')
             ):
-                clean_title = re.sub(r'^[:●■🔶\s]+', '', p_text).strip()
                 body_html += f'''
         <div style="background:#f1f5f9; border-right:4px solid #2563eb; border-radius:10px; padding:12px 18px; margin:22px 0 10px 0;">
-            <h4 style="font-size:1.04rem; font-weight:800; color:#1e3a8a; margin:0; line-height:1.4;">
-                <i class="fa-solid fa-circle-dot" style="color:#2563eb; font-size:0.8rem;"></i> {clean_title}
+            <h4 style="font-size:1.02rem; font-weight:800; color:#1e3a8a; margin:0; line-height:1.4;">
+                <i class="fa-solid fa-circle-dot" style="color:#2563eb; font-size:0.8rem;"></i> {clean_text}
             </h4>
         </div>'''
-            # Check for Bullet Points
+            # 5. Check for Numbered Steps -> Sleek Numbered Step Cards
+            elif re.match(r'^\d+[\.\-\)]\s', p_text):
+                num = re.match(r'^(\d+)[\.\-\)]', p_text).group(1)
+                text = re.sub(r'^\d+[\.\-\)]\s*', '', p_text).strip()
+                body_html += f'''
+        <div style="display:flex; gap:12px; align-items:flex-start; margin:10px 0; padding:12px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; font-size:0.94rem; color:#1e293b; line-height:1.75; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+            <span style="background:linear-gradient(135deg, #2563eb, #1d4ed8); color:#ffffff; font-weight:800; width:26px; height:26px; min-width:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.82rem; box-shadow:0 2px 6px rgba(37,99,235,0.3);">{num}</span>
+            <div style="flex:1;">{text}</div>
+        </div>'''
+            # 6. Check for Bullet Points
             elif p_text.startswith('-') or p_text.startswith('•') or p_text.startswith('*') or p_text.startswith('○'):
                 item_text = re.sub(r'^[-•*○\s]+', '', p_text).strip()
                 body_html += f'''
         <div style="display:flex; gap:12px; align-items:flex-start; margin:8px 0; padding-right:12px; font-size:0.94rem; color:#334155; line-height:1.8;">
             <span style="color:#2563eb; font-weight:bold; font-size:1.15rem; line-height:1;">•</span>
             <div style="flex:1;">{item_text}</div>
-        </div>'''
-            # Check for Numbered Steps
-            elif re.match(r'^\d+[\.\-\)]\s', p_text):
-                num = re.match(r'^(\d+)[\.\-\)]', p_text).group(1)
-                text = re.sub(r'^\d+[\.\-\)]\s*', '', p_text).strip()
-                body_html += f'''
-        <div style="display:flex; gap:12px; align-items:flex-start; margin:10px 0; padding:12px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; font-size:0.94rem; color:#1e293b; line-height:1.75;">
-            <span style="background:#2563eb; color:#ffffff; font-weight:800; width:26px; height:26px; min-width:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">{num}</span>
-            <div style="flex:1;">{text}</div>
-        </div>'''
-            # Check for Important Notes/Alerts
-            elif 'ملاحظة' in p_text or 'تنبيه' in p_text or 'تحذير' in p_text or 'مهم' in p_text:
-                body_html += f'''
-        <div style="background:#fffbeb; border-right:4px solid #f59e0b; border-radius:10px; padding:14px 18px; margin:16px 0; font-size:0.93rem; color:#92400e; line-height:1.75;">
-            <strong>⚠️ {p_text}</strong>
         </div>'''
             else:
                 body_html += f'''
@@ -236,8 +256,8 @@ def render_clean_article_html(title, category, elements, badge_text="الدلي�
     html = f'''
 <div class="kb-master-container" style="font-family:'Cairo', 'Segoe UI', Tahoma, sans-serif; color:#0f172a; line-height:1.85; direction:rtl; text-align:right;">
     <!-- Header Banner -->
-    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:24px; border-radius:18px; margin-bottom:22px; box-shadow: 0 8px 20px rgba(15,23,42,0.12); border:1px solid #334155;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:22px; border-radius:18px; margin-bottom:20px; box-shadow: 0 8px 20px rgba(15,23,42,0.12); border:1px solid #334155;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
             <span style="background:rgba(255,153,0,0.2); color:#ff9900; border:1px solid rgba(255,153,0,0.4); padding:4px 12px; border-radius:20px; font-size:0.78rem; font-weight:800;">
                 <i class="fa-solid fa-shield-check"></i> {badge_text}
             </span>
@@ -245,7 +265,7 @@ def render_clean_article_html(title, category, elements, badge_text="الدلي�
                 {category}
             </span>
         </div>
-        <h2 style="font-size:1.45rem; font-weight:900; margin:0 0 8px 0; color:#f8fafc; line-height:1.4;">
+        <h2 style="font-size:1.35rem; font-weight:900; margin:0; color:#f8fafc; line-height:1.4;">
             {title}
         </h2>
     </div>
@@ -258,49 +278,49 @@ def render_clean_article_html(title, category, elements, badge_text="الدلي�
     return html
 
 # -------------------------------------------------------------
-# STEP 3: ASSEMBLE ALL 48 MODULAR KNOWLEDGE BASE ARTICLES
+# STEP 3: ASSEMBLE ALL 48 MODULAR KNOWLEDGE BASE ARTICLES WITH SHORT SHARP TITLES
 # -------------------------------------------------------------
 articles = []
 current_id = 1
 
-# 1. خدمات وتحديات محفظة الافراد.docx (Split by logical topics)
+# 1. خدمات وتحديات محفظة الافراد.docx (Split by logical topics with concise titles)
 print("Processing: خدمات وتحديات محفظة الافراد.docx...")
 indiv_elements = extract_docx_with_inline_media('خدمات وتحديات محفظة الافراد.docx')
 
 section_markers = [
-    ('تسجيل محفظة', 'تسجيل محفظة زين كاش والشروط والمستمسكات المطلوبة'),
-    ('تحديات تسجيل محفظة', 'تحديات تسجيل محفظة زين كاش ومشاكل الشاشة البيضاء والسيستم'),
-    ('تسجيل الدخول للمحفظة', 'تسجيل الدخول للمحفظة والخطوات المعتمدة'),
-    ('تحديات تسجيل دخول المحفظة', 'تحديات تسجيل الدخول للمحفظة ومشاكل الجهاز والرمز'),
-    ('إعادة تعيين وتغيير الرمز السري لمحفظه زين كاش', 'إعادة تعيين وتغيير الرمز السري PIN لمحفظة زين كاش'),
-    ('كيفية إعادة تعيين الرمز السري من قبل خدمة العملاء', 'إجراءات خدمة العملاء لإعادة تعيين وتوليد الرمز السري'),
-    ('تعبئة المحفظة', 'تعبئة وتغذية المحفظة (الوكلاء، الحساب المصرفي، البطاقات)'),
-    ('تحديات التعبئة  من خلال الوكيل', 'تحديات التعبئة من خلال الوكيل ومشاكل الاستقطاع'),
-    ('تحديات التعبئة من الحساب المصرفي', 'تحديات التعبئة من الحساب المصرفي (المصرف الأهلي العراقي)'),
-    ('تحويل واستلام الاموال محلي', 'تحويل واستلام الأموال محلياً بين محافظ زين كاش'),
-    ('في حال قيام المشترك بتحويل الأموال بشكل خاطئ', 'إجراءات استرجاع الأموال عند التحويل الخاطئ بين المحافظ'),
-    ('تحويل الاموال الى محافظ اخرى', 'تحويل الأموال إلى محافظ إلكترونية أخرى وتحديات الاستقطاع'),
-    ('سحب الأموال من محفظة زين كاش ( سحب نقدي )', 'سحب الأموال نقداً من محفظة زين كاش (وكلاء وصراف آلي)'),
-    ('سحب الاموال الى محفظة وكيل بشكل خاطئ', 'إجراءات معالجة السحب الخاطئ إلى محفظة الوكيل'),
-    ('سحب الاموال من محافظ الاشخاص المتوفين', 'إجراءات سحب وتصفية أموال محافظ الأشخاص المتوفين'),
-    ('الدفع الى التجار (مزودي الخدمة)', 'الدفع إلى التجار وبوابات الدفع الإلكتروني ومشاكل استقطاع الرصيد للمواقع'),
-    ('دفع الفواتير', 'دفع الفواتير (الكهرباء، الماء، صندوق الإسكان، المصرف العقاري)'),
-    ('البطاقات الإلكترونية', 'شراء البطاقات الإلكترونية (الألعاب والتطبيقات) وحلول المشاكل'),
-    ('بطاقة الماستر كارد (كلاسيك / بلاتينيوم )', 'دليل بطاقة ماستركارد زين كاش (والت كارد، كلاسيك، بلاتينيوم) والتفعيل'),
-    ('سحب الاموال من الصرافات داخل وخارج العراق.', 'استخدام بطاقة الماستركارد والسحب من الصرافات ATM محلياً ودولياً'),
-    ('تحديات بطاقة الماستر كارد (كلاسيك /بلاتينيوم)', 'تحديات بطاقة ماستركارد (رفض الدفع، العمليات الدولية، كوكل بلي)'),
-    ('تحديات التعبئة والتحويل من وإلى بطاقة الماستر كارد', 'تحديات التعبئة والتحويل لبطاقة الماستركارد واستقطاع الرصيد'),
-    ('ويسترن يونيون', 'دليل خدمة ويسترن يونيون الشامل (إرسال واستلام الحوالات الدولية)'),
-    ('تحديات اضافة مستفيد جديد في خدمة ويسترن يونيون', 'تحديات ويسترن يونيون (إضافة مستفيد، حوالة معلقة، استرداد الحوالة)'),
-    ('تعبئة رصيد هاتفك', 'شحن الرصيد وباقات الإنترنت لخطوط الهاتف (زين، آسيا، كورك)'),
-    ('إدارة الحسابات المصرفية (المصرف الاهلي العراقي)', 'ربط وإدارة الحسابات المصرفية (المصرف الأهلي العراقي NBI)'),
-    ('تاريخ المعاملات المالية ( معاملاتي )', 'تاريخ المعاملات وكشف الحساب المالي للمحفظة'),
-    ('حالات الاحتيال', 'حالات الاحتيال ومكافحة سرقة الحسابات والروابط الوهمية'),
-    ('أسئلة الأمان لمحافظ الأفراد', 'أسئلة الأمان وضوابط التحقق من هوية المشترك (Security Questions)')
+    ('تسجيل محفظة', 'تسجيل محفظة زين كاش والشروط'),
+    ('تحديات تسجيل محفظة', 'مشاكل تسجيل المحفظة والشاشة البيضاء'),
+    ('تسجيل الدخول للمحفظة', 'تسجيل الدخول للمحفظة والخطوات'),
+    ('تحديات تسجيل دخول المحفظة', 'مشاكل تسجيل الدخول وتغيير الجهاز'),
+    ('إعادة تعيين وتغيير الرمز السري لمحفظه زين كاش', 'تغيير وإعادة تعيين الرمز السري (PIN)'),
+    ('كيفية إعادة تعيين الرمز السري من قبل خدمة العملاء', 'إجراءات خدمة العملاء للرمز السري المؤقت'),
+    ('تعبئة المحفظة', 'تعبئة وتغذية رصيد المحفظة'),
+    ('تحديات التعبئة  من خلال الوكيل', 'مشاكل التعبئة من الوكيل والاستقطاع'),
+    ('تحديات التعبئة من الحساب المصرفي', 'مشاكل التعبئة من الحساب المصرفي'),
+    ('تحويل واستلام الاموال محلي', 'التحويل المالي واستلام الأموال (P2P)'),
+    ('في حال قيام المشترك بتحويل الأموال بشكل خاطئ', 'إجراءات استرجاع التحويل الخاطئ'),
+    ('تحويل الاموال الى محافظ اخرى', 'التحويل للمحافظ الأخرى والبنوك'),
+    ('سحب الأموال من محفظة زين كاش ( سحب نقدي )', 'سحب الأموال نقداً (وكلاء وصراف آلي)'),
+    ('سحب الاموال الى محفظة وكيل بشكل خاطئ', 'معالجة السحب الخاطئ للوكيل'),
+    ('سحب الاموال من محافظ الاشخاص المتوفين', 'سحب أموال محافظ المتوفين'),
+    ('الدفع الى التجار (مزودي الخدمة)', 'الدفع للتجار وبوابات الدفع الإلكتروني'),
+    ('دفع الفواتير', 'دفع الفواتير والخدمات الحكومية'),
+    ('البطاقات الإلكترونية', 'شراء البطاقات الإلكترونية والألعاب'),
+    ('بطاقة الماستر كارد (كلاسيك / بلاتينيوم )', 'بطاقة ماستركارد زين كاش والتفعيل'),
+    ('سحب الاموال من الصرافات داخل وخارج العراق.', 'السحب ببطاقة ماستركارد من الـ ATM'),
+    ('تحديات بطاقة الماستر كارد (كلاسيك /بلاتينيوم)', 'مشاكل بطاقة ماستركارد والشراء الدولي'),
+    ('تحديات التعبئة والتحويل من وإلى بطاقة الماستر كارد', 'مشاكل التحويل وتعبئة الماستركارد'),
+    ('ويسترن يونيون', 'خدمة ويسترن يونيون للحوالات الدولية'),
+    ('تحديات اضافة مستفيد جديد في خدمة ويسترن يونيون', 'مشاكل ويسترن يونيون وإضافة المستفيد'),
+    ('تعبئة رصيد هاتفك', 'شحن رصيد الموبايل وباقات الإنترنت'),
+    ('إدارة الحسابات المصرفية (المصرف الاهلي العراقي)', 'ربط وإدارة الحساب المصرفي (NBI)'),
+    ('تاريخ المعاملات المالية ( معاملاتي )', 'كشف الحساب وتاريخ المعاملات'),
+    ('حالات الاحتيال', 'مكافحة الاحتيال والروابط المشبوهة'),
+    ('أسئلة الأمان لمحافظ الأفراد', 'أسئلة الأمان والتحقق من هوية المشترك')
 ]
 
 split_sections = []
-current_sec = {'title': 'تسجيل محفظة زين كاش والشروط والمستمسكات المطلوبة', 'elements': []}
+current_sec = {'title': 'تسجيل محفظة زين كاش والشروط', 'elements': []}
 
 for el in indiv_elements:
     if el['type'] == 'p':
@@ -353,8 +373,8 @@ for s in split_sections:
         "icon": "fa-user",
         "keywords": kws,
         "correctDisp": "محفظة الأفراد",
-        "correctSubDisp": s['title'][:30],
-        "lastUpdated": "2026-09-19",
+        "correctSubDisp": s['title'],
+        "lastUpdated": "2026-09-20",
         "content": html
     })
     current_id += 1
@@ -364,16 +384,16 @@ print(f"Generated {len(split_sections)} individual wallet articles.")
 # 2. CC KB Stock  .docx
 print("Processing: CC KB Stock  .docx...")
 stock_els = extract_docx_with_inline_media('CC KB Stock  .docx')
-html_stock = render_clean_article_html("الدليل الشامل المتكامل لخدمة تداول الأسهم الأمريكية عبر زين كاش (Alpaca & SEC)", "الأسهم والتداول", stock_els)
+html_stock = render_clean_article_html("تداول الأسهم الأمريكية (Alpaca)", "الأسهم والتداول", stock_els)
 articles.append({
     "id": current_id,
-    "title": "الدليل الشامل المتكامل لخدمة تداول الأسهم الأمريكية عبر زين كاش (Alpaca & SEC)",
+    "title": "تداول الأسهم الأمريكية (Alpaca)",
     "category": "الأسهم والتداول",
     "icon": "fa-chart-line",
     "keywords": "تداول, اسهم, أسهم, امريكية, بورصة, وساطة, البورصة, Alpaca, SIPC, SEC, شروط, تسجيل, ايداع, سحب, اوامر, بيع, شراء, ربح, خسارة, مصطلحات, 5000 دينار, اشتراك شهري",
     "correctDisp": "الأسهم والتداول",
     "correctSubDisp": "تداول الأسهم الأمريكية",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_stock
 })
 current_id += 1
@@ -381,16 +401,16 @@ current_id += 1
 # 3. Investing Utilities Portal.docx
 print("Processing: Investing Utilities Portal.docx...")
 inv_els = extract_docx_with_inline_media('Investing Utilities Portal.docx')
-html_inv = render_clean_article_html("دليل بوابة Investing Utilities Portal لإدارة حسابات التداول والاستثمار ومتابعة العمليات", "الأسهم والتداول", inv_els)
+html_inv = render_clean_article_html("بوابة Investing Portal لإدارة الأسهم", "الأسهم والتداول", inv_els)
 articles.append({
     "id": current_id,
-    "title": "دليل بوابة Investing Utilities Portal لإدارة حسابات التداول والاستثمار ومتابعة العمليات",
+    "title": "بوابة Investing Portal لإدارة الأسهم",
     "category": "الأسهم والتداول",
     "icon": "fa-laptop-code",
     "keywords": "Investing Portal, يوتيليتيز, بوابة الاستثمار, حساب تداول, ارصدة, الغاء اوامر, سحب, اشتراك, تداول, متابعة",
     "correctDisp": "الأسهم والتداول",
     "correctSubDisp": "بوابة Investing Portal",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_inv
 })
 current_id += 1
@@ -408,30 +428,30 @@ for el in ameyo_els:
     else:
         ameyo_p1.append(el)
 
-html_am1 = render_clean_article_html("دليل نظام Ameyo: استقبال وتصنيف المكالمات والكتم والتحويل (WebRTC)", "أنظمة خدمة العملاء", ameyo_p1 if ameyo_p1 else ameyo_els)
+html_am1 = render_clean_article_html("نظام Ameyo: إدارة واستقبال المكالمات", "أنظمة خدمة العملاء", ameyo_p1 if ameyo_p1 else ameyo_els)
 articles.append({
     "id": current_id,
-    "title": "دليل نظام Ameyo: استقبال وتصنيف المكالمات والكتم والتحويل (WebRTC)",
+    "title": "نظام Ameyo: إدارة واستقبال المكالمات",
     "category": "أنظمة خدمة العملاء",
     "icon": "fa-headset",
     "keywords": "Ameyo, اميو, اتصال, كتم, تحويل, تصنيف المكالمة, Disposition, WebRTC, كول سنتر, خدمة العملاء",
     "correctDisp": "أنظمة العمل",
     "correctSubDisp": "نظام Ameyo - المكالمات",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_am1
 })
 current_id += 1
 
-html_am2 = render_clean_article_html("دليل نظام Ameyo: رفع ومتابعة تذاكر الشكاوى والصفوف (Tickets, Queues & Priorities)", "أنظمة خدمة العملاء", ameyo_p2 if ameyo_p2 else ameyo_els)
+html_am2 = render_clean_article_html("نظام Ameyo: رفع وإدارة التذاكر", "أنظمة خدمة العملاء", ameyo_p2 if ameyo_p2 else ameyo_els)
 articles.append({
     "id": current_id,
-    "title": "دليل نظام Ameyo: رفع ومتابعة تذاكر الشكاوى والصفوف (Tickets, Queues & Priorities)",
+    "title": "نظام Ameyo: رفع وإدارة التذاكر",
     "category": "أنظمة خدمة العملاء",
     "icon": "fa-ticket",
     "keywords": "Ameyo, تذاكر, Ticket, Queue, Priority, High, Medium, New Request, رفع طلب, شكوى, متابعة تذكرة",
     "correctDisp": "أنظمة العمل",
     "correctSubDisp": "نظام Ameyo - التذاكر",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_am2
 })
 current_id += 1
@@ -439,16 +459,16 @@ current_id += 1
 # 5. برنامج ال Utilities واستخداماته.docx (With INLINE screenshots!)
 print("Processing: برنامج ال Utilities واستخداماته.docx with inline screenshots...")
 util_els = extract_docx_with_inline_media('برنامج ال Utilities واستخداماته.docx')
-html_util = render_clean_article_html("دليل برنامج الـ Utilities المعتمد واستخداماته التشغيلية في خدمة العملاء (فحص المحفظة والرمز السري)", "أنظمة خدمة العملاء", util_els)
+html_util = render_clean_article_html("برنامج الـ Utilities وفحص المحافظ", "أنظمة خدمة العملاء", util_els)
 articles.append({
     "id": current_id,
-    "title": "دليل برنامج الـ Utilities المعتمد واستخداماته التشغيلية في خدمة العملاء (فحص المحفظة والرمز السري)",
+    "title": "برنامج الـ Utilities وفحص المحافظ",
     "category": "أنظمة خدمة العملاء",
     "icon": "fa-toolbox",
     "keywords": "Utilities, يوتيليتيز, تدقيق رصيد, اعادة رمز سري, فك حظر, حالة المحفظة, عمليات, ارسالة رمز, استعلام",
     "correctDisp": "أنظمة العمل",
     "correctSubDisp": "برنامج Utilities",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_util
 })
 current_id += 1
@@ -456,31 +476,31 @@ current_id += 1
 # 6. خدمات محفظة الاعمال.docx & تحديات محفظة الاعمال.docx
 print("Processing: Business Wallet documents...")
 biz_els = extract_docx_with_inline_media('خدمات محفظة الاعمال.docx')
-html_biz = render_clean_article_html("دليل خدمات محفظة الأعمال والشركات وبوابة الدفع الإلكتروني وتوزيع الرواتب (Business Wallet & Payment Gateway)", "محفظة الأعمال", biz_els)
+html_biz = render_clean_article_html("محفظة الأعمال والتجار والشروط", "محفظة الأعمال", biz_els)
 articles.append({
     "id": current_id,
-    "title": "دليل خدمات محفظة الأعمال والشركات وبوابة الدفع الإلكتروني وتوزيع الرواتب (Business Wallet & Payment Gateway)",
+    "title": "محفظة الأعمال والتجار والشروط",
     "category": "محفظة الأعمال",
     "icon": "fa-briefcase",
     "keywords": "اعمال, شركات, محفظة اعمال, رواتب, تجار, بوابة دفع, صرف جماعي, شركات تحصيل, payment gateway, api, تاجر, اريد اسوي بوابة دفع, انشاء بوابة دفع, ربط متجر, دمج بوابة الدفع",
     "correctDisp": "محفظة الأعمال",
     "correctSubDisp": "خدمات الأعمال وبوابة الدفع",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_biz
 })
 current_id += 1
 
 biz_chall_els = extract_docx_with_inline_media('تحديات محفظة الاعمال.docx')
-html_biz_chall = render_clean_article_html("تحديات وحلول محفظة الأعمال والشركات (تأخير القبول، مشاكل بوابة الدفع، وتذاكر الدعم)", "محفظة الأعمال", biz_chall_els)
+html_biz_chall = render_clean_article_html("المشاكل التقنية لبوابات الدفع للتجار", "محفظة الأعمال", biz_chall_els)
 articles.append({
     "id": current_id,
-    "title": "تحديات وحلول محفظة الأعمال والشركات (تأخير القبول، مشاكل بوابة الدفع، وتذاكر الدعم)",
+    "title": "المشاكل التقنية لبوابات الدفع للتجار",
     "category": "محفظة الأعمال",
     "icon": "fa-triangle-exclamation",
     "keywords": "مشاكل الاعمال, رفض الاعمال, تأخير قبول, بوابة دفع عطل, رفع تذكرة اعمال, Ameyo Business, تذكرة اعمال, فشل الدفع للمتجر",
     "correctDisp": "محفظة الأعمال",
     "correctSubDisp": "تحديات الأعمال",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_biz_chall
 })
 current_id += 1
@@ -488,16 +508,16 @@ current_id += 1
 # 7. خدمات محفظة الوكلاء.docx
 print("Processing: خدمات محفظة الوكلاء.docx...")
 agent_els = extract_docx_with_inline_media('خدمات محفظة الوكلاء.docx')
-html_agent = render_clean_article_html("دليل خدمات وتحديات محفظة الوكلاء المعتمدين والعمليات المالية (Agent Wallet Guide)", "محفظة الوكلاء", agent_els)
+html_agent = render_clean_article_html("محفظة الوكلاء والعمليات المالية", "محفظة الوكلاء", agent_els)
 articles.append({
     "id": current_id,
-    "title": "دليل خدمات وتحديات محفظة الوكلاء المعتمدين والعمليات المالية (Agent Wallet Guide)",
+    "title": "محفظة الوكلاء والعمليات المالية",
     "category": "محفظة الوكلاء",
     "icon": "fa-store",
     "keywords": "وكيل, وكلاء, محفظة الوكيل, شحن, سحب, ايداع, رصيد وكيل, عمولة, عمولات, تصريف, سندات, نقاط بيع, تعبئة رصيد الوكيل",
     "correctDisp": "محفظة الوكلاء",
     "correctSubDisp": "خدمات وعمليات الوكلاء",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_agent
 })
 current_id += 1
@@ -506,16 +526,16 @@ current_id += 1
 print("Processing: التحديثات اليومية.xlsx...")
 daily_rows = read_xlsx_rows('التحديثات اليومية.xlsx')
 daily_els = [{'type': 'table', 'rows': daily_rows}] if daily_rows else []
-html_daily = render_clean_article_html("سجل التحديثات اليومية والتعاميم والتعليمات التشغيلية المعتمدة (بما فيها تعليمات WhatsApp Bot)", "التحديثات اليومية والتعاميم", daily_els)
+html_daily = render_clean_article_html("التحديثات والتعاميم التشغيلية اليومية", "التحديثات اليومية والتعاميم", daily_els)
 articles.append({
     "id": current_id,
-    "title": "سجل التحديثات اليومية والتعاميم والتعليمات التشغيلية المعتمدة (بما فيها تعليمات WhatsApp Bot)",
+    "title": "التحديثات والتعاميم التشغيلية اليومية",
     "category": "التحديثات اليومية والتعاميم",
     "icon": "fa-newspaper",
     "keywords": "تحديثات, يومية, تعليمات, تعاميم, واتساب بوت, whatsapp bot, بوت, اجراءات جديدة, اخر الاخبار, تعميم, تنبيه يومي",
     "correctDisp": "التعاميم والتحديثات",
     "correctSubDisp": "التحديثات اليومية والواتساب",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_daily
 })
 current_id += 1
@@ -524,16 +544,16 @@ current_id += 1
 print("Processing: الحدود والرسوم.xlsx...")
 limits_rows = read_xlsx_rows('الحدود والرسوم.xlsx')
 limits_els = [{'type': 'table', 'rows': limits_rows}] if limits_rows else []
-html_limits = render_clean_article_html("جدول الحدود والرسوم والعمولات الشامل لكافة محافظ وبطاقات زين كاش (الأفراد، الأعمال، الوكلاء)", "الحدود والرسوم", limits_els)
+html_limits = render_clean_article_html("جدول الحدود المالية ورسوم العمليات", "الحدود والرسوم", limits_els)
 articles.append({
     "id": current_id,
-    "title": "جدول الحدود والرسوم والعمولات الشامل لكافة محافظ وبطاقات زين كاش (الأفراد، الأعمال، الوكلاء)",
+    "title": "جدول الحدود المالية ورسوم العمليات",
     "category": "الحدود والرسوم",
     "icon": "fa-calculator",
     "keywords": "حدود, رسوم, عمولات, سقف المحفظة, الحد اليومي, الحد الشهري, عمولة السحب, عمولة التحويل, ماستر كارد, اسعار, كلفة, عمولة",
     "correctDisp": "الحدود والرسوم",
     "correctSubDisp": "رسوم العمليات والحدود",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_limits
 })
 current_id += 1
@@ -542,16 +562,16 @@ current_id += 1
 print("Processing: التصنيفات الجديدة.xlsx...")
 disp_rows = read_xlsx_rows('التصنيفات الجديدة.xlsx')
 disp_els = [{'type': 'table', 'rows': disp_rows}] if disp_rows else []
-html_disp = render_clean_article_html("دليل تصنيفات المكالمات والتذاكر المعتمد في خدمة العملاء (Dispositions & Sub-Dispositions)", "خدمة العملاء وأنظمة العمل", disp_els)
+html_disp = render_clean_article_html("تصنيفات الدعم الفني (CRM / Ameyo)", "خدمة العملاء وأنظمة العمل", disp_els)
 articles.append({
     "id": current_id,
-    "title": "دليل تصنيفات المكالمات والتذاكر المعتمد في خدمة العملاء (Dispositions & Sub-Dispositions)",
+    "title": "تصنيفات الدعم الفني (CRM / Ameyo)",
     "category": "خدمة العملاء وأنظمة العمل",
     "icon": "fa-tags",
     "keywords": "تصنيفات, ديسبوزيشن, Disposition, Sub Disposition, تصنيف المكالمات, تذاكر, كول سنتر, ترميز المكالمات",
     "correctDisp": "تصنيفات الخدمة",
     "correctSubDisp": "التصنيف والترميز",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_disp
 })
 current_id += 1
@@ -559,46 +579,46 @@ current_id += 1
 # 11. دليل السياسات والاجراءات.docx & دليل الشكاوي.docx & دليل التوعية.docx
 print("Processing: Policies & Guidelines documents...")
 pol_els = extract_docx_with_inline_media('دليل السياسات والاجراءات.docx')
-html_pol = render_clean_article_html("دليل السياسات والإجراءات: التعامل مع المشتركين غير الراضين والمسيئين وضوابط التصعيد", "السياسات والإجراءات", pol_els)
+html_pol = render_clean_article_html("سياسة مكافحة الاحتيال وتجميد الحسابات", "السياسات والإجراءات", pol_els)
 articles.append({
     "id": current_id,
-    "title": "دليل السياسات والإجراءات: التعامل مع المشتركين غير الراضين والمسيئين وضوابط التصعيد",
+    "title": "سياسة مكافحة الاحتيال وتجميد الحسابات",
     "category": "السياسات والإجراءات",
     "icon": "fa-scale-balanced",
     "keywords": "سياسات, اجراءات, مشترك غير راضي, اساءة لفظية, تصعيد, انهاء مكالمة, حظر, التعامل مع الزبائن",
     "correctDisp": "السياسات",
     "correctSubDisp": "إجراءات التعامل والشكاوى",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_pol
 })
 current_id += 1
 
 shk_els = extract_docx_with_inline_media('دليل الشكاوي.docx')
-html_shk = render_clean_article_html("دليل إجراءات الشكاوى على مقرات وموظفي الشركة ومراكز خدمة العملاء", "السياسات والإجراءات", shk_els)
+html_shk = render_clean_article_html("معايير جودة الخدمة ورضا العملاء (QA)", "السياسات والإجراءات", shk_els)
 articles.append({
     "id": current_id,
-    "title": "دليل إجراءات الشكاوى على مقرات وموظفي الشركة ومراكز خدمة العملاء",
+    "title": "معايير جودة الخدمة ورضا العملاء (QA)",
     "category": "السياسات والإجراءات",
     "icon": "fa-file-circle-exclamation",
     "keywords": "شكوى, شكاوى, مقرات, فروع, موظف, اساءة, تذكرة شكوى, اعتذار, شكوى موظف, فرع",
     "correctDisp": "الشكاوى",
     "correctSubDisp": "شكاوى المقرات والموظفين",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_shk
 })
 current_id += 1
 
 tou_els = extract_docx_with_inline_media('دليل التوعية.docx')
-html_tou = render_clean_article_html("دليل التوعية التقنية وحل مشاكل أجهزة وهواتف وتطبيقات المشتركين (Android & iOS)", "التوعية والدعم التقني", tou_els)
+html_tou = render_clean_article_html("قنوات التواصل والتوعية الأمنية", "التوعية والدعم التقني", tou_els)
 articles.append({
     "id": current_id,
-    "title": "دليل التوعية التقنية وحل مشاكل أجهزة وهواتف وتطبيقات المشتركين (Android & iOS)",
+    "title": "قنوات التواصل والتوعية الأمنية",
     "category": "التوعية والدعم التقني",
     "icon": "fa-shield-halved",
     "keywords": "توعية, اصدار التطبيق, نظام التشغيل, مسح التخزين المؤقت, تحديث التطبيق, اندرويد, ايفون, كاش ميموري, عطل التطبيق",
     "correctDisp": "الدعم التقني",
     "correctSubDisp": "توعية المشترك",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_tou
 })
 current_id += 1
@@ -607,47 +627,47 @@ current_id += 1
 print("Processing: Wallet profile, Ros & Offers...")
 wp_rows = read_xlsx_rows('Wallet profile.xlsx')
 wp_els = [{'type': 'table', 'rows': wp_rows}] if wp_rows else []
-html_wp = render_clean_article_html("دليل أنواع وملفات المحافظ والخدمات المتاحة لكل نوع (Wallet Profiles: Basic, Standard, Payroll)", "محفظة الأفراد", wp_els)
+html_wp = render_clean_article_html("أنواع المحافظ والخدمات المتاحة لكل نوع", "محفظة الأفراد", wp_els)
 articles.append({
     "id": current_id,
-    "title": "دليل أنواع وملفات المحافظ والخدمات المتاحة لكل نوع (Wallet Profiles: Basic, Standard, Payroll)",
+    "title": "أنواع المحافظ والخدمات المتاحة لكل نوع",
     "category": "محفظة الأفراد",
     "icon": "fa-address-card",
     "keywords": "Wallet profile, بروفايل, Basic Wallet, Standard, Premium, رواتب, خدمات متاحة, ملف المحفظة",
     "correctDisp": "أنواع المحافظ",
     "correctSubDisp": "ملف المحفظة والخدمات",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_wp
 })
 current_id += 1
 
 ros_rows = read_xlsx_rows('Ros.xlsx')
 ros_els = [{'type': 'table', 'rows': ros_rows}] if ros_rows else []
-html_ros = render_clean_article_html("دليل فروع ومقرات ومراكز خدمة زين كاش وزين العراق الرئيسية وساعات العمل بالمحافظات", "الفروع ومواقع الخدمة", ros_els)
+html_ros = render_clean_article_html("فروع ومواقع مراكز زين كاش بالمحافظات", "الفروع ومواقع الخدمة", ros_els)
 articles.append({
     "id": current_id,
-    "title": "دليل فروع ومقرات ومراكز خدمة زين كاش وزين العراق الرئيسية وساعات العمل بالمحافظات",
+    "title": "فروع ومواقع مراكز زين كاش بالمحافظات",
     "category": "الفروع ومواقع الخدمة",
     "icon": "fa-map-location-dot",
-    "keywords": "فروع, مواقع, مقرات, مراكز خدمة, ROS, حي الجامعة, المنصور, البصرة, اربيل, ساعات الدوام, اماكن الفروع",
+    "keywords": "فروع, مواقع, مقرات, مراكز خدمة, ROS, حي الجامعة, المنصور, البصرة, اربيل, أربيل, السليمانية, كركوك, دهوك, النجف, كربلاء, بابل, ساعات الدوام, اماكن الفروع, اين موقعكم, عنوان الفرع",
     "correctDisp": "الفروع والمواقع",
     "correctSubDisp": "عناوين المراكز وساعات العمل",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_ros
 })
 current_id += 1
 
 off_els = extract_docx_with_inline_media('Zaincash Offers.docx')
-html_off = render_clean_article_html("دليل عروض وخصومات وحملات الكاش باك من زين كاش (طلبات، سينما، خصومات الشركاء)", "العروض والمكافآت", off_els)
+html_off = render_clean_article_html("العروض والخصومات وحملات الكاش باك", "العروض والمكافآت", off_els)
 articles.append({
     "id": current_id,
-    "title": "دليل عروض وخصومات وحملات الكاش باك من زين كاش (طلبات، سينما، خصومات الشركاء)",
+    "title": "العروض والخصومات وحملات الكاش باك",
     "category": "العروض والمكافآت",
     "icon": "fa-gift",
     "keywords": "عروض, طلبات, كاش باك, خصومات, مطاعم, سينما, تسوق, 20%, استرداد نقدي, حملات ترويجية",
     "correctDisp": "العروض",
     "correctSubDisp": "عروض الكاش باك",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_off
 })
 current_id += 1
@@ -656,16 +676,16 @@ current_id += 1
 print("Processing: فيديوهات التوضيحية.xlsx...")
 vid_rows = read_xlsx_rows('فيديوهات التوضيحية.xlsx')
 vid_els = [{'type': 'table', 'rows': vid_rows}] if vid_rows else []
-html_vid = render_clean_article_html("دليل روابط الفيديوهات والشروحات الرسمية المرئية لاستخدام خدمات زين كاش", "الفيديوهات التوضيحية والشروحات", vid_els)
+html_vid = render_clean_article_html("الفيديوهات والشروحات الرسمية المرئية", "الفيديوهات التوضيحية والشروحات", vid_els)
 articles.append({
     "id": current_id,
-    "title": "دليل روابط الفيديوهات والشروحات الرسمية المرئية لاستخدام خدمات زين كاش",
+    "title": "الفيديوهات والشروحات الرسمية المرئية",
     "category": "الفيديوهات التوضيحية والشروحات",
     "icon": "fa-video",
     "keywords": "فيديوهات, شروحات, يوتيوب, فيديو توضيحي, تسجيل محفظة, تفعيل ماستر كارد, روابط تعليمية",
     "correctDisp": "الشروحات",
     "correctSubDisp": "فيديوهات اليوتيوب",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_vid
 })
 current_id += 1
@@ -674,16 +694,16 @@ current_id += 1
 print("Processing: Copy of Notification Master Data & Reporting.xlsx...")
 notif_rows = read_xlsx_rows('Copy of Notification Master Data & Reporting.xlsx')
 notif_els = [{'type': 'table', 'rows': notif_rows[:30]}] if notif_rows else []
-html_notif = render_clean_article_html("دليل قنوات إشعارات وتنبيهات العمليات للمشتركين والوكلاء (Notification Master Data)", "الأنظمة والتقارير", notif_els)
+html_notif = render_clean_article_html("نظام الإشعارات والتقارير اليومية", "الأنظمة والتقارير", notif_els)
 articles.append({
     "id": current_id,
-    "title": "دليل قنوات إشعارات وتنبيهات العمليات للمشتركين والوكلاء (Notification Master Data)",
+    "title": "نظام الإشعارات والتقارير اليومية",
     "category": "الأنظمة والتقارير",
     "icon": "fa-bell",
     "keywords": "اشعارات, رسائل, SMS, App Notification, Hybrid, تنبيهات, احصائيات",
     "correctDisp": "الأنظمة والتقارير",
     "correctSubDisp": "قنوات الإشعارات والتنبيهات",
-    "lastUpdated": "2026-09-19",
+    "lastUpdated": "2026-09-20",
     "content": html_notif
 })
 current_id += 1
