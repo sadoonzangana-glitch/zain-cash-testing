@@ -696,8 +696,11 @@ app.post('/api/ai/chat', async (req, res) => {
             if (title.includes('تجار') || title.includes('بوابة') || kw.includes('بوابة دفع') || title.includes('بوابات')) score += 80;
             if (title.includes('اعمال') || title.includes('أعمال')) score += 50;
         }
-        if (qLower.includes('اسهم') || qLower.includes('أسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben') || qLower.includes('سهم') || qLower.includes('تداول')) {
-            if (title.includes('اسهم') || title.includes('أسهم') || title.includes('تداول')) score += 70;
+        if (qLower.includes('تحويل خاطئ') || qLower.includes('حولت بالخطأ') || qLower.includes('استرجاع') || qLower.includes('تجميد') || qLower.includes('قانوني') || qLower.includes('قضائي') || qLower.includes('امر قضائي') || qLower.includes('أمر قضائي') || qLower.includes('بالخطأ')) {
+            if (title.includes('استرجاع التحويل الخاطئ') || title.includes('التحويل الخاطئ') || kw.includes('تحويل خاطئ')) score += 130;
+        }
+        if (qLower.includes('اسهم') || qLower.includes('أسهم') || qLower.includes('بورصة') || qLower.includes('alpaca') || qLower.includes('w-8ben') || qLower.includes('سهم') || qLower.includes('تداول') || qLower.includes('investing') || qLower.includes('onboarding')) {
+            if (title.includes('الأسهم الأمريكية') || title.includes('Investing Portal') || title.includes('تداول')) score += 110;
         }
         if (qLower.includes('ci') || qLower.includes('حظر') || qLower.includes('متوقف') || qLower.includes('موقوفة') || qLower.includes('معلق') || qLower.includes('واكفة') || qLower.includes('واقفة')) {
             if (title.includes('إيقاف') || title.includes('حظر') || title.includes('متوقف') || content.includes('additional customer')) score += 60;
